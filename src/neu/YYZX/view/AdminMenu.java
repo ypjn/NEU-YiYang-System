@@ -17,5 +17,6 @@ public class AdminMenu {
         }else{
             System.out.println("登录失败！");
         }
+        System.out.println("=========================");
     }
 }
