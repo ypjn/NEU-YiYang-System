@@ -1,36 +1,40 @@
 package neu.YYZX.view;
 
-import neu.YYZX.model.CareProject;
-import neu.YYZX.model.CareRecord;
-import neu.YYZX.model.Elderly;
-import neu.YYZX.model.NursingLevel;
-import neu.YYZX.model.User;
-import neu.YYZX.service.DataManager;
-import neu.YYZX.util.FileUtil;
+import neu.YYZX.common.IMenu;
+import neu.YYZX.common.PersistentIdGenerator;
+import neu.YYZX.model.*;
+import neu.YYZX.service.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 
-public class NurseMenu {
-    private final DataManager dm = DataManager.getInstance();
-    private final Scanner sc;
+/**
+ * 护工菜单
+ */
+public class NurseMenu implements IMenu {
+
+    private final DataInitializer ctx = DataInitializer.getInstance();
+
+    private final UserService userService = new UserService(ctx.getUserDao());
+    private final ElderlyService elderlyService = new ElderlyService(ctx.getElderlyDao());
+    private final CareProjectService projectService = new CareProjectService(ctx.getCareProjectDao());
+    private final CareRecordService recordService = new CareRecordService(ctx.getCareRecordDao());
+    private final OutRegistrationService outService = new OutRegistrationService(ctx.getOutRegistrationDao());
+    private final HealthRecordService healthService = new HealthRecordService(ctx.getHealthRecordDao());
+    private final NursingLevelService levelService = new NursingLevelService(ctx.getNursingLevelDao());
+
     private String nurseName;
 
-    public NurseMenu(Scanner sc) {
-        this.sc = sc;
-    }
-
-    public void execute() {
+    @Override
+    public void show() {
         System.out.println("======护工登录======");
-        System.out.println("请输入账号：");
-        String userName = sc.next();
-        System.out.println("请输入密码：");
-        String password = sc.next();
+        System.out.print("请输入账号：");
+        String username = mainMenu.readWord();
+        System.out.print("请输入密码：");
+        String password = mainMenu.readWord();
 
-        User user = dm.authenticate(userName, password, User.ROLE_NURSE);
+        User user = userService.authenticate(username, password, User.ROLE_NURSE);
         if (user == null) {
             System.out.println("登录失败！账号、密码或角色不正确");
             return;
@@ -45,135 +49,139 @@ public class NurseMenu {
         while (true) {
             System.out.println();
             System.out.println("==========护工功能菜单==========");
-            System.out.println("1---------查询老人信息");
-            System.out.println("2---------登记护理执行");
-            System.out.println("3---------查看护理执行记录");
-            System.out.println("4---------返回主菜单");
+            System.out.println("1. 查询老人信息");
+            System.out.println("2. 登记护理执行");
+            System.out.println("3. 查看我的护理记录");
+            System.out.println("4. 外出登记");
+            System.out.println("5. 登记健康记录");
+            System.out.println("6. 返回主菜单");
             System.out.print("请选择：");
 
-            int choice = readInt();
-            switch (choice) {
-                case 1:
-                    searchElder();
-                    break;
-                case 2:
-                    registerCare();
-                    break;
-                case 3:
-                    listMyRecords();
-                    break;
-                case 4:
-                    return;
-                default:
-                    System.out.println("输入有误，请重新输入");
+            switch (mainMenu.readInt()) {
+                case 1: searchElderly(); break;
+                case 2: registerCare(); break;
+                case 3: listMyRecords(); break;
+                case 4: outRegistration(); break;
+                case 5: healthRecord(); break;
+                case 6: return;
+                default: System.out.println("输入有误，请重新输入");
             }
         }
     }
 
-    private void searchElder() {
+    /** 1. 查询老人信息 */
+    private void searchElderly() {
         System.out.print("请输入老人编号或姓名关键字：");
-        String keyword = sc.next().trim();
-        if (keyword.isEmpty()) {
-            System.out.println("关键字不能为空");
-            return;
+        String keyword = mainMenu.readWord().trim();
+        if (keyword.isEmpty()) { System.out.println("关键字不能为空"); return; }
+
+        List<Elderly> matched = elderlyService.findByName(keyword);
+        Elderly byId = elderlyService.findById(keyword);
+        if (byId != null && !matched.contains(byId)) {
+            matched.add(0, byId);
         }
 
-        ArrayList<Elderly> matched = new ArrayList<>();
-        for (Elderly e : dm.getElders()) {
-            if (e.getId().contains(keyword) || e.getName().contains(keyword)) {
-                matched.add(e);
-            }
-        }
+        if (matched.isEmpty()) { System.out.println("未找到匹配的老人信息"); return; }
 
-        if (matched.isEmpty()) {
-            System.out.println("未找到匹配的老人信息");
-            return;
-        }
-
-        System.out.println("编号\t姓名\t年龄\t性别\t护理等级\t房间号\t等级说明");
+        System.out.println("编号\t姓名\t年龄\t性别\t护理等级\t等级说明\t房间号\t状态");
         for (Elderly e : matched) {
-            NursingLevel level = dm.findLevelByCode(e.getNursingLevelCode());
-            String levelName = level != null ? level.getName() : "未知";
-            System.out.printf("%s\t%s\t%d\t%s\t%s\t%s\t%s%n",
+            NursingLevel level = levelService.findByCode(e.getNursingLevelCode());
+            System.out.printf("%s\t%s\t%d\t%s\t%s\t%s\t%s\t%s%n",
                     e.getId(), e.getName(), e.getAge(), e.getGender(),
-                    e.getNursingLevelCode(), e.getRoomNo(), levelName);
+                    e.getNursingLevelCode(), level != null ? level.getName() : "未知",
+                    e.getRoomNo(), nvl(e.getStatus()));
         }
     }
 
+    /** 2. 登记护理执行 */
     private void registerCare() {
         System.out.print("请输入老人编号：");
-        String elderId = sc.next();
-        Elderly elder = dm.findElderById(elderId);
-        if (elder == null) {
-            System.out.println("老人编号不存在，请重新输入");
-            return;
-        }
+        String elderId = mainMenu.readWord();
+        Elderly elder = elderlyService.findById(elderId);
+        if (elder == null) { System.out.println("老人编号不存在"); return; }
 
-        List<CareProject> applicable = dm.getApplicableProjects(elder.getNursingLevelCode());
-        if (applicable.isEmpty()) {
-            System.out.println("当前护理等级无适用项目，请联系管理员维护项目库");
-            return;
-        }
+        List<CareProject> applicable = projectService.findApplicable(elder.getNursingLevelCode());
+        if (applicable.isEmpty()) { System.out.println("当前护理等级无适用项目"); return; }
 
         System.out.println("可选护理项目：");
         for (int i = 0; i < applicable.size(); i++) {
             CareProject p = applicable.get(i);
-            System.out.printf("%d. %s %s (%.0f元/%s) %s%n",
-                    i + 1, p.getCode(), p.getName(), p.getPrice(), p.getUnit(), p.getRemark());
+            System.out.printf("%d. %s %s (%.0f元/%s)%n",
+                    i + 1, p.getCode(), p.getName(), p.getPrice(), p.getUnit());
         }
         System.out.print("请选择项目序号：");
-        int index = readInt() - 1;
-        if (index < 0 || index >= applicable.size()) {
-            System.out.println("选择无效");
-            return;
-        }
+        int idx = mainMenu.readInt() - 1;
+        if (idx < 0 || idx >= applicable.size()) { System.out.println("选择无效"); return; }
 
-        CareProject project = applicable.get(index);
-        sc.nextLine();
-        System.out.print("请输入备注(可回车跳过)：");
-        String remark = sc.nextLine();
+        CareProject project = applicable.get(idx);
+        mainMenu.getScanner().nextLine();
+        System.out.print("备注(可回车跳过)：");
+        String remark = mainMenu.getScanner().nextLine();
 
         String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        CareRecord record = new CareRecord(
-                dm.nextRecordId(),
-                elderId,
-                project.getCode(),
-                time,
-                nurseName,
-                remark);
-        dm.getRecords().add(record);
-        FileUtil.persist();
+        CareRecord record = new CareRecord(null, elderId, project.getCode(), time, nurseName, remark);
+        recordService.add(record);
+        PersistentIdGenerator.getInstance().save();
         System.out.println("护理执行登记成功！记录号：" + record.getId());
     }
 
+    /** 3. 查看我的护理记录 */
     private void listMyRecords() {
-        ArrayList<CareRecord> list = dm.getRecords();
-        if (list.isEmpty()) {
-            System.out.println("无信息，请添加后查询");
-            return;
-        }
+        List<CareRecord> list = recordService.findByNurseName(nurseName);
+        if (list.isEmpty()) { System.out.println("暂无本人执行的护理记录"); return; }
 
         System.out.println("记录号\t老人编号\t项目编码\t执行时间\t护工\t备注");
-        boolean found = false;
-        for (CareRecord r : list) {
-            if (r.getNurseName() != null && r.getNurseName().equalsIgnoreCase(nurseName)) {
-                found = true;
-                System.out.printf("%s\t%s\t%s\t%s\t%s\t%s%n",
-                        r.getId(), r.getElderlyId(), r.getProjectCode(),
-                        r.getExecuteTime(), r.getNurseName(),
-                        r.getRemark() == null ? "" : r.getRemark());
-            }
-        }
-        if (!found) {
-            System.out.println("暂无本人执行的护理记录");
-        }
+        for (CareRecord r : list)
+            System.out.printf("%s\t%s\t%s\t%s\t%s\t%s%n",
+                    r.getId(), r.getElderlyId(), r.getProjectCode(),
+                    r.getExecuteTime(), r.getNurseName(),
+                    r.getRemark() == null ? "" : r.getRemark());
     }
 
-    private int readInt() {
-        while (!sc.hasNextInt()) {
-            sc.next();
-            System.out.print("请输入数字：");
-        }
-        return sc.nextInt();
+    /** 4. 外出登记 */
+    private void outRegistration() {
+        System.out.print("请输入老人编号：");
+        String elderId = mainMenu.readWord();
+        Elderly elder = elderlyService.findById(elderId);
+        if (elder == null) { System.out.println("老人编号不存在"); return; }
+
+        mainMenu.getScanner().nextLine();
+        System.out.print("外出时间(yyyy-MM-dd HH:mm)：");
+        String outTime = mainMenu.getScanner().nextLine();
+        System.out.print("预计归来时间：");
+        String expected = mainMenu.getScanner().nextLine();
+        System.out.print("陪同人：");
+        String companion = mainMenu.getScanner().nextLine();
+        System.out.print("事由：");
+        String reason = mainMenu.getScanner().nextLine();
+
+        outService.add(new OutRegistration(null, elderId, outTime, expected, null, companion, reason, "外出中"));
+        PersistentIdGenerator.getInstance().save();
+        System.out.println("外出登记成功！");
     }
+
+    /** 5. 登记健康记录 */
+    private void healthRecord() {
+        System.out.print("请输入老人编号：");
+        String elderId = mainMenu.readWord();
+        if (!elderlyService.exists(elderId)) { System.out.println("老人编号不存在"); return; }
+
+        mainMenu.getScanner().nextLine();
+        String today = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        System.out.print("记录日期(" + today + ")：");
+        String date = mainMenu.getScanner().nextLine();
+        if (date.isEmpty()) date = today;
+        System.out.print("血压："); String bp = mainMenu.getScanner().nextLine();
+        System.out.print("心率："); String hr = mainMenu.getScanner().nextLine();
+        System.out.print("血糖："); String bs = mainMenu.getScanner().nextLine();
+        System.out.print("体重："); String wt = mainMenu.getScanner().nextLine();
+        System.out.print("体温："); String tp = mainMenu.getScanner().nextLine();
+        System.out.print("备注："); String remark = mainMenu.getScanner().nextLine();
+
+        healthService.add(new HealthRecord(null, elderId, date, bp, hr, bs, wt, tp, remark));
+        PersistentIdGenerator.getInstance().save();
+        System.out.println("健康记录登记成功！");
+    }
+
+    private static String nvl(String s) { return s == null ? "" : s; }
 }

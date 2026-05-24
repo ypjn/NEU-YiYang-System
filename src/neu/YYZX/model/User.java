@@ -1,20 +1,45 @@
 package neu.YYZX.model;
 
+/**
+ * 用户实体类
+ */
 public class User {
     public static final String ROLE_ADMIN = "admin";
     public static final String ROLE_NURSE = "nurse";
 
+    private String userId;
     private String username;
     private String password;
     private String role;
+    private String realName;
+    private String phone;
+    private String createTime;
 
     public User() {
     }
 
+    /** 兼容旧版3参数构造器 */
     public User(String username, String password, String role) {
+        this(null, username, password, role, null, null, null);
+    }
+
+    public User(String userId, String username, String password, String role,
+                String realName, String phone, String createTime) {
+        this.userId = userId;
         this.username = username;
         this.password = password;
         this.role = role;
+        this.realName = realName;
+        this.phone = phone;
+        this.createTime = createTime;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getUsername() {
@@ -39,5 +64,29 @@ public class User {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getRealName() {
+        return realName;
+    }
+
+    public void setRealName(String realName) {
+        this.realName = realName;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(String createTime) {
+        this.createTime = createTime;
     }
 }
