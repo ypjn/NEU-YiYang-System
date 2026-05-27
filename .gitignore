@@ -31,3 +31,10 @@ bin/
 
 ### Project data ###
 data/
+
+### Maven ###
+target/
+
+### Node ###
+node_modules/
+dist/

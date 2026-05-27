@@ -627,7 +627,7 @@ public class AdminMenu implements IMenu {
         String remark = mainMenu.readLine();
 
         ctx.getServiceAssignmentDao().insert(
-                new ServiceAssignment(null, empId, eid, type, start, end, fee, "服务中", remark));
+                new ServiceAssignment(null, empId, eid, type, start, end, fee, "服务中", remark, "管理员"));
         PersistentIdGenerator.getInstance().save();
         System.out.println("服务对象设置成功！");
     }
@@ -718,7 +718,7 @@ public class AdminMenu implements IMenu {
         String remark = mainMenu.readLine();
 
         ctx.getServiceAssignmentDao().insert(
-                new ServiceAssignment(null, empId, eid, type, start, end, fee, "服务中", remark));
+                new ServiceAssignment(null, empId, eid, type, start, end, fee, "服务中", remark, "管理员"));
         PersistentIdGenerator.getInstance().save();
         System.out.println("服务购买成功！");
     }
