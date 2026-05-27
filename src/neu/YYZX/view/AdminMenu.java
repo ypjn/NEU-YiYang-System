@@ -122,7 +122,7 @@ public class AdminMenu implements IMenu {
         System.out.print("请输入电话：");
         String phone = mainMenu.readLine();
         String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        userService.addUser(new User(null, uname, pwd, role, rname, phone, now));
+        userService.addUser(new User(null, uname, pwd, role, rname, phone, null, null, now));
         PersistentIdGenerator.getInstance().save();
         System.out.println("添加成功！");
     }

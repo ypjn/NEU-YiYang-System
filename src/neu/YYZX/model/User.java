@@ -13,6 +13,8 @@ public class User {
     private String role;
     private String realName;
     private String phone;
+    private String securityQuestion;
+    private String securityAnswer;
     private String createTime;
 
     public User() {
@@ -20,17 +22,20 @@ public class User {
 
     /** 兼容旧版3参数构造器 */
     public User(String username, String password, String role) {
-        this(null, username, password, role, null, null, null);
+        this(null, username, password, role, null, null, null, null, null);
     }
 
     public User(String userId, String username, String password, String role,
-                String realName, String phone, String createTime) {
+                String realName, String phone, String securityQuestion, String securityAnswer,
+                String createTime) {
         this.userId = userId;
         this.username = username;
         this.password = password;
         this.role = role;
         this.realName = realName;
         this.phone = phone;
+        this.securityQuestion = securityQuestion;
+        this.securityAnswer = securityAnswer;
         this.createTime = createTime;
     }
 
@@ -80,6 +85,22 @@ public class User {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getSecurityQuestion() {
+        return securityQuestion;
+    }
+
+    public void setSecurityQuestion(String securityQuestion) {
+        this.securityQuestion = securityQuestion;
+    }
+
+    public String getSecurityAnswer() {
+        return securityAnswer;
+    }
+
+    public void setSecurityAnswer(String securityAnswer) {
+        this.securityAnswer = securityAnswer;
     }
 
     public String getCreateTime() {

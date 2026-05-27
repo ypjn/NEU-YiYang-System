@@ -25,4 +25,14 @@ public class MessageDao extends BaseJsonDao<Message> {
     protected TypeReference<List<Message>> getTypeReference() {
         return new TypeReference<List<Message>>() {};
     }
+
+    public List<Message> findByReceiver(String receiverName) {
+        List<Message> result = new java.util.ArrayList<>();
+        for (Message m : list) {
+            if (m.getReceiverName() != null && m.getReceiverName().equals(receiverName)) {
+                result.add(m);
+            }
+        }
+        return result;
+    }
 }

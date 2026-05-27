@@ -67,6 +67,11 @@ public class UserService {
         return null;
     }
 
+    /** 根据用户名查找用户 */
+    public User findByUsername(String username) {
+        return userDao.findByUsername(username);
+    }
+
     /** 判断用户名是否存在 */
     public boolean containsUsername(String username) {
         return userDao.containsUsername(username);

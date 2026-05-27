@@ -54,6 +54,35 @@ public class DataInitializer {
         ensureDefaults();
     }
 
+    /** 保存所有数据 */
+    public void saveAll() {
+        loadAllDaos(); // 实际上不需要重新加载，但saveAll需要save所有
+        userDao.save();
+        roleDao.save();
+        menuDao.save();
+        roleMenuDao.save();
+        buildingDao.save();
+        roomDao.save();
+        bedDao.save();
+        bedDetailDao.save();
+        elderlyDao.save();
+        dietPreferenceDao.save();
+        nursingLevelDao.save();
+        careProjectDao.save();
+        nursingContentDao.save();
+        careRecordDao.save();
+        outRegistrationDao.save();
+        checkOutDao.save();
+        foodDao.save();
+        dietCalendarDao.save();
+        healthRecordDao.save();
+        employeeDao.save();
+        serviceAssignmentDao.save();
+        operationLogDao.save();
+        messageDao.save();
+        PersistentIdGenerator.getInstance().save();
+    }
+
     private void loadAllDaos() {
         userDao.load();
         roleDao.load();
@@ -93,8 +122,8 @@ public class DataInitializer {
     private void ensureDefaultUsers() {
         if (userDao.size() == 0) {
             String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            userDao.insert(new User(null, "admin", "admin", User.ROLE_ADMIN, "系统管理员", "13800000000", now));
-            userDao.insert(new User(null, "nurse", "nurse", User.ROLE_NURSE, "护工张三", "13800000001", now));
+            userDao.insert(new User(null, "admin", "admin", User.ROLE_ADMIN, "系统管理员", "13800000000", null, null, now));
+            userDao.insert(new User(null, "nurse", "nurse", User.ROLE_NURSE, "护工张三", "13800000001", null, null, now));
         }
     }
 
