@@ -614,6 +614,7 @@ public class AdminFrame {
 
         filterRow.getChildren().addAll(new Label("楼层："), floorBox, addBedBtn, delBedBtn, swapBedBtn, roomBtn);
 
+
         // 床位展示区
         VBox bedArea = new VBox(8);
         bedArea.setPadding(new Insets(5));
@@ -626,7 +627,7 @@ public class AdminFrame {
             List<Room> rooms = ctx.getRoomDao().findByBuildingId(building.getBuildingId());
             if (!"全部".equals(floorSel)) {
                 int floor = Integer.parseInt(floorSel.replace("楼", ""));
-                rooms = rooms.stream().filter(r -> r.getFloor() == floor).toList();
+                rooms = rooms.stream().filter(r -> r.getFloor() == floor).collect(java.util.stream.Collectors.toCollection(java.util.ArrayList::new));
             }
             if (rooms.isEmpty()) { bedArea.getChildren().add(new Label("无房间")); return; }
             // 按床位占用状态排序：有空闲床位的房间在前，全占用的在后
