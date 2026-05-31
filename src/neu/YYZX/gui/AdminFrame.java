@@ -506,40 +506,46 @@ public class AdminFrame {
             // 已有护理级别 — 询问是否移除
             Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
                 e.getName() + " 当前护理级别为 " + e.getNursingLevelCode()
-                + "。\n\n需要先移除当前级别才能设置新级别。\n\n确定要移除吗？（会级联删除客户在当前级别的所有护理项目）",
+                + "。\n\n移除后将自动弹出新级别选择窗口。\n\n确定要移除吗？（会级联删除客户在当前级别的所有护理项目）",
                 ButtonType.YES, ButtonType.NO);
             confirm.showAndWait().ifPresent(r -> {
                 if (r == ButtonType.YES) {
                     removeCustomerLevel(e);
+                    // 移除后立即弹出设置新级别
+                    showSetLevelDialog(e);
                 }
             });
         } else {
             // 没有护理级别 — 设置新级别
-            List<NursingLevel> levels = ctx.getNursingLevelDao().findAll().stream()
-                .filter(l -> "启用".equals(l.getStatus())).toList();
-            if (levels.isEmpty()) { LoginPane.showAlert(Alert.AlertType.WARNING, "没有可用的护理级别"); return; }
-            ChoiceDialog<String> dlg = new ChoiceDialog<>(
-                levels.get(0).getCode() + " - " + levels.get(0).getName(),
-                levels.stream().map(l -> l.getCode() + " - " + l.getName()).toList());
-            dlg.setTitle("设置护理等级");
-            dlg.setHeaderText("为 " + e.getName() + " 设置护理等级");
-            dlg.showAndWait().ifPresent(sel -> {
-                String code = sel.split(" - ")[0];
-                e.setNursingLevelCode(code);
-                ctx.getElderlyDao().update(e);
-                // 批量添加该级别的护理项目
-                String now = LocalDateTime.now().format(fmt);
-                String expireDate = LocalDate.now().plusMonths(3).toString();
-                List<NursingContent> contents = ctx.getNursingContentDao().findByLevelCode(code);
-                for (NursingContent nc : contents) {
-                    CustomerCareProject ccp = new CustomerCareProject(null, e.getId(),
-                        nc.getCareProjectCode(), 1, now, expireDate);
-                    ctx.getCustomerCareProjectDao().insert(ccp);
-                }
-                PersistentIdGenerator.getInstance().save();
-                AuditLogger.log("设置护理等级", "老人管理", e.getName() + " → " + code);
-            });
+            showLevelSelection(e);
         }
+    }
+
+    private void showLevelSelection(Elderly e) {
+        List<NursingLevel> levels = ctx.getNursingLevelDao().findAll().stream()
+            .filter(l -> "启用".equals(l.getStatus())).toList();
+        if (levels.isEmpty()) { LoginPane.showAlert(Alert.AlertType.WARNING, "没有可用的护理级别"); return; }
+        ChoiceDialog<String> dlg = new ChoiceDialog<>(
+            levels.get(0).getCode() + " - " + levels.get(0).getName(),
+            levels.stream().map(l -> l.getCode() + " - " + l.getName()).toList());
+        dlg.setTitle("设置护理等级");
+        dlg.setHeaderText("为 " + e.getName() + " 设置护理等级");
+        dlg.showAndWait().ifPresent(sel -> {
+            String code = sel.split(" - ")[0];
+            e.setNursingLevelCode(code);
+            ctx.getElderlyDao().update(e);
+            // 批量添加该级别的护理项目
+            String now = LocalDateTime.now().format(fmt);
+            String expireDate = LocalDate.now().plusMonths(3).toString();
+            List<NursingContent> contents = ctx.getNursingContentDao().findByLevelCode(code);
+            for (NursingContent nc : contents) {
+                CustomerCareProject ccp = new CustomerCareProject(null, e.getId(),
+                    nc.getCareProjectCode(), 1, now, expireDate);
+                ctx.getCustomerCareProjectDao().insert(ccp);
+            }
+            PersistentIdGenerator.getInstance().save();
+            AuditLogger.log("设置护理等级", "老人管理", e.getName() + " → " + code);
+        });
     }
 
     private void removeCustomerLevel(Elderly e) {
