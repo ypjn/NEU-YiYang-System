@@ -1145,22 +1145,29 @@ public class AdminFrame {
         VBox box = new VBox(10);
         box.setPadding(new Insets(15));
 
-        // 管家列表
         HBox topRow = new HBox(10);
         ComboBox<String> butlerBox = new ComboBox<>();
         butlerBox.setPromptText("选择健康管家(护工)");
-        ctx.getUserDao().findByRole("nurse").forEach(u ->
-            butlerBox.getItems().add(u.getUserId() + " - " + u.getRealName()));
+        // 用 Employee 表查找管家/护工，不用 User 表
+        ctx.getEmployeeDao().findAll().forEach(emp -> {
+            if (emp.getPosition() != null && (emp.getPosition().contains("管家") || emp.getPosition().contains("护工"))) {
+                butlerBox.getItems().add(emp.getEmployeeId() + " - " + emp.getName());
+            }
+        });
 
         topRow.getChildren().addAll(new Label("健康管家："), butlerBox);
 
-        // 服务客户列表
+        // 服务客户列表 — 用自定义列解析名称
         TableView<ServiceAssignment> table = new TableView<>();
-        TableColumn<ServiceAssignment, String> c1 = tc("老人ID", "elderlyId");
-        TableColumn<ServiceAssignment, String> c2 = tc("服务类型", "serviceType");
-        TableColumn<ServiceAssignment, String> c3 = tc("开始日期", "startDate");
-        TableColumn<ServiceAssignment, String> c4 = tc("状态", "status");
-        table.getColumns().addAll(c1, c2, c3, c4);
+        TableColumn<ServiceAssignment, String> c0 = new TableColumn<>("老人姓名");
+        c0.setCellValueFactory(data -> {
+            Elderly e = ctx.getElderlyDao().findById(data.getValue().getElderlyId());
+            return new SimpleStringProperty(e != null ? e.getName() : data.getValue().getElderlyId());
+        });
+        TableColumn<ServiceAssignment, String> c1 = tc("服务类型", "serviceType");
+        TableColumn<ServiceAssignment, String> c2 = tc("开始日期", "startDate");
+        TableColumn<ServiceAssignment, String> c3 = tc("状态", "status");
+        table.getColumns().addAll(c0, c1, c2, c3);
 
         butlerBox.setOnAction(e -> {
             String sel = butlerBox.getValue();
@@ -1179,14 +1186,15 @@ public class AdminFrame {
             String empId = sel.split(" - ")[0];
             String empName = sel.split(" - ")[1];
 
-            // 查询无管家客户
-            List<Elderly> allElders = ctx.getElderlyDao().findAll();
+            // 查询无管家客户（只查在住老人）
+            List<Elderly> allElders = ctx.getElderlyDao().findAll().stream()
+                .filter(el -> "在住".equals(el.getStatus())).toList();
             List<ServiceAssignment> allAssigns = ctx.getServiceAssignmentDao().findAll();
             List<Elderly> unassigned = allElders.stream()
                 .filter(el -> allAssigns.stream().noneMatch(a -> a.getElderlyId().equals(el.getId())))
                 .toList();
 
-            if (unassigned.isEmpty()) { LoginPane.showAlert(Alert.AlertType.INFORMATION, "没有未分配管家的客户"); return; }
+            if (unassigned.isEmpty()) { LoginPane.showAlert(Alert.AlertType.INFORMATION, "没有未分配管家的在住客户"); return; }
 
             ChoiceDialog<String> dlg = new ChoiceDialog<>(
                 unassigned.get(0).getId() + " - " + unassigned.get(0).getName(),
@@ -1200,7 +1208,7 @@ public class AdminFrame {
                 sa.setElderlyId(elderId);
                 sa.setServiceType("日常护理");
                 sa.setStartDate(LocalDate.now().toString());
-                sa.setStatus("active");
+                sa.setStatus("服务中");
                 ctx.getServiceAssignmentDao().insert(sa);
                 PersistentIdGenerator.getInstance().save();
                 refreshTable(table, ctx.getServiceAssignmentDao().findByEmployeeId(empId));
@@ -1216,8 +1224,8 @@ public class AdminFrame {
                 if (r == ButtonType.YES) {
                     ctx.getServiceAssignmentDao().delete(sa.getAssignmentId());
                     PersistentIdGenerator.getInstance().save();
-                    String sel = butlerBox.getValue();
-                    if (sel != null) refreshTable(table, ctx.getServiceAssignmentDao().findByEmployeeId(sel.split(" - ")[0]));
+                    String selValue = butlerBox.getValue();
+                    if (selValue != null) refreshTable(table, ctx.getServiceAssignmentDao().findByEmployeeId(selValue.split(" - ")[0]));
                 }
             });
         });
