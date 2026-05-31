@@ -419,7 +419,10 @@ public class AdminFrame {
             if (btn != okBtn || name.getText().trim().isEmpty() || bedBox.getValue() == null) return null;
             String bedId = bedBox.getValue().split(" - ")[0];
             Bed bed = ctx.getBedDao().findById(bedId);
-            if (bed != null) bed.setStatus("occupied");
+            if (bed != null) {
+                bed.setStatus("occupied");
+                ctx.getBedDao().update(bed);
+            }
 
             Elderly e = new Elderly();
             e.setName(name.getText().trim());
