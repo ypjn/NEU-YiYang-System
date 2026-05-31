@@ -49,6 +49,7 @@ public class AdminFrame {
         stage.setScene(new Scene(root, 1100, 720));
         stage.setOnCloseRequest(e -> {
             Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+            confirm.initOwner(stage);
             confirm.setTitle("退出确认");
             confirm.setHeaderText("确定要退出系统吗？");
             confirm.setContentText("未保存的数据将自动保存");
@@ -269,6 +270,7 @@ public class AdminFrame {
             User sel = table.getSelectionModel().getSelectedItem();
             if (sel == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择用户"); return; }
             Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+            confirm.initOwner(stage);
             confirm.setTitle("删除确认");
             confirm.setHeaderText("确定要删除用户「" + sel.getUsername() + "」吗？");
             confirm.setContentText("此操作不可撤销");
@@ -305,6 +307,7 @@ public class AdminFrame {
 
     private Dialog<User> userEditDialog(User existing) {
         Dialog<User> dlg = new Dialog<>();
+        dlg.initOwner(stage);
         dlg.setTitle(existing == null ? "新增用户" : "编辑用户");
 
         GridPane grid = new GridPane();
@@ -388,6 +391,7 @@ public class AdminFrame {
 
     private void showCheckinDialog(TableView<Elderly> table) {
         Dialog<Elderly> dlg = new Dialog<>();
+        dlg.initOwner(stage);
         dlg.setTitle("老人入住");
 
         GridPane grid = new GridPane();
@@ -538,6 +542,7 @@ public class AdminFrame {
         ChoiceDialog<String> dlg = new ChoiceDialog<>(
             levels.get(0).getCode() + " - " + levels.get(0).getName(),
             levels.stream().map(l -> l.getCode() + " - " + l.getName()).toList());
+        dlg.initOwner(stage);
         dlg.setTitle("设置护理等级");
         dlg.setHeaderText("为 " + e.getName() + " 设置护理等级");
         dlg.showAndWait().ifPresent(sel -> {
@@ -640,36 +645,51 @@ public class AdminFrame {
                 beds.sort((a, b) -> Integer.compare(
                     "available".equals(a.getStatus()) ? 0 : "out".equals(a.getStatus()) ? 1 : 2,
                     "available".equals(b.getStatus()) ? 0 : "out".equals(b.getStatus()) ? 1 : 2));
-                HBox roomRow = new HBox(8);
-                roomRow.setAlignment(Pos.CENTER_LEFT);
-                Label roomLabel = new Label(room.getRoomNo());
-                roomLabel.setStyle("-fx-font-weight:bold; -fx-font-size:16px; -fx-text-fill:#1a5276; -fx-min-width:65; -fx-padding:4 0");
-                roomRow.getChildren().add(roomLabel);
+                // 每个房间一个区块
+                VBox roomBlock = new VBox(6);
+                roomBlock.setPadding(new Insets(4, 0, 8, 0));
+                Label roomLabel = new Label(room.getRoomNo() + "（" + beds.size() + "床）");
+                roomLabel.setStyle("-fx-font-weight:bold; -fx-font-size:14px; -fx-text-fill:#1a5276; -fx-padding:2 0");
+                roomBlock.getChildren().add(roomLabel);
                 if (beds.isEmpty()) {
-                    roomRow.getChildren().add(new Label("（无床位）"));
+                    roomBlock.getChildren().add(new Label("  （无床位）"));
                 } else {
+                    FlowPane bedFlow = new FlowPane(8, 8);
                     for (Bed bed : beds) {
-                        Label bedLabel = new Label(bed.getBedNo());
-                        bedLabel.setStyle("-fx-padding:8 18; -fx-background-radius:8; -fx-font-size:15px; -fx-font-weight:bold; -fx-min-width:70; -fx-alignment:center; -fx-border-radius:8");
-                        switch (bed.getStatus()) {
-                            case "available": bedLabel.setStyle(bedLabel.getStyle()
-                                + " -fx-background-color:#27ae60; -fx-text-fill:#1a1a2e; -fx-border-color:#1e8449; -fx-border-width:2"); break;
-                            case "occupied": bedLabel.setStyle(bedLabel.getStyle()
-                                + " -fx-background-color:#fff0f0; -fx-text-fill:#c0392b; -fx-border-color:#e74c3c; -fx-border-width:3"); break;
-                            case "out": bedLabel.setStyle(bedLabel.getStyle()
-                                + " -fx-background-color:#e67e22; -fx-text-fill:#1a1a2e; -fx-border-color:#ca6f1e; -fx-border-width:2"); break;
-                            default: bedLabel.setStyle(bedLabel.getStyle()
-                                + " -fx-background-color:#7f8c8d; -fx-text-fill:#1a1a2e; -fx-border-color:#6c7a7a; -fx-border-width:2"); break;
-                        }
-                        // 状态小标签
-                        String statusText = bed.getStatus().equals("available") ? "空闲" : bed.getStatus().equals("occupied") ? "占用" : bed.getStatus().equals("out") ? "外出" : bed.getStatus();
+                        VBox bedTile = new VBox(2);
+                        bedTile.setAlignment(Pos.CENTER);
+                        bedTile.setPrefWidth(100);
+                        bedTile.setPadding(new Insets(8, 10, 8, 10));
+                        Label bedNoLabel = new Label(bed.getBedNo());
+                        bedNoLabel.setStyle("-fx-font-size:14px; -fx-font-weight:bold");
+                        String statusText = "available".equals(bed.getStatus()) ? "空闲" : "occupied".equals(bed.getStatus()) ? "占用" : "out".equals(bed.getStatus()) ? "外出" : bed.getStatus();
                         Label statusTag = new Label(statusText);
-                        String tagColor = "occupied".equals(bed.getStatus()) ? "#e74c3c" : "#555";
-                        statusTag.setStyle("-fx-font-size:12px; -fx-text-fill:" + tagColor + "; -fx-padding:0 0 0 6; -fx-font-weight:bold");
-                        roomRow.getChildren().addAll(bedLabel, statusTag);
+                        statusTag.setStyle("-fx-font-size:11px; -fx-font-weight:bold");
+                        bedTile.getChildren().addAll(bedNoLabel, statusTag);
+                        switch (bed.getStatus()) {
+                            case "available":
+                                bedTile.setStyle("-fx-background-color:#27ae60; -fx-background-radius:8; -fx-border-color:#1e8449; -fx-border-radius:8; -fx-border-width:2");
+                                bedNoLabel.setStyle(bedNoLabel.getStyle() + " -fx-text-fill:#1a1a2e");
+                                break;
+                            case "occupied":
+                                bedTile.setStyle("-fx-background-color:#c0392b; -fx-background-radius:8; -fx-border-color:#922b21; -fx-border-radius:8; -fx-border-width:3");
+                                bedNoLabel.setStyle(bedNoLabel.getStyle() + " -fx-text-fill:#ffffff");
+                                statusTag.setStyle(statusTag.getStyle() + " -fx-text-fill:#f5b7b1");
+                                break;
+                            case "out":
+                                bedTile.setStyle("-fx-background-color:#e67e22; -fx-background-radius:8; -fx-border-color:#ca6f1e; -fx-border-radius:8; -fx-border-width:2");
+                                bedNoLabel.setStyle(bedNoLabel.getStyle() + " -fx-text-fill:#1a1a2e");
+                                break;
+                            default:
+                                bedTile.setStyle("-fx-background-color:#7f8c8d; -fx-background-radius:8; -fx-border-color:#6c7a7a; -fx-border-radius:8; -fx-border-width:2");
+                                bedNoLabel.setStyle(bedNoLabel.getStyle() + " -fx-text-fill:#1a1a2e");
+                                break;
+                        }
+                        bedFlow.getChildren().add(bedTile);
                     }
+                    roomBlock.getChildren().add(bedFlow);
                 }
-                bedArea.getChildren().add(roomRow);
+                bedArea.getChildren().add(roomBlock);
             }
         };
         refreshBedArea.run();
@@ -688,6 +708,7 @@ public class AdminFrame {
             ChoiceDialog<String> dlg = new ChoiceDialog<>(
                 availBeds.get(0).getBedId() + " - " + availBeds.get(0).getBedNo(),
                 availBeds.stream().map(b -> b.getBedId() + " - " + b.getBedNo()).toList());
+            dlg.initOwner(stage);
             dlg.setTitle("删除床位");
             dlg.setHeaderText("选择要删除的空闲床位（占用/外出中的床位不可删除）");
             dlg.showAndWait().ifPresent(sel -> {
@@ -717,6 +738,7 @@ public class AdminFrame {
             rooms.get(0).getRoomId() + " - " + rooms.get(0).getRoomNo(),
             rooms.stream().map(r -> r.getRoomId() + " - " + r.getRoomNo() + " (" + r.getRoomType()
                 + " " + ctx.getBedDao().findByRoomId(r.getRoomId()).size() + "/" + r.getCapacity() + ")").toList());
+        dlg.initOwner(stage);
         dlg.setTitle("选择房间");
         dlg.setHeaderText("请选择要添加床位的房间");
 
@@ -759,6 +781,7 @@ public class AdminFrame {
         if (building == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先创建楼栋"); return; }
 
         Dialog<Void> dlg = new Dialog<>();
+        dlg.initOwner(stage);
         dlg.setTitle("房间管理 — " + building.getBuildingName());
         dlg.setResizable(true);
 
@@ -792,6 +815,7 @@ public class AdminFrame {
 
         addBtn.setOnAction(e -> {
             Dialog<Void> addDlg = new Dialog<>();
+            addDlg.initOwner(stage);
             addDlg.setTitle("添加房间");
             GridPane g = new GridPane();
             g.setHgap(10); g.setVgap(10); g.setPadding(new Insets(15));
@@ -856,6 +880,7 @@ public class AdminFrame {
 
     private void showSwapBedDialog(Runnable onDone) {
         Dialog<Void> dlg = new Dialog<>();
+        dlg.initOwner(stage);
         dlg.setTitle("床位调换 — 当天调换当天办理");
 
         GridPane grid = new GridPane();
@@ -956,6 +981,7 @@ public class AdminFrame {
         ChoiceDialog<String> dlg = new ChoiceDialog<>(
             rooms.get(0).getRoomId() + " - " + rooms.get(0).getRoomNo(),
             rooms.stream().map(r -> r.getRoomId() + " - " + r.getRoomNo() + " (" + r.getRoomType() + ")").toList());
+        dlg.initOwner(stage);
         dlg.setTitle("选择房间");
         dlg.setHeaderText("请选择要添加床位的房间");
 
@@ -1027,6 +1053,7 @@ public class AdminFrame {
 
     private void showLevelProjectConfig(NursingLevel level) {
         Dialog<Void> dlg = new Dialog<>();
+        dlg.initOwner(stage);
         dlg.setTitle("配置 " + level.getCode() + " - " + level.getName() + " 的护理项目");
 
         VBox content = new VBox(10);
@@ -1093,6 +1120,7 @@ public class AdminFrame {
 
     private Dialog<NursingLevel> nursingLevelDialog(NursingLevel existing) {
         Dialog<NursingLevel> dlg = new Dialog<>();
+        dlg.initOwner(stage);
         dlg.setTitle(existing == null ? "新增护理等级" : "编辑护理等级");
 
         GridPane grid = new GridPane();
@@ -1222,6 +1250,7 @@ public class AdminFrame {
             }
 
             Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+            confirm.initOwner(stage);
             confirm.setTitle("删除确认");
             confirm.setHeaderText("确定要删除护理项目「" + sel.getName() + "」吗？");
             confirm.setContentText("项目代码：" + sel.getCode() + "\n此操作不可撤销！");
@@ -1256,6 +1285,7 @@ public class AdminFrame {
 
         private Dialog<CareProject> careProjectDialog(CareProject existing) {
         Dialog<CareProject> dlg = new Dialog<>();
+        dlg.initOwner(stage);
         dlg.setTitle(existing == null ? "新增护理项目" : "编辑护理项目");
         GridPane grid = new GridPane();
         grid.setHgap(10); grid.setVgap(10); grid.setPadding(new Insets(20));
@@ -1523,6 +1553,7 @@ public class AdminFrame {
 
     private void showBuyProjectDialog(String customerId, String customerName, TableView<CustomerCareProject> table) {
         Dialog<Void> dlg = new Dialog<>();
+        dlg.initOwner(stage);
         dlg.setTitle("为客户 " + customerName + " 购买护理项目");
 
         GridPane grid = new GridPane();
@@ -1567,6 +1598,7 @@ public class AdminFrame {
 
     private void showRenewDialog(CustomerCareProject ccp, TableView<CustomerCareProject> table) {
         Dialog<Void> dlg = new Dialog<>();
+        dlg.initOwner(stage);
         dlg.setTitle("续费 " + ccp.getProjectCode());
 
         GridPane grid = new GridPane();
@@ -1671,6 +1703,7 @@ public class AdminFrame {
             ChoiceDialog<String> dlg = new ChoiceDialog<>(
                 unassigned.get(0).getId() + " - " + unassigned.get(0).getName(),
                 unassigned.stream().map(el -> el.getId() + " - " + el.getName()).toList());
+            dlg.initOwner(stage);
             dlg.setTitle("选择客户");
             dlg.setHeaderText("为管家 " + empName + " 添加服务客户");
             dlg.showAndWait().ifPresent(clientSel -> {
@@ -1736,6 +1769,7 @@ public class AdminFrame {
             Food sel = table.getSelectionModel().getSelectedItem();
             if (sel == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择食物"); return; }
             Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+            confirm.initOwner(stage);
             confirm.setTitle("删除确认");
             confirm.setHeaderText("确定要删除食物「" + sel.getFoodName() + "」吗？");
             confirm.setContentText("此操作不可撤销");
@@ -1755,6 +1789,7 @@ public class AdminFrame {
 
     private Dialog<Food> foodDialog(Food existing) {
         Dialog<Food> dlg = new Dialog<>();
+        dlg.initOwner(stage);
         dlg.setTitle(existing == null ? "新增食物" : "编辑食物");
         GridPane grid = new GridPane();
         grid.setHgap(10); grid.setVgap(10); grid.setPadding(new Insets(20));
@@ -1806,6 +1841,7 @@ public class AdminFrame {
             Employee sel = table.getSelectionModel().getSelectedItem();
             if (sel == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择员工"); return; }
             Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+            confirm.initOwner(stage);
             confirm.setTitle("删除确认");
             confirm.setHeaderText("确定要删除员工「" + sel.getName() + "」吗？");
             confirm.setContentText("此操作不可撤销");
@@ -1825,6 +1861,7 @@ public class AdminFrame {
 
     private Dialog<Employee> employeeDialog(Employee existing) {
         Dialog<Employee> dlg = new Dialog<>();
+        dlg.initOwner(stage);
         dlg.setTitle(existing == null ? "新增员工" : "编辑员工");
         GridPane grid = new GridPane();
         grid.setHgap(10); grid.setVgap(10); grid.setPadding(new Insets(20));
@@ -2029,6 +2066,7 @@ public class AdminFrame {
 
         addBtn.setOnAction(e -> {
             Dialog<HealthRecord> dlg = new Dialog<>();
+            dlg.initOwner(stage);
             dlg.setTitle("登记健康记录");
             dlg.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 

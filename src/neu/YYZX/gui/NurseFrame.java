@@ -48,6 +48,7 @@ public class NurseFrame {
         stage.setScene(new Scene(root, 1000, 680));
         stage.setOnCloseRequest(e -> {
             Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+            confirm.initOwner(stage);
             confirm.setTitle("退出确认");
             confirm.setHeaderText("确定要退出系统吗？");
             confirm.setContentText("未保存的数据将自动保存");
@@ -219,6 +220,7 @@ public class NurseFrame {
 
     private void showCheckinDialog(TableView<Elderly> table) {
         Dialog<Elderly> dlg = new Dialog<>();
+        dlg.initOwner(stage);
         dlg.setTitle("老人入住");
 
         GridPane grid = new GridPane();
@@ -377,6 +379,7 @@ public class NurseFrame {
 
     private void showAddRecordDialog(String nurseName, TableView<CareRecord> table) {
         Dialog<CareRecord> dlg = new Dialog<>();
+        dlg.initOwner(stage);
         dlg.setTitle("新增护理记录");
 
         GridPane grid = new GridPane();
@@ -516,6 +519,7 @@ public class NurseFrame {
             selDlg.showAndWait().ifPresent(elderSel -> {
                 String elderId = elderSel.split(" - ")[0];
                 Dialog<OutRegistration> dlg = new Dialog<>();
+                dlg.initOwner(stage);
                 dlg.setTitle("外出申请");
                 GridPane grid = new GridPane();
                 grid.setHgap(10); grid.setVgap(10); grid.setPadding(new Insets(20));
@@ -607,6 +611,7 @@ public class NurseFrame {
             selDlg.showAndWait().ifPresent(elderSel -> {
                 String elderId = elderSel.split(" - ")[0];
                 Dialog<CheckOut> dlg = new Dialog<>();
+                dlg.initOwner(stage);
                 dlg.setTitle("退住申请");
                 GridPane grid = new GridPane();
                 grid.setHgap(10); grid.setVgap(10); grid.setPadding(new Insets(20));
@@ -756,6 +761,7 @@ public class NurseFrame {
 
         addBtn.setOnAction(e -> {
             Dialog<HealthRecord> dlg = new Dialog<>();
+            dlg.initOwner(stage);
             dlg.setTitle("登记健康记录");
             dlg.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
