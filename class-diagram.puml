@@ -1,0 +1,463 @@
+@startuml 东软颐养中心管理系统-类图
+
+skinparam backgroundColor #FEFEFE
+skinparam classBorderColor #2c3e50
+skinparam classBackgroundColor #ecf0f1
+skinparam packageBorderColor #34495e
+skinparam packageBackgroundColor #fafafa
+skinparam defaultFontSize 11
+skinparam arrowColor #555
+
+' ==================== 包定义 ====================
+package "model（领域模型 - 23个POJO）" #White {
+    class Elderly {
+        + id: String
+        + name: String
+        + age: int
+        + gender: String
+        + idCard: String
+        + phone: String
+        + address: String
+        + emergencyContact: String
+        + emergencyPhone: String
+        + checkInDate: String
+        + bedId: String
+        + nursingLevelCode: String
+        + status: String
+    }
+    class User {
+        + userId: String
+        + username: String
+        + password: String
+        + role: String
+        + realName: String
+        + phone: String
+        + securityQuestion: String
+        + securityAnswer: String
+        + createTime: String
+        {static} + ROLE_ADMIN: String = "admin"
+        {static} + ROLE_NURSE: String = "nurse"
+    }
+    class Employee {
+        + employeeId: String
+        + name: String
+        + gender: String
+        + position: String
+        + phone: String
+        + idCard: String
+        + hireDate: String
+        + salary: double
+        + status: String
+        + remark: String
+    }
+    class Bed {
+        + bedId: String
+        + bedNo: String
+        + roomId: String
+        + status: String
+    }
+    class Room {
+        + roomId: String
+        + roomNo: String
+        + buildingId: String
+        + floor: int
+        + roomType: String
+        + capacity: int
+        + price: double
+        + status: String
+    }
+    class Building {
+        + buildingId: String
+        + buildingName: String
+        + floorCount: int
+        + description: String
+    }
+    class CareProject {
+        + code: String
+        + name: String
+        + category: String
+        + unit: String
+        + price: double
+        + cycle: String
+        + remark: String
+    }
+    class CareRecord {
+        + id: String
+        + elderlyId: String
+        + projectCode: String
+        + executeTime: String
+        + nurseName: String
+        + remark: String
+    }
+    class NursingLevel {
+        + code: String
+        + name: String
+        + description: String
+        + frequency: String
+    }
+    class NursingContent {
+        + contentId: String
+        + contentName: String
+        + careProjectCode: String
+        + nursingLevelCode: String
+        + description: String
+        + standardDuration: String
+        + remark: String
+    }
+    class Food {
+        + foodId: String
+        + foodName: String
+        + category: String
+        + unit: String
+        + price: double
+        + nutrition: String
+        + remark: String
+    }
+    class DietCalendar {
+        + calendarId: String
+        + calendarDate: String
+        + mealType: String
+        + foodIds: String
+        + remark: String
+    }
+    class DietPreference {
+        + preferenceId: String
+        + customerId: String
+        + preferenceType: String
+        + description: String
+        + allergies: String
+        + taboos: String
+    }
+    class HealthRecord {
+        + healthId: String
+        + customerId: String
+        + recordDate: String
+        + bloodPressure: String
+        + heartRate: String
+        + bloodSugar: String
+        + weight: String
+        + temperature: String
+    }
+    class OutRegistration {
+        + outId: String
+        + customerId: String
+        + outTime: String
+        + expectedReturnTime: String
+        + actualReturnTime: String
+        + status: String
+    }
+    class CheckOut {
+        + checkoutId: String
+        + customerId: String
+        + checkoutDate: String
+        + reason: String
+        + remark: String
+    }
+    class ServiceAssignment {
+        + assignmentId: String
+        + employeeId: String
+        + elderlyId: String
+        + serviceType: String
+        + startDate: String
+        + endDate: String
+        + fee: double
+        + status: String
+    }
+    class Message {
+        + messageId: String
+        + receiverName: String
+        + content: String
+        + time: String
+        + isRead: boolean
+    }
+    class OperationLog {
+        + logId: String
+        + operatorName: String
+        + operatorRole: String
+        + action: String
+        + target: String
+        + detail: String
+        + time: String
+    }
+    class BedDetail {
+        + detailId: String
+        + bedId: String
+        + customerId: String
+        + assignDate: String
+        + releaseDate: String
+    }
+    class Role {
+        + roleId: String
+        + roleName: String
+        + description: String
+    }
+    class SysMenu {
+        + menuId: String
+        + menuName: String
+        + parentId: String
+        + url: String
+        + sortOrder: int
+    }
+    class RoleMenu {
+        + id: String
+        + roleId: String
+        + menuId: String
+    }
+}
+
+package "dao（数据访问层）" #LightCyan {
+    interface BaseDao<<T>> {
+        + findAll(): List<T>
+        + findById(String): T
+        + insert(T): boolean
+        + update(T): boolean
+        + delete(String): boolean
+        + exists(String): boolean
+        + load(): void
+        + save(): void
+    }
+    abstract class BaseJsonDao<<T>> {
+        # list: List<T>
+        # fileName: String
+        # idPrefix: String
+        # entityType: String
+        # idGenerator: PersistentIdGenerator
+        --
+        {abstract} + getEntityId(T): String
+        {abstract} + setEntityId(T, String): void
+        {abstract} + getTypeReference(): TypeReference
+        --
+        + findAll(): List<T>
+        + findById(String): T
+        + insert(T): boolean
+        + update(T): boolean
+        + delete(String): boolean
+        + load(): void
+        + save(): void
+        + size(): int
+    }
+    class ElderlyDao extends BaseJsonDao {
+        + findByName(String): List<Elderly>
+        + findByNursingLevel(String): List<Elderly>
+        + findByBedId(String): Elderly
+        + findActive(): List<Elderly>
+    }
+    class UserDao extends BaseJsonDao {
+        + findByUsername(String): User
+        + containsUsername(String): boolean
+        + findByRole(String): List<User>
+    }
+    class BedDao extends BaseJsonDao {
+        + findByRoomId(String): List<Bed>
+        + findAvailable(): List<Bed>
+    }
+    class CareRecordDao extends BaseJsonDao {
+        + findByElderlyId(String): List<CareRecord>
+        + findByNurseName(String): List<CareRecord>
+    }
+    class OtherDaos extends BaseJsonDao {
+        ..
+    }
+    note right of OtherDaos : RoomDao, FoodDao, EmployeeDao,\nMessageDao 等共 19 个 DAO
+}
+
+package "service（业务逻辑层）" #LightYellow {
+    class DataInitializer <<singleton>> {
+        {static} - instance: DataInitializer
+        - userDao: UserDao
+        - elderlyDao: ElderlyDao
+        - bedDao: BedDao
+        - ... （全部 23 个 DAO）
+        --
+        {static} + getInstance(): DataInitializer
+        + init(): void
+        + saveAll(): void
+        + getUserDao(): UserDao
+        + getElderlyDao(): ElderlyDao
+        + getBedDao(): BedDao
+        + ... （23 个 getter）
+    }
+    class UserService {
+        - userDao: UserDao
+        --
+        + authenticate(String, String, String): User
+        + addUser(User): boolean
+        + changePassword(String, String): boolean
+        + findByUsername(String): User
+    }
+    class ElderlyService {
+        - elderlyDao: ElderlyDao
+        --
+        + findAll(): List<Elderly>
+        + findByName(String): List<Elderly>
+        + add(Elderly): void
+    }
+    class DataManager <<singleton>> {
+        - levels: ArrayList<NursingLevel>
+        - projects: ArrayList<CareProject>
+        - elders: ArrayList<Elderly>
+        - users: ArrayList<User>
+        --
+        {static} + getInstance(): DataManager
+        + ensureDefaults(): void
+        + authenticate(...): User
+    }
+    class "其他 15 个 Service 类\ne.g. BedService, FoodService,\nCareRecordService..." as OtherServices {
+    }
+}
+
+package "common（公共组件）" #Lavender {
+    class PersistentIdGenerator <<singleton>> {
+        - idMap: Map<String, Integer>
+        --
+        {static} + getInstance(): PersistentIdGenerator
+        + nextId(prefix, entityType): String
+        + load(): void
+        + save(): void
+    }
+    class LoginContext {
+        {static} - TOKEN_MAP: ConcurrentHashMap<String, User>
+        --
+        {static} + login(User): String
+        {static} + getUser(String): User
+        {static} + logout(String): void
+        {static} + isAdmin(String): boolean
+    }
+    class AuditLogger {
+        {static} - CURRENT_USER: ThreadLocal<User>
+        --
+        {static} + log(action, target, detail): void
+        {static} + setCurrentUser(User): void
+    }
+}
+
+package "util（工具）" #HoneyDew {
+    class JsonUtil {
+        {static} + readList(String, TypeReference): List<T>
+        {static} + writeList(String, List): void
+        {static} + fileExists(String): boolean
+    }
+    class FileUtil {
+        {static} + load(DataManager): void
+        {static} + save(DataManager): void
+    }
+}
+
+package "gui（JavaFX 桌面界面）" #LightPink {
+    class MainApp extends Application {
+        + start(Stage): void
+        + stop(): void
+    }
+    class LoginPane extends VBox {
+        - userService: UserService
+        --
+        + LoginPane(Stage)
+    }
+    class AdminFrame {
+        - user: User
+        - ctx: DataInitializer
+        --
+        + AdminFrame(User, String)
+        + show(): void
+        - showCheckinDialog(...): void
+        - userEditDialog(...): Dialog
+        - employeeDialog(...): Dialog
+        - ... （13 个模块界面）
+    }
+    class NurseFrame {
+        - user: User
+        - ctx: DataInitializer
+        --
+        + NurseFrame(User, String)
+        + show(): void
+        - showAddRecordDialog(...): void
+        - ... （5 个模块界面）
+    }
+}
+
+package "view（旧版命令行菜单）" #Thistle {
+    interface IMenu {
+        + show(): void
+    }
+    class mainMenu implements IMenu {
+        + show(): void
+    }
+    class AdminMenu implements IMenu {
+        - userService: UserService
+        - elderlyService: ElderlyService
+        - ctx: DataInitializer
+        --
+        + show(): void
+    }
+    class NurseMenu implements IMenu {
+        - ctx: DataInitializer
+        --
+        + show(): void
+    }
+}
+
+' ==================== 关系连接 ====================
+
+' --- 继承关系 ---
+BaseDao <|.. BaseJsonDao
+BaseJsonDao <|-- ElderlyDao
+BaseJsonDao <|-- UserDao
+BaseJsonDao <|-- BedDao
+BaseJsonDao <|-- CareRecordDao
+BaseJsonDao <|-- OtherDaos
+
+' --- GUI 依赖 ---
+MainApp --> DataInitializer : «create & init»
+MainApp ..> LoginPane : «create»
+LoginPane --> UserService : «use»
+LoginPane ..> AdminFrame : «open»
+LoginPane ..> NurseFrame : «open»
+AdminFrame --> DataInitializer : «getInstance»
+AdminFrame --> PersistentIdGenerator : «save»
+AdminFrame --> AuditLogger : «log»
+NurseFrame --> DataInitializer : «getInstance»
+NurseFrame --> PersistentIdGenerator : «save»
+
+' --- Service 依赖 DAO ---
+UserService --> UserDao : «holds»
+ElderlyService --> ElderlyDao : «holds»
+DataInitializer --> UserDao : «creates»
+DataInitializer --> ElderlyDao : «creates»
+DataInitializer --> BedDao : «creates»
+DataInitializer --> OtherDaos : «creates»
+OtherServices ..> OtherDaos : «holds»
+
+' --- DAO 依赖 ---
+BaseJsonDao --> PersistentIdGenerator : «generates ID»
+BaseJsonDao --> JsonUtil : «reads/writes JSON»
+
+' --- Common 依赖 ---
+AuditLogger --> DataInitializer : «getOpLogDao»
+AuditLogger --> PersistentIdGenerator : «save»
+
+' --- View 层依赖（旧版） ---
+mainMenu ..> AdminMenu : «create»
+mainMenu ..> NurseMenu : «create»
+AdminMenu --> DataInitializer : «getInstance»
+NurseMenu --> DataInitializer : «getInstance»
+DataManager ..> FileUtil : «legacy load/save»
+
+' ==================== 图例 ====================
+legend right
+  **分层架构**
+  | 层 | 包 | 说明 |
+  | GUI | gui | JavaFX 桌面界面 |
+  | View | view | 旧版控制台菜单（已废弃）|
+  | Service | service | 业务逻辑 + 数据初始化 |
+  | DAO | dao | JSON 文件 CRUD |
+  | Model | model | 23 个 POJO 实体 |
+  | Common | common | 认证、日志、ID 生成 |
+  | Util | util | JSON 文件读写工具 |
+
+  **核心流程**：
+  MainApp → DataInitializer.init()
+  → 所有 DAO.load() → 各JSON文件
+  请求链路：GUI事件 → DAO(CRUD) → JSON文件
+endlegend
+
+@enduml

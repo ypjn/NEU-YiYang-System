@@ -1,5 +1,6 @@
 package neu.YYZX.gui;
 
+import javafx.animation.FadeTransition;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
@@ -8,16 +9,20 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import neu.YYZX.common.AuditLogger;
 import neu.YYZX.common.PersistentIdGenerator;
 import neu.YYZX.model.*;
 import neu.YYZX.service.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class AdminFrame {
 
@@ -29,6 +34,8 @@ public class AdminFrame {
     private final BorderPane root = new BorderPane();
     private final StackPane contentArea = new StackPane();
     private final DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private final Map<String, ToggleButton> navButtons = new LinkedHashMap<>();
+    private final Label moduleTitle = new Label();
 
     public AdminFrame(User user, String token) {
         this.user = user;
@@ -40,22 +47,31 @@ public class AdminFrame {
 
     public void show() {
         stage.setScene(new Scene(root, 1100, 720));
+        stage.setOnCloseRequest(e -> {
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+            confirm.setTitle("退出确认");
+            confirm.setHeaderText("确定要退出系统吗？");
+            confirm.setContentText("未保存的数据将自动保存");
+            confirm.showAndWait().ifPresent(r -> {
+                if (r != ButtonType.OK) e.consume();
+            });
+        });
         stage.show();
     }
 
     private void buildUI() {
         // 左侧导航
-        VBox nav = new VBox(5);
+        VBox nav = new VBox(3);
         nav.setPadding(new Insets(10));
         nav.setPrefWidth(160);
         nav.setStyle("-fx-background-color:#2c3e50");
 
         String[][] items = {
-            {"仪表盘", "dashboard"}, {"用户管理", "users"}, {"老人管理", "elderly"},
-            {"床位管理", "beds"}, {"护理等级", "nlevels"}, {"护理项目", "nprojects"},
-            {"护理记录", "nrecords"}, {"膳食管理", "foods"}, {"员工管理", "employees"},
-            {"外出手续", "outreg"}, {"退住管理", "checkout"}, {"健康记录", "health"},
-            {"操作日志", "logs"}
+            {"📊 仪表盘", "dashboard"}, {"👤 用户管理", "users"}, {"🧓 老人管理", "elderly"},
+            {"🛏 床位管理", "beds"}, {"⭐ 护理等级", "nlevels"}, {"📋 护理项目", "nprojects"},
+            {"📝 护理记录", "nrecords"}, {"🍽 膳食管理", "foods"}, {"👷 员工管理", "employees"},
+            {"🚶 外出手续", "outreg"}, {"🏠 退住管理", "checkout"}, {"💊 健康记录", "health"},
+            {"📜 操作日志", "logs"}
         };
 
         ToggleGroup group = new ToggleGroup();
@@ -63,12 +79,25 @@ public class AdminFrame {
             ToggleButton btn = new ToggleButton(items[i][0]);
             btn.setToggleGroup(group);
             btn.setPrefWidth(140);
-            btn.setStyle("-fx-background-color:#34495e;-fx-text-fill:white;-fx-font-size:13px");
+            btn.setAlignment(Pos.CENTER_LEFT);
             String key = items[i][1];
+            navButtons.put(key, btn);
             btn.setOnAction(e -> switchContent(key));
             if (i == 0) btn.setSelected(true);
             nav.getChildren().add(btn);
         }
+        updateNavStyles(null);
+
+        // 标题栏
+        moduleTitle.setFont(Font.font("System", FontWeight.BOLD, 20));
+        moduleTitle.setTextFill(Color.web("#2c3e50"));
+        moduleTitle.setPadding(new Insets(0, 0, 5, 0));
+
+        // 内容区 = 标题 + 内容面板
+        VBox contentWrapper = new VBox(10);
+        contentWrapper.setPadding(new Insets(15, 20, 15, 20));
+        contentWrapper.getChildren().addAll(moduleTitle, contentArea);
+        VBox.setVgrow(contentArea, Priority.ALWAYS);
 
         // 顶部
         HBox topBar = new HBox(10);
@@ -82,27 +111,61 @@ public class AdminFrame {
 
         root.setTop(topBar);
         root.setLeft(nav);
-        root.setCenter(contentArea);
+        root.setCenter(contentWrapper);
         switchContent("dashboard");
     }
 
-    private void switchContent(String key) {
-        contentArea.getChildren().clear();
-        switch (key) {
-            case "dashboard": contentArea.getChildren().add(buildDashboard()); break;
-            case "users": contentArea.getChildren().add(buildUserManage()); break;
-            case "elderly": contentArea.getChildren().add(buildElderlyManage()); break;
-            case "beds": contentArea.getChildren().add(buildBedManage()); break;
-            case "nlevels": contentArea.getChildren().add(buildNursingLevels()); break;
-            case "nprojects": contentArea.getChildren().add(buildNursingProjects()); break;
-            case "nrecords": contentArea.getChildren().add(buildNursingRecords()); break;
-            case "foods": contentArea.getChildren().add(buildFoodManage()); break;
-            case "employees": contentArea.getChildren().add(buildEmployeeManage()); break;
-            case "outreg": contentArea.getChildren().add(buildOutRegManage()); break;
-            case "checkout": contentArea.getChildren().add(buildCheckoutManage()); break;
-            case "health": contentArea.getChildren().add(buildHealthRecords()); break;
-            case "logs": contentArea.getChildren().add(buildLogView()); break;
+    private void updateNavStyles(String selectedKey) {
+        for (Map.Entry<String, ToggleButton> entry : navButtons.entrySet()) {
+            ToggleButton btn = entry.getValue();
+            if (entry.getKey().equals(selectedKey)) {
+                btn.setStyle("-fx-background-color:#3498db; -fx-text-fill:white; -fx-font-size:13px; "
+                    + "-fx-background-radius:6; -fx-border-color:#2980b9; -fx-border-radius:6; -fx-border-width:2");
+            } else {
+                btn.setStyle("-fx-background-color:transparent; -fx-text-fill:#bdc3c7; -fx-font-size:13px; "
+                    + "-fx-background-radius:6");
+            }
         }
+    }
+
+    private Map<String, String> moduleNames = Map.ofEntries(
+        Map.entry("dashboard", "仪表盘"), Map.entry("users", "用户管理"), Map.entry("elderly", "老人管理"),
+        Map.entry("beds", "床位管理"), Map.entry("nlevels", "护理等级"), Map.entry("nprojects", "护理项目"),
+        Map.entry("nrecords", "护理记录"), Map.entry("foods", "膳食管理"), Map.entry("employees", "员工管理"),
+        Map.entry("outreg", "外出手续"), Map.entry("checkout", "退住管理"), Map.entry("health", "健康记录"),
+        Map.entry("logs", "操作日志")
+    );
+
+    private void switchContent(String key) {
+        updateNavStyles(key);
+        moduleTitle.setText("▸ " + moduleNames.getOrDefault(key, key));
+
+        javafx.scene.Node content;
+        switch (key) {
+            case "dashboard": content = buildDashboard(); break;
+            case "users": content = buildUserManage(); break;
+            case "elderly": content = buildElderlyManage(); break;
+            case "beds": content = buildBedManage(); break;
+            case "nlevels": content = buildNursingLevels(); break;
+            case "nprojects": content = buildNursingProjects(); break;
+            case "nrecords": content = buildNursingRecords(); break;
+            case "foods": content = buildFoodManage(); break;
+            case "employees": content = buildEmployeeManage(); break;
+            case "outreg": content = buildOutRegManage(); break;
+            case "checkout": content = buildCheckoutManage(); break;
+            case "health": content = buildHealthRecords(); break;
+            case "logs": content = buildLogView(); break;
+            default: content = new Label("开发中...");
+        }
+
+        content.setOpacity(0);
+        contentArea.getChildren().clear();
+        contentArea.getChildren().add(content);
+
+        FadeTransition ft = new FadeTransition(Duration.millis(200), content);
+        ft.setFromValue(0);
+        ft.setToValue(1);
+        ft.play();
     }
 
     private void logout() {
@@ -194,10 +257,18 @@ public class AdminFrame {
         delBtn.setOnAction(e -> {
             User sel = table.getSelectionModel().getSelectedItem();
             if (sel == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择用户"); return; }
-            String err = userService.deleteUser(sel.getUsername());
-            if (err != null) { LoginPane.showAlert(Alert.AlertType.ERROR, err); return; }
-            PersistentIdGenerator.getInstance().save();
-            refreshTable(table, ctx.getUserDao().findAll());
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+            confirm.setTitle("删除确认");
+            confirm.setHeaderText("确定要删除用户「" + sel.getUsername() + "」吗？");
+            confirm.setContentText("此操作不可撤销");
+            confirm.showAndWait().ifPresent(r -> {
+                if (r == ButtonType.OK) {
+                    String err = userService.deleteUser(sel.getUsername());
+                    if (err != null) { LoginPane.showAlert(Alert.AlertType.ERROR, err); return; }
+                    PersistentIdGenerator.getInstance().save();
+                    refreshTable(table, ctx.getUserDao().findAll());
+                }
+            });
         });
 
         chgPwdBtn.setOnAction(e -> {
@@ -316,6 +387,7 @@ public class AdminFrame {
         ComboBox<String> bedBox = new ComboBox<>();
         ctx.getBedDao().findAll().stream().filter(b -> "available".equals(b.getStatus()))
             .forEach(b -> bedBox.getItems().add(b.getBedId() + " - " + b.getBedNo()));
+        DatePicker checkinDate = new DatePicker(LocalDate.now());
 
         grid.add(new Label("姓名："), 0, 0); grid.add(name, 1, 0);
         grid.add(new Label("年龄："), 0, 1); grid.add(age, 1, 1);
@@ -326,6 +398,7 @@ public class AdminFrame {
         grid.add(new Label("紧急联系人："), 0, 6); grid.add(emContact, 1, 6);
         grid.add(new Label("紧急电话："), 0, 7); grid.add(emPhone, 1, 7);
         grid.add(new Label("床位："), 0, 8); grid.add(bedBox, 1, 8);
+        grid.add(new Label("入住日期："), 0, 9); grid.add(checkinDate, 1, 9);
 
         dlg.getDialogPane().setContent(grid);
         ButtonType okBtn = new ButtonType("入住", ButtonBar.ButtonData.OK_DONE);
@@ -347,7 +420,7 @@ public class AdminFrame {
             e.setEmergencyContact(emContact.getText().trim());
             e.setEmergencyPhone(emPhone.getText().trim());
             e.setBedId(bedId);
-            e.setCheckInDate(LocalDateTime.now().format(fmt));
+            e.setCheckInDate(checkinDate.getValue() != null ? checkinDate.getValue().toString() + " 00:00:00" : LocalDateTime.now().format(fmt));
             e.setStatus("在住");
             ctx.getElderlyDao().insert(e);
             PersistentIdGenerator.getInstance().save();
@@ -585,9 +658,17 @@ public class AdminFrame {
         delBtn.setOnAction(e -> {
             Food sel = table.getSelectionModel().getSelectedItem();
             if (sel == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择食物"); return; }
-            ctx.getFoodDao().delete(sel.getFoodId());
-            PersistentIdGenerator.getInstance().save();
-            refreshTable(table, ctx.getFoodDao().findAll());
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+            confirm.setTitle("删除确认");
+            confirm.setHeaderText("确定要删除食物「" + sel.getFoodName() + "」吗？");
+            confirm.setContentText("此操作不可撤销");
+            confirm.showAndWait().ifPresent(r -> {
+                if (r == ButtonType.OK) {
+                    ctx.getFoodDao().delete(sel.getFoodId());
+                    PersistentIdGenerator.getInstance().save();
+                    refreshTable(table, ctx.getFoodDao().findAll());
+                }
+            });
         });
 
         HBox btns = new HBox(10, addBtn, delBtn);
@@ -647,9 +728,17 @@ public class AdminFrame {
         delBtn.setOnAction(e -> {
             Employee sel = table.getSelectionModel().getSelectedItem();
             if (sel == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择员工"); return; }
-            ctx.getEmployeeDao().delete(sel.getEmployeeId());
-            PersistentIdGenerator.getInstance().save();
-            refreshTable(table, ctx.getEmployeeDao().findAll());
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+            confirm.setTitle("删除确认");
+            confirm.setHeaderText("确定要删除员工「" + sel.getName() + "」吗？");
+            confirm.setContentText("此操作不可撤销");
+            confirm.showAndWait().ifPresent(r -> {
+                if (r == ButtonType.OK) {
+                    ctx.getEmployeeDao().delete(sel.getEmployeeId());
+                    PersistentIdGenerator.getInstance().save();
+                    refreshTable(table, ctx.getEmployeeDao().findAll());
+                }
+            });
         });
 
         HBox btns = new HBox(10, addBtn, delBtn);
@@ -664,20 +753,23 @@ public class AdminFrame {
         grid.setHgap(10); grid.setVgap(10); grid.setPadding(new Insets(20));
         TextField name = new TextField(), gender = new TextField("男"), position = new TextField(),
                    phone = new TextField(), idCard = new TextField(), salary = new TextField();
+        DatePicker entryDate = new DatePicker(LocalDate.now());
         grid.add(new Label("姓名："), 0, 0); grid.add(name, 1, 0);
         grid.add(new Label("性别："), 0, 1); grid.add(gender, 1, 1);
         grid.add(new Label("职位："), 0, 2); grid.add(position, 1, 2);
         grid.add(new Label("电话："), 0, 3); grid.add(phone, 1, 3);
         grid.add(new Label("身份证："), 0, 4); grid.add(idCard, 1, 4);
         grid.add(new Label("工资："), 0, 5); grid.add(salary, 1, 5);
+        grid.add(new Label("入职日期："), 0, 6); grid.add(entryDate, 1, 6);
         dlg.getDialogPane().setContent(grid);
         ButtonType okBtn = new ButtonType("确定", ButtonBar.ButtonData.OK_DONE);
         dlg.getDialogPane().getButtonTypes().addAll(okBtn, ButtonType.CANCEL);
         dlg.setResultConverter(btn -> {
             if (btn != okBtn || name.getText().trim().isEmpty()) return null;
+            String entryDateStr = entryDate.getValue() != null ? entryDate.getValue().toString() + " 00:00:00" : LocalDateTime.now().format(fmt);
             return new Employee(null, name.getText().trim(), gender.getText().trim(), position.getText().trim(),
                 phone.getText().trim(), idCard.getText().trim(),
-                LocalDateTime.now().format(fmt),
+                entryDateStr,
                 Double.parseDouble(salary.getText().isEmpty() ? "0" : salary.getText()),
                 "在职", "");
         });
