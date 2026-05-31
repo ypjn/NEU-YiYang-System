@@ -123,37 +123,37 @@ public class DataManager {
 
         levels.add(new NursingLevel("ZL", "自理型",
                 "身体健康，生活完全自理，无须特殊护理，只需提供生活协助和膳食。",
-                "每日巡查 1 次"));
+                "每日巡查 1 次", "启用"));
         levels.add(new NursingLevel("HL-1", "一级护理",
                 "轻度失能，日常生活需部分协助（如洗澡、穿衣需提醒或辅助），或患有慢性病需定时监测。",
-                "每日巡查 2-3 次"));
+                "每日巡查 2-3 次", "启用"));
         levels.add(new NursingLevel("HL-2", "二级护理",
                 "中度失能，日常生活需较大帮助（如需协助进食、如厕），或轻度认知障碍。",
-                "每 2 小时巡查 1 次"));
+                "每 2 小时巡查 1 次", "启用"));
         levels.add(new NursingLevel("HL-3", "三级护理",
                 "重度失能，卧床不起，完全依赖他人照顾，或严重认知障碍（如晚期失智）。",
-                "每 1 小时巡查 1 次，24小时看护"));
+                "每 1 小时巡查 1 次，24小时看护", "启用"));
         levels.add(new NursingLevel("YZ", "医疗专护",
                 "患有严重疾病，需保留胃管、尿管，或需定期换药、康复训练的术后老人。",
-                "医护人员定时执行医嘱"));
+                "医护人员定时执行医嘱", "启用"));
 
-        projects.add(new CareProject("LZ-001", "晨间护理", "生活照料", "次", 15, "每天", "所有护理级"));
-        projects.add(new CareProject("LZ-002", "晚间护理", "生活照料", "次", 10, "每天", "所有护理级"));
-        projects.add(new CareProject("LZ-003", "床上擦浴", "生活照料", "次", 20, "隔天/每周", "HL-2, HL-3"));
-        projects.add(new CareProject("LZ-004", "协助进食/鼻饲", "生活照料", "次", 10, "按餐次", "HL-2, HL-3"));
-        projects.add(new CareProject("LZ-005", "协助如厕/更换尿布", "生活照料", "次", 5, "按需", "HL-2, HL-3"));
-        projects.add(new CareProject("LZ-006", "剪指甲/理发", "生活照料", "次", 15, "每周", "HL-1, HL-2"));
-        projects.add(new CareProject("LZ-007", "翻身拍背 (防褥疮)", "生活照料", "次", 8, "每2小时", "HL-3"));
+        projects.add(new CareProject("LZ-001", "晨间护理", "生活照料", "次", 15, "每天", 1, "启用", "所有护理级"));
+        projects.add(new CareProject("LZ-002", "晚间护理", "生活照料", "次", 10, "每天", 1, "启用", "所有护理级"));
+        projects.add(new CareProject("LZ-003", "床上擦浴", "生活照料", "次", 20, "隔天/每周", 1, "启用", "HL-2, HL-3"));
+        projects.add(new CareProject("LZ-004", "协助进食/鼻饲", "生活照料", "次", 10, "按餐次", 1, "启用", "HL-2, HL-3"));
+        projects.add(new CareProject("LZ-005", "协助如厕/更换尿布", "生活照料", "次", 5, "按需", 1, "启用", "HL-2, HL-3"));
+        projects.add(new CareProject("LZ-006", "剪指甲/理发", "生活照料", "次", 15, "每周", 1, "启用", "HL-1, HL-2"));
+        projects.add(new CareProject("LZ-007", "翻身拍背 (防褥疮)", "生活照料", "次", 8, "每2小时", 1, "启用", "HL-3"));
 
-        projects.add(new CareProject("YL-001", "生命体征监测", "医疗护理", "次", 5, "每日1-2次", "含体温、血压、血糖"));
-        projects.add(new CareProject("YL-002", "药物管理与喂药", "医疗护理", "次", 10, "按医嘱", "需记录服药时间"));
-        projects.add(new CareProject("YL-003", "伤口换药", "医疗护理", "次", 50, "隔天", "需医生开具处方"));
-        projects.add(new CareProject("YL-004", "导尿管/胃管护理", "医疗护理", "次", 60, "每周", "专业护理"));
-        projects.add(new CareProject("YL-005", "吸氧", "医疗护理", "小时", 5, "按需", "医生开具处方, 按需"));
+        projects.add(new CareProject("YL-001", "生命体征监测", "医疗护理", "次", 5, "每日1-2次", 1, "启用", "含体温、血压、血糖"));
+        projects.add(new CareProject("YL-002", "药物管理与喂药", "医疗护理", "次", 10, "按医嘱", 1, "启用", "需记录服药时间"));
+        projects.add(new CareProject("YL-003", "伤口换药", "医疗护理", "次", 50, "隔天", 1, "启用", "需医生开具处方"));
+        projects.add(new CareProject("YL-004", "导尿管/胃管护理", "医疗护理", "次", 60, "每周", 1, "启用", "专业护理"));
+        projects.add(new CareProject("YL-005", "吸氧", "医疗护理", "小时", 5, "按需", 1, "启用", "医生开具处方, 按需"));
 
-        projects.add(new CareProject("KF-001", "肢体被动训练", "康复心理", "次", 30, "每天", "防止肌肉萎缩"));
-        projects.add(new CareProject("KF-002", "认知训练(益智游戏)", "康复心理", "次", 20, "隔天", "针对失智老人"));
-        projects.add(new CareProject("KF-003", "心理疏导", "康复心理", "次", 40, "每周", "一对一谈心"));
+        projects.add(new CareProject("KF-001", "肢体被动训练", "康复心理", "次", 30, "每天", 1, "启用", "防止肌肉萎缩"));
+        projects.add(new CareProject("KF-002", "认知训练(益智游戏)", "康复心理", "次", 20, "隔天", 1, "启用", "针对失智老人"));
+        projects.add(new CareProject("KF-003", "心理疏导", "康复心理", "次", 40, "每周", 1, "启用", "一对一谈心"));
     }
 
     public static int getLevelIndex(ArrayList<NursingLevel> list, String code) {

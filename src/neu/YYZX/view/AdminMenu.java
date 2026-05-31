@@ -238,7 +238,7 @@ public class AdminMenu implements IMenu {
         String desc = mainMenu.readLine();
         System.out.print("巡查频次：");
         String freq = mainMenu.readLine();
-        levelService.add(new NursingLevel(code, name, desc, freq));
+        levelService.add(new NursingLevel(code, name, desc, freq, "启用"));
         PersistentIdGenerator.getInstance().save();
         System.out.println("添加成功！");
     }
@@ -271,7 +271,7 @@ public class AdminMenu implements IMenu {
         String cycle = mainMenu.readLine();
         System.out.print("备注/适用等级：");
         String remark = mainMenu.readLine();
-        projectService.add(new CareProject(code, name, cat, unit, price, cycle, remark));
+        projectService.add(new CareProject(code, name, cat, unit, price, cycle, 1, "启用", remark));
         PersistentIdGenerator.getInstance().save();
         System.out.println("添加成功！");
     }
@@ -459,8 +459,9 @@ public class AdminMenu implements IMenu {
             System.out.println("床位不存在"); return;
         }
 
-        Elderly e = new Elderly(null, name, age, gender, idCard, phone, addr,
-                contact, ephone, checkin, bedId, level, roomNo, "在住");
+        Elderly e = new Elderly(null, name, age, gender, idCard, null, null,
+                phone, addr, contact, ephone, null,
+                checkin, null, bedId, level, roomNo, null, "在住");
         elderlyService.add(e);
 
         if (bedId != null) {

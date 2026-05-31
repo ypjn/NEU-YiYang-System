@@ -81,14 +81,14 @@ public class FileUtil {
                     case "LEVEL":
                         if (parts.length >= 5) {
                             dm.getLevels().add(new NursingLevel(
-                                    parts[1], parts[2], parts[3], parts[4]));
+                                    parts[1], parts[2], parts[3], parts[4], "启用"));
                         }
                         break;
                     case "PROJECT":
                         if (parts.length >= 8) {
                             dm.getProjects().add(new CareProject(
                                     parts[1], parts[2], parts[3], parts[4],
-                                    Double.parseDouble(parts[5]), parts[6], parts[7]));
+                                    Double.parseDouble(parts[5]), parts[6], 1, "启用", parts[7]));
                         }
                         break;
                     case "ELDER":
@@ -101,7 +101,7 @@ public class FileUtil {
                     case "RECORD":
                         if (parts.length >= 7) {
                             dm.getRecords().add(new CareRecord(
-                                    parts[1], parts[2], parts[3], parts[4], parts[5], parts[6]));
+                                    parts[1], parts[2], parts[3], parts[4], 1, parts[5], parts[6]));
                             try {
                                 int num = Integer.parseInt(parts[1].substring(1));
                                 if (num >= maxRecordSeq) {
