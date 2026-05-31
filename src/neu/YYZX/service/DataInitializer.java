@@ -118,9 +118,11 @@ public class DataInitializer {
         ensureDefaultRoles();
         ensureDefaultNursingLevels();
         ensureDefaultCareProjects();
+        ensureDefaultNursingContents();
         ensureDefaultBuildings();
         ensureDefaultRoomsAndBeds();
         ensureDefaultFoods();
+        ensureDefaultEmployees();
     }
 
     private void ensureDefaultUsers() {
@@ -180,6 +182,46 @@ public class DataInitializer {
         }
     }
 
+    private void ensureDefaultNursingContents() {
+        if (nursingContentDao.size() == 0) {
+            // ZL 自理型
+            nursingContentDao.insert(new NursingContent(null, "晨间护理", "LZ-001", "ZL", "每日基础晨间护理", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "晚间护理", "LZ-002", "ZL", "每日基础晚间护理", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "生命体征监测", "YL-001", "ZL", "每日1次测量血压心率", "10分钟", ""));
+            // HL-1 一级护理
+            nursingContentDao.insert(new NursingContent(null, "晨间护理", "LZ-001", "HL-1", "每日晨间护理", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "晚间护理", "LZ-002", "HL-1", "每日晚间护理", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "剪指甲/理发", "LZ-006", "HL-1", "每周理发修甲", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "生命体征监测", "YL-001", "HL-1", "每日2次测量", "15分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "药物管理与喂药", "YL-002", "HL-1", "按医嘱执行", "15分钟", ""));
+            // HL-2 二级护理
+            nursingContentDao.insert(new NursingContent(null, "晨间护理", "LZ-001", "HL-2", "每日晨间护理", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "晚间护理", "LZ-002", "HL-2", "每日晚间护理", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "床上擦浴", "LZ-003", "HL-2", "隔天擦浴", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "协助进食", "LZ-004", "HL-2", "每餐协助", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "协助如厕", "LZ-005", "HL-2", "按需协助", "15分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "生命体征监测", "YL-001", "HL-2", "每日3次测量", "15分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "药物管理与喂药", "YL-002", "HL-2", "按医嘱执行", "15分钟", ""));
+            // HL-3 三级护理
+            nursingContentDao.insert(new NursingContent(null, "晨间护理", "LZ-001", "HL-3", "每日晨间全套护理", "45分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "晚间护理", "LZ-002", "HL-3", "每日晚间全套护理", "45分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "床上擦浴", "LZ-003", "HL-3", "每日擦浴", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "鼻饲护理", "LZ-004", "HL-3", "每餐鼻饲", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "更换尿布", "LZ-005", "HL-3", "按需更换", "15分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "翻身拍背防褥疮", "LZ-007", "HL-3", "每2小时翻身", "20分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "生命体征监测", "YL-001", "HL-3", "每4小时测量", "15分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "药物管理与喂药", "YL-002", "HL-3", "按医嘱执行", "15分钟", ""));
+            // YZ 医疗专护
+            nursingContentDao.insert(new NursingContent(null, "生命体征监测", "YL-001", "YZ", "定时测量", "15分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "药物管理与喂药", "YL-002", "YZ", "按医嘱执行", "15分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "伤口换药", "YL-003", "YZ", "隔天换药", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "导管护理", "YL-004", "YZ", "每周维护", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "吸氧治疗", "YL-005", "YZ", "按需执行", "按需", ""));
+            nursingContentDao.insert(new NursingContent(null, "肢体被动训练", "KF-001", "YZ", "每日康复训练", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "心理疏导", "KF-003", "YZ", "每周心理疏导", "40分钟", ""));
+        }
+    }
+
     private void ensureDefaultBuildings() {
         if (buildingDao.size() == 0) {
             buildingDao.insert(new Building(null, "606", 6, "颐养中心主楼"));
@@ -228,6 +270,16 @@ public class DataInitializer {
             foodDao.insert(new Food(null, "苹果", "水果", "个", 5, "富含维C", ""));
             foodDao.insert(new Food(null, "酸奶", "零食", "杯", 6, "助消化", ""));
             foodDao.insert(new Food(null, "药膳鸡汤", "汤品", "碗", 20, "滋补", "需预约"));
+        }
+    }
+
+    private void ensureDefaultEmployees() {
+        if (employeeDao.size() == 0) {
+            employeeDao.insert(new Employee(null, "李管家", "女", "健康管家", "13900000001", null, "2024-01-01", 6000, "在岗", ""));
+            employeeDao.insert(new Employee(null, "王管家", "男", "健康管家", "13900000002", null, "2024-03-01", 6000, "在岗", ""));
+            employeeDao.insert(new Employee(null, "张三", "男", "护工", "13900000003", null, "2024-02-01", 5000, "在岗", ""));
+            employeeDao.insert(new Employee(null, "赵护工", "女", "护工", "13900000004", null, "2024-06-01", 5000, "在岗", ""));
+            employeeDao.insert(new Employee(null, "钱护工", "男", "护工", "13900000005", null, "2025-01-01", 5000, "在岗", ""));
         }
     }
 

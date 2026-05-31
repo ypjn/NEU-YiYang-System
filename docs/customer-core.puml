@@ -1,0 +1,138 @@
+@startuml 客户管理-核心
+
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontSize 10
+skinparam dpi 96
+
+skinparam class {
+    BorderColor #8B4513
+    BorderThickness 1.5
+    BackgroundColor #FDF5E6
+    FontSize 11
+    HeaderBackgroundColor #8B4513
+    HeaderFontColor #FFFFFF
+}
+
+skinparam abstractClass {
+    BorderColor #A0522D
+    BorderThickness 1.5
+    BackgroundColor #FDF8F3
+    FontSize 11
+    HeaderBackgroundColor #A0522D
+    HeaderFontColor #FFFFFF
+    FontStyle italic
+}
+
+skinparam package {
+    BorderThickness 1.5
+    BackgroundColor #FDFAF5
+    FontStyle bold
+    FontSize 12
+    BorderColor #D2B48C
+}
+
+skinparam arrow {
+    Color #A0522D
+    Thickness 1.2
+}
+
+skinparam nodesep 20
+skinparam ranksep 20
+
+package "model" #FDF0E0 {
+    class Elderly <<客户核心>> {
+        - id : String
+        - name : String
+        - age : int
+        - gender : String
+        - idCard / phone
+        - emergencyContact / emergencyPhone
+        - checkInDate : String
+        - bedId : String
+        - nursingLevelCode : String
+        - roomNo : String
+        - status : String
+    }
+
+    class BedDetail <<床位分配>> {
+        - detailId : String
+        - bedId : String
+        - customerId : String
+        - assignDate : String
+        - releaseDate : String
+        - remark : String
+    }
+
+    class CheckOut <<退住登记>> {
+        - checkoutId : String
+        - customerId : String
+        - checkoutDate : String
+        - reason : String
+        - remark : String
+    }
+}
+
+package "dao" #F0EDE0 {
+    abstract class BaseJsonDao<T> {
+        + findAll() : List\<T\>
+        + findById(String) : T
+        + insert(T) : boolean
+        + update / delete / exists
+        + load() / save()
+    }
+
+    class ElderlyDao {
+        + findByName(String)
+        + findByNursingLevel(String)
+        + findByBedId(String) : Elderly
+        + findActive()
+    }
+
+    class BedDetailDao {
+        + findByBedId(String)
+        + findByCustomerId(String)
+    }
+
+    class CheckOutDao {
+        + findByCustomerId(String)
+    }
+}
+
+package "service" #FDF5E6 {
+    class ElderlyService {
+        - dao
+        + findAll() / findByName()
+        + findByNursingLevel / findActive
+        + add / update / delete / exists
+    }
+
+    class BedDetailService {
+        - dao
+        + findAll() / findByBedId()
+        + findByCustomerId()
+        + add / update / delete
+    }
+
+    class CheckOutService {
+        - dao
+        + findAll()
+        + findByCustomerId()
+        + add / update / delete
+    }
+}
+
+BaseJsonDao <|-- ElderlyDao
+BaseJsonDao <|-- BedDetailDao
+BaseJsonDao <|-- CheckOutDao
+
+ElderlyService --> ElderlyDao
+BedDetailService --> BedDetailDao
+CheckOutService --> CheckOutDao
+
+BedDetail ..> Elderly : customerId
+CheckOut ..> Elderly : customerId
+
+note right of Elderly : status: "在住" / "已退住"\n所有子模块通过customerId关联
+
+@enduml

@@ -1,0 +1,88 @@
+@startuml 床位管理-GUI层
+
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontSize 10
+skinparam dpi 96
+
+skinparam class {
+    BorderColor #5A3B8C
+    BorderThickness 1.5
+    BackgroundColor #F2EEFA
+    FontSize 11
+    HeaderBackgroundColor #5A3B8C
+    HeaderFontColor #FFFFFF
+}
+
+skinparam package {
+    BorderThickness 1.5
+    BackgroundColor #F8F6FD
+    FontStyle bold
+    FontSize 12
+}
+
+skinparam arrow {
+    Color #7B6FAF
+    Thickness 1.2
+}
+
+skinparam nodesep 25
+skinparam ranksep 25
+
+package "gui" #F2EEFA {
+    class AdminFrame {
+        床位管理Tab:
+        - 楼栋选择(ComboBox)
+        - 床位表格(TableView)
+        - 添加床位按钮
+        --
+        buildBedManage()
+        showAddBedDialog()
+    }
+    class NurseFrame {
+        老人信息Tab:
+        - 显示老人床位ID
+        --
+        buildElderlyInfo()
+    }
+}
+
+package "dao" #EAF0E8 {
+    class BuildingDao {
+        + findAll()
+    }
+    class RoomDao {
+        + findAll()
+        + findByBuildingId(String)
+    }
+    class BedDao {
+        + findAll()
+        + findByRoomId(String)
+        + findAvailable()
+        + insert(Bed)
+    }
+}
+
+package "model" #E8F0FA {
+    class Building {
+        buildingId / buildingName
+    }
+    class Room {
+        roomId / roomNo / buildingId
+    }
+    class Bed {
+        bedId / bedNo / roomId / status
+    }
+}
+
+' === GUI → DAO ===
+AdminFrame --> BuildingDao : 楼栋列表
+AdminFrame --> RoomDao : 按楼栋查房间
+AdminFrame --> BedDao : 按房间查床位/添加床位
+NurseFrame --> BedDao : 显示老人床位
+
+' === 关联 ===
+Building <.. Room : buildingId
+Room <.. Bed : roomId
+
+@enduml

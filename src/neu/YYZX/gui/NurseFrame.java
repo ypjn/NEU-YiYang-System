@@ -66,7 +66,8 @@ public class NurseFrame {
 
         String[][] items = {
             {"🧓 老人信息", "elderly"}, {"📝 护理记录", "records"}, {"📋 服务管理", "services"},
-            {"🍽 膳食偏好", "diet"}, {"💬 我的消息", "messages"}
+            {"🍽 膳食偏好", "diet"}, {"🚶 外出申请", "outreg"}, {"🏠 退住申请", "checkout"},
+            {"💬 我的消息", "messages"}
         };
 
         ToggleGroup group = new ToggleGroup();
@@ -139,7 +140,8 @@ public class NurseFrame {
 
     private Map<String, String> moduleNames = Map.of(
         "elderly", "老人信息", "records", "护理记录", "services", "服务管理",
-        "diet", "膳食偏好", "messages", "我的消息"
+        "diet", "膳食偏好", "outreg", "外出申请", "checkout", "退住申请",
+        "messages", "我的消息"
     );
 
     private void switchContent(String key) {
@@ -152,6 +154,8 @@ public class NurseFrame {
             case "records": content = buildCareRecords(); break;
             case "services": content = buildServices(); break;
             case "diet": content = buildDiet(); break;
+            case "outreg": content = buildOutRegApply(); break;
+            case "checkout": content = buildCheckoutApply(); break;
             case "messages": content = buildMessages(); break;
             default: content = new Label("开发中...");
         }
@@ -197,8 +201,153 @@ public class NurseFrame {
             else refresh(table, ctx.getElderlyDao().findByName(nv.trim()));
         });
 
-        box.getChildren().addAll(searchField, table);
+        Button checkinBtn = new Button("老人入住");
+        checkinBtn.setOnAction(e -> {
+            long availBeds = ctx.getBedDao().findAll().stream().filter(b -> "available".equals(b.getStatus())).count();
+            if (availBeds == 0) {
+                LoginPane.showAlert(Alert.AlertType.WARNING, "没有空闲床位，请先由管理员创建房间和床位");
+                return;
+            }
+            showCheckinDialog(table);
+        });
+
+        HBox topRow = new HBox(10, searchField, checkinBtn);
+        box.getChildren().addAll(topRow, table);
         return box;
+    }
+
+    private void showCheckinDialog(TableView<Elderly> table) {
+        Dialog<Elderly> dlg = new Dialog<>();
+        dlg.setTitle("老人入住");
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10); grid.setVgap(10); grid.setPadding(new Insets(20));
+
+        TextField name = new TextField();
+        TextField age = new TextField();
+        ComboBox<String> gender = new ComboBox<>();
+        gender.getItems().addAll("男", "女"); gender.setValue("男");
+        TextField idCard = new TextField();
+        ComboBox<String> bloodType = new ComboBox<>();
+        bloodType.getItems().addAll("A", "B", "AB", "O"); bloodType.setValue("A");
+        DatePicker birthDate = new DatePicker();
+        TextField phone = new TextField();
+        TextField familyMember = new TextField();
+        TextField emContact = new TextField();
+        TextField emPhone = new TextField();
+        ComboBox<String> bedBox = new ComboBox<>();
+        ctx.getBedDao().findAll().stream().filter(b -> "available".equals(b.getStatus()))
+            .forEach(b -> bedBox.getItems().add(b.getBedId() + " - " + b.getBedNo()));
+        DatePicker checkinDate = new DatePicker(LocalDate.now());
+        DatePicker contractEndDate = new DatePicker(LocalDate.now().plusYears(1));
+
+        // 身份证校验 + 自动提取
+        Label idCardMsg = new Label();
+        idCardMsg.setStyle("-fx-font-size:11px");
+        idCard.textProperty().addListener((o, ov, nv) -> {
+            String result = validateIdCard(nv);
+            if (result == null) {
+                idCard.setStyle("-fx-border-color:red; -fx-border-width:1px");
+                idCardMsg.setText(nv.length() == 18 ? "身份证格式错误" : "");
+                idCardMsg.setStyle("-fx-text-fill:red; -fx-font-size:11px");
+            } else {
+                idCard.setStyle("");
+                String birth = nv.substring(6, 14);
+                LocalDate bd = LocalDate.parse(birth.substring(0, 4) + "-" + birth.substring(4, 6) + "-" + birth.substring(6, 8));
+                birthDate.setValue(bd);
+                int calculatedAge = LocalDate.now().getYear() - bd.getYear();
+                age.setText(String.valueOf(calculatedAge));
+                int seqDigit = Integer.parseInt(nv.substring(14, 17));
+                gender.setValue(seqDigit % 2 == 1 ? "男" : "女");
+                idCardMsg.setText("✓ 出生: " + result + "  性别: " + gender.getValue() + "  年龄: " + calculatedAge);
+                idCardMsg.setStyle("-fx-text-fill:green; -fx-font-size:11px");
+            }
+        });
+
+        grid.add(new Label("姓名："), 0, 0); grid.add(name, 1, 0);
+        grid.add(new Label("年龄："), 0, 1); grid.add(age, 1, 1);
+        grid.add(new Label("出生日期："), 2, 1); grid.add(birthDate, 3, 1);
+        grid.add(new Label("性别："), 0, 2); grid.add(gender, 1, 2);
+        grid.add(new Label("血型："), 2, 2); grid.add(bloodType, 3, 2);
+        grid.add(new Label("身份证："), 0, 3); grid.add(idCard, 1, 3);
+        grid.add(idCardMsg, 2, 3, 2, 1);
+        grid.add(new Label("电话："), 0, 4); grid.add(phone, 1, 4);
+        grid.add(new Label("家属："), 0, 5); grid.add(familyMember, 1, 5);
+        grid.add(new Label("紧急联系人："), 2, 5); grid.add(emContact, 3, 5);
+        grid.add(new Label("紧急电话："), 0, 6); grid.add(emPhone, 1, 6);
+        grid.add(new Label("床位："), 2, 6); grid.add(bedBox, 3, 6);
+        grid.add(new Label("入住日期："), 0, 7); grid.add(checkinDate, 1, 7);
+        grid.add(new Label("合同到期："), 2, 7); grid.add(contractEndDate, 3, 7);
+
+        dlg.getDialogPane().setContent(grid);
+        ButtonType okBtn = new ButtonType("入住", ButtonBar.ButtonData.OK_DONE);
+        dlg.getDialogPane().getButtonTypes().addAll(okBtn, ButtonType.CANCEL);
+
+        dlg.setResultConverter(btn -> {
+            if (btn != okBtn || name.getText().trim().isEmpty() || bedBox.getValue() == null) return null;
+            String idCardText = idCard.getText().trim();
+            if (!idCardText.isEmpty() && validateIdCard(idCardText) == null) return null;
+
+            String bedId = bedBox.getValue().split(" - ")[0];
+            Bed bed = ctx.getBedDao().findById(bedId);
+            if (bed != null) {
+                bed.setStatus("occupied");
+                ctx.getBedDao().update(bed);
+            }
+
+            Elderly e = new Elderly();
+            e.setName(name.getText().trim());
+            e.setGender(gender.getValue());
+            e.setIdCard(idCardText);
+            e.setBloodType(bloodType.getValue());
+            if (birthDate.getValue() != null) {
+                e.setBirthDate(birthDate.getValue().toString());
+                e.setAge(LocalDate.now().getYear() - birthDate.getValue().getYear());
+            } else {
+                try { e.setAge(Integer.parseInt(age.getText())); } catch (Exception ex) { e.setAge(0); }
+            }
+            e.setPhone(phone.getText().trim());
+            e.setFamilyMember(familyMember.getText().trim());
+            e.setEmergencyContact(emContact.getText().trim());
+            e.setEmergencyPhone(emPhone.getText().trim());
+            e.setBedId(bedId);
+            if (bed != null) {
+                Room room = ctx.getRoomDao().findById(bed.getRoomId());
+                if (room != null) {
+                    e.setRoomNo(room.getRoomNo());
+                    e.setBuildingId(room.getBuildingId());
+                }
+            }
+            e.setCheckInDate(checkinDate.getValue() != null ? checkinDate.getValue().toString() + " 00:00:00" : LocalDateTime.now().format(fmt));
+            e.setContractEndDate(contractEndDate.getValue() != null ? contractEndDate.getValue().toString() : "");
+            e.setStatus("在住");
+            ctx.getElderlyDao().insert(e);
+            PersistentIdGenerator.getInstance().save();
+            refresh(table, ctx.getElderlyDao().findAll());
+            return e;
+        });
+        dlg.showAndWait();
+    }
+
+    private String validateIdCard(String id) {
+        if (id == null || id.length() != 18) return null;
+        for (int i = 0; i < 17; i++) {
+            if (!Character.isDigit(id.charAt(i))) return null;
+        }
+        char last = id.charAt(17);
+        if (!Character.isDigit(last) && last != 'X' && last != 'x') return null;
+        String birth = id.substring(6, 14);
+        try {
+            LocalDate.parse(birth.substring(0, 4) + "-" + birth.substring(4, 6) + "-" + birth.substring(6, 8));
+        } catch (Exception e) { return null; }
+        int[] weights = {7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2};
+        char[] checkCodes = {'1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'};
+        int sum = 0;
+        for (int i = 0; i < 17; i++) sum += (id.charAt(i) - '0') * weights[i];
+        char expected = checkCodes[sum % 11];
+        if (expected == 'X' && (last == 'X' || last == 'x')) return birth.substring(0, 4) + "-" + birth.substring(4, 6) + "-" + birth.substring(6, 8);
+        if (Character.toUpperCase(last) != expected) return null;
+        return birth.substring(0, 4) + "-" + birth.substring(4, 6) + "-" + birth.substring(6, 8);
     }
 
     // ==================== 护理记录 ====================
@@ -233,8 +382,12 @@ public class NurseFrame {
 
         ComboBox<String> elderlyBox = new ComboBox<>();
         ctx.getElderlyDao().findAll().forEach(e -> elderlyBox.getItems().add(e.getId() + " - " + e.getName()));
+        // 只显示启用状态的护理项目
         ComboBox<String> projectBox = new ComboBox<>();
-        ctx.getCareProjectDao().findAll().forEach(p -> projectBox.getItems().add(p.getCode() + " - " + p.getName()));
+        ctx.getCareProjectDao().findAll().stream()
+        .filter(p -> "启用".equals(p.getStatus()))
+        .forEach(p -> projectBox.getItems().add(p.getCode() + " - " + p.getName()));
+
         TextField quantity = new TextField("1");
         TextField remark = new TextField();
         DatePicker execDate = new DatePicker(LocalDate.now());
@@ -298,6 +451,145 @@ public class NurseFrame {
         refresh(table, ctx.getDietPreferenceDao().findAll());
 
         box.getChildren().add(table);
+        return box;
+    }
+
+    // ==================== 外出申请 ====================
+    private VBox buildOutRegApply() {
+        VBox box = new VBox(10);
+        box.setPadding(new Insets(15));
+
+        TableView<OutRegistration> table = new TableView<>();
+        TableColumn<OutRegistration, String> c1 = col("老人ID", "customerId");
+        TableColumn<OutRegistration, String> c2 = col("外出时间", "outTime");
+        TableColumn<OutRegistration, String> c3 = col("预计归时", "expectedReturnTime");
+        TableColumn<OutRegistration, String> c4 = col("实际归时", "actualReturnTime");
+        TableColumn<OutRegistration, String> c5 = col("陪同人", "companion");
+        TableColumn<OutRegistration, String> c6 = col("事由", "reason");
+        TableColumn<OutRegistration, String> c7 = col("审批状态", "approvalStatus");
+        table.getColumns().addAll(c1, c2, c3, c4, c5, c6, c7);
+
+        String nurseName = user.getRealName() != null ? user.getRealName() : user.getUsername();
+        refresh(table, ctx.getOutRegistrationDao().findAll().stream()
+            .filter(o -> nurseName.equals(o.getCompanion())).toList());
+
+        Button applyBtn = new Button("新增外出申请");
+        applyBtn.setOnAction(e -> {
+            List<Elderly> activeElders = ctx.getElderlyDao().findAll().stream()
+                .filter(el -> "在住".equals(el.getStatus())).toList();
+            if (activeElders.isEmpty()) { LoginPane.showAlert(Alert.AlertType.WARNING, "没有在住老人"); return; }
+
+            ChoiceDialog<String> selDlg = new ChoiceDialog<>(
+                activeElders.get(0).getId() + " - " + activeElders.get(0).getName(),
+                activeElders.stream().map(el -> el.getId() + " - " + el.getName()).toList());
+            selDlg.setTitle("选择老人");
+            selDlg.setHeaderText("请选择要申请外出的老人");
+            selDlg.showAndWait().ifPresent(elderSel -> {
+                String elderId = elderSel.split(" - ")[0];
+                Dialog<OutRegistration> dlg = new Dialog<>();
+                dlg.setTitle("外出申请");
+                GridPane grid = new GridPane();
+                grid.setHgap(10); grid.setVgap(10); grid.setPadding(new Insets(20));
+                DatePicker outDate = new DatePicker(LocalDate.now());
+                TextField outTimeField = new TextField(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
+                DatePicker returnDate = new DatePicker(LocalDate.now().plusDays(1));
+                TextField returnTimeField = new TextField("18:00");
+                TextField reason = new TextField();
+                grid.add(new Label("外出日期："), 0, 0); grid.add(outDate, 1, 0);
+                grid.add(new Label("外出时间："), 0, 1); grid.add(outTimeField, 1, 1);
+                grid.add(new Label("预计归日："), 0, 2); grid.add(returnDate, 1, 2);
+                grid.add(new Label("预计归时："), 0, 3); grid.add(returnTimeField, 1, 3);
+                grid.add(new Label("事由："), 0, 4); grid.add(reason, 1, 4);
+                dlg.getDialogPane().setContent(grid);
+                ButtonType okBtn = new ButtonType("提交", ButtonBar.ButtonData.OK_DONE);
+                dlg.getDialogPane().getButtonTypes().addAll(okBtn, ButtonType.CANCEL);
+                dlg.setResultConverter(btn -> {
+                    if (btn != okBtn) return null;
+                    String outTime = outDate.getValue() + " " + outTimeField.getText().trim();
+                    String expectedReturn = returnDate.getValue() + " " + returnTimeField.getText().trim();
+                    OutRegistration r = new OutRegistration();
+                    r.setCustomerId(elderId);
+                    r.setOutTime(outTime);
+                    r.setExpectedReturnTime(expectedReturn);
+                    r.setCompanion(nurseName);
+                    r.setReason(reason.getText().trim());
+                    r.setStatus("申请中");
+                    r.setApprovalStatus("待审批");
+                    ctx.getOutRegistrationDao().insert(r);
+                    PersistentIdGenerator.getInstance().save();
+                    refresh(table, ctx.getOutRegistrationDao().findAll().stream()
+                        .filter(o -> nurseName.equals(o.getCompanion())).toList());
+                    return r;
+                });
+                dlg.showAndWait();
+            });
+        });
+
+        box.getChildren().addAll(applyBtn, table);
+        return box;
+    }
+
+    // ==================== 退住申请 ====================
+    private VBox buildCheckoutApply() {
+        VBox box = new VBox(10);
+        box.setPadding(new Insets(15));
+
+        TableView<CheckOut> table = new TableView<>();
+        TableColumn<CheckOut, String> c1 = col("老人ID", "customerId");
+        TableColumn<CheckOut, String> c2 = col("退住类型", "checkoutType");
+        TableColumn<CheckOut, String> c3 = col("退住日期", "checkoutDate");
+        TableColumn<CheckOut, String> c4 = col("原因", "reason");
+        TableColumn<CheckOut, String> c5 = col("审批状态", "approvalStatus");
+        table.getColumns().addAll(c1, c2, c3, c4, c5);
+
+        refresh(table, ctx.getCheckOutDao().findAll());
+
+        Button applyBtn = new Button("新增退住申请");
+        applyBtn.setOnAction(e -> {
+            List<Elderly> activeElders = ctx.getElderlyDao().findAll().stream()
+                .filter(el -> "在住".equals(el.getStatus())).toList();
+            if (activeElders.isEmpty()) { LoginPane.showAlert(Alert.AlertType.WARNING, "没有在住老人"); return; }
+
+            ChoiceDialog<String> selDlg = new ChoiceDialog<>(
+                activeElders.get(0).getId() + " - " + activeElders.get(0).getName(),
+                activeElders.stream().map(el -> el.getId() + " - " + el.getName()).toList());
+            selDlg.setTitle("选择老人");
+            selDlg.setHeaderText("请选择要申请退住的老人");
+            selDlg.showAndWait().ifPresent(elderSel -> {
+                String elderId = elderSel.split(" - ")[0];
+                Dialog<CheckOut> dlg = new Dialog<>();
+                dlg.setTitle("退住申请");
+                GridPane grid = new GridPane();
+                grid.setHgap(10); grid.setVgap(10); grid.setPadding(new Insets(20));
+                ComboBox<String> typeBox = new ComboBox<>();
+                typeBox.getItems().addAll("正常退住", "死亡退住", "保留床位");
+                typeBox.setValue("正常退住");
+                DatePicker checkoutDate = new DatePicker(LocalDate.now());
+                TextField reason = new TextField();
+                grid.add(new Label("退住类型："), 0, 0); grid.add(typeBox, 1, 0);
+                grid.add(new Label("退住日期："), 0, 1); grid.add(checkoutDate, 1, 1);
+                grid.add(new Label("原因："), 0, 2); grid.add(reason, 1, 2);
+                dlg.getDialogPane().setContent(grid);
+                ButtonType okBtn = new ButtonType("提交", ButtonBar.ButtonData.OK_DONE);
+                dlg.getDialogPane().getButtonTypes().addAll(okBtn, ButtonType.CANCEL);
+                dlg.setResultConverter(btn -> {
+                    if (btn != okBtn) return null;
+                    CheckOut co = new CheckOut();
+                    co.setCustomerId(elderId);
+                    co.setCheckoutType(typeBox.getValue());
+                    co.setCheckoutDate(checkoutDate.getValue().toString());
+                    co.setReason(reason.getText().trim());
+                    co.setApprovalStatus("待审批");
+                    ctx.getCheckOutDao().insert(co);
+                    PersistentIdGenerator.getInstance().save();
+                    refresh(table, ctx.getCheckOutDao().findAll());
+                    return co;
+                });
+                dlg.showAndWait();
+            });
+        });
+
+        box.getChildren().addAll(applyBtn, table);
         return box;
     }
 

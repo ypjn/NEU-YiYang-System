@@ -1,0 +1,181 @@
+@startuml 床位管理模块类图
+
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontSize 10
+skinparam dpi 96
+
+skinparam class {
+    BorderColor #1E5A8A
+    BorderThickness 1.5
+    BackgroundColor #EEF4FA
+    FontSize 11
+    HeaderBackgroundColor #1E5A8A
+    HeaderFontColor #FFFFFF
+}
+
+skinparam abstractClass {
+    BorderColor #3A7CB8
+    BorderThickness 1.5
+    BackgroundColor #F5F8FC
+    FontSize 11
+    HeaderBackgroundColor #3A7CB8
+    HeaderFontColor #FFFFFF
+    FontStyle italic
+}
+
+skinparam package {
+    BorderThickness 1.5
+    BackgroundColor #F8FAFD
+    FontStyle bold
+    FontSize 12
+    BorderColor #8AB0D4
+}
+
+skinparam arrow {
+    Color #3A7CB8
+    Thickness 1.2
+}
+
+skinparam nodesep 20
+skinparam ranksep 25
+
+package "model" #E8F0FA {
+    class Building {
+        - buildingId : String
+        - buildingName : String
+        - floorCount : int
+        - description : String
+    }
+
+    class Room {
+        - roomId : String
+        - roomNo : String
+        - buildingId : String
+        - floor : int
+        - roomType : String
+        - capacity : int
+        - price : double
+        - status : String
+    }
+
+    class Bed {
+        - bedId : String
+        - bedNo : String
+        - roomId : String
+        - status : String
+    }
+
+    class BedDetail {
+        - detailId : String
+        - bedId : String
+        - customerId : String
+        - assignDate : String
+        - releaseDate : String
+        - remark : String
+    }
+}
+
+package "dao" #EAF0E8 {
+    abstract class BaseJsonDao<T> {
+        + findAll() : List\<T\>
+        + findById(String) : T
+        + insert(T) : boolean
+        + update / delete / exists
+        + load() / save()
+    }
+
+    class BuildingDao {
+        {static} FILE = buildings.json
+        {static} PREFIX = B
+    }
+
+    class RoomDao {
+        {static} FILE = rooms.json
+        {static} PREFIX = RM
+        --
+        + findByBuildingId(String) : List\<Room\>
+        + findAvailable() : List\<Room\>
+    }
+
+    class BedDao {
+        {static} FILE = beds.json
+        {static} PREFIX = BD
+        --
+        + findByRoomId(String) : List\<Bed\>
+        + findAvailable() : List\<Bed\>
+    }
+
+    class BedDetailDao {
+        {static} FILE = bed_details.json
+        {static} PREFIX = BDD
+        --
+        + findByBedId(String) : List\<BedDetail\>
+        + findByCustomerId(String) : List\<BedDetail\>
+    }
+}
+
+package "service" #FAF5E8 {
+    class BuildingService {
+        - dao : BuildingDao
+        + findAll() / findById()
+        + add / update / delete / exists
+    }
+
+    class BedService {
+        - dao : BedDao
+        + findAll() / findById()
+        + findByRoomId(String)
+        + findAvailable()
+        + add(Bed) : boolean
+        + update / delete / exists
+    }
+
+    class BedDetailService {
+        - dao : BedDetailDao
+        + findAll() / findById()
+        + findByBedId(String)
+        + findByCustomerId(String)
+        + add / update / delete
+    }
+}
+
+package "gui" #F2EEFA {
+    class AdminFrame {
+        床位管理 Tab:
+        buildBedManage()
+        showAddBedDialog()
+    }
+}
+
+' === 继承 ===
+BaseJsonDao <|-- BuildingDao
+BaseJsonDao <|-- RoomDao
+BaseJsonDao <|-- BedDao
+BaseJsonDao <|-- BedDetailDao
+
+' === 泛型绑定 ===
+BuildingDao ....> Building : <<bind>>
+RoomDao ........> Room : <<bind>>
+BedDao .........> Bed : <<bind>>
+BedDetailDao ...> BedDetail : <<bind>>
+
+' === Service → DAO ===
+BuildingService --> BuildingDao
+BedService --> BedDao
+BedDetailService --> BedDetailDao
+
+' === 模型关联 ===
+Room ........> Building : buildingId
+Bed .........> Room : roomId
+BedDetail ...> Bed : bedId
+
+' === GUI ===
+AdminFrame --> BuildingDao : 楼栋列表
+AdminFrame --> RoomDao : 按楼栋查房间
+AdminFrame --> BedDao : 按房间查床位\n添加床位
+
+note right of Bed : status: "空闲" / "已占用"
+note bottom of BedDetail : 床位分配记录\nassignDate / releaseDate
+
+@enduml

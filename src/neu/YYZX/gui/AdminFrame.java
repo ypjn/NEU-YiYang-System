@@ -119,7 +119,7 @@ public class AdminFrame {
         for (Map.Entry<String, ToggleButton> entry : navButtons.entrySet()) {
             ToggleButton btn = entry.getValue();
             if (entry.getKey().equals(selectedKey)) {
-                btn.setStyle("-fx-background-color:#3498db; -fx-text-fill:white; -fx-font-size:13px; "
+                btn.setStyle("-fx-background-color:#3498db; -fx-text-fill:#1a1a2e; -fx-font-size:13px; "
                     + "-fx-background-radius:6; -fx-border-color:#2980b9; -fx-border-radius:6; -fx-border-width:2");
             } else {
                 btn.setStyle("-fx-background-color:transparent; -fx-text-fill:#bdc3c7; -fx-font-size:13px; "
@@ -247,14 +247,20 @@ public class AdminFrame {
         Button delBtn = new Button("删除用户");
         Button chgPwdBtn = new Button("修改密码");
 
-        addBtn.setOnAction(e -> {
+               addBtn.setOnAction(e -> {
             Dialog<User> dlg = userEditDialog(null);
             dlg.showAndWait().ifPresent(u -> {
-                userService.addUser(u);
+                boolean success = userService.addUser(u);
+                if (!success) {
+                    LoginPane.showAlert(Alert.AlertType.ERROR, "添加失败：账号「" + u.getUsername() + "」已存在，请使用其他账号名");
+                    return;
+                }
                 PersistentIdGenerator.getInstance().save();
                 refreshTable(table, ctx.getUserDao().findAll());
+                LoginPane.showAlert(Alert.AlertType.INFORMATION, "用户添加成功");
             });
         });
+
 
         delBtn.setOnAction(e -> {
             User sel = table.getSelectionModel().getSelectedItem();
@@ -357,7 +363,14 @@ public class AdminFrame {
         Button checkinBtn = new Button("老人入住");
         Button setLevelBtn = new Button("设置护理等级");
 
-        checkinBtn.setOnAction(e -> showCheckinDialog(table));
+        checkinBtn.setOnAction(e -> {
+            long availBeds = ctx.getBedDao().findAll().stream().filter(b -> "available".equals(b.getStatus())).count();
+            if (availBeds == 0) {
+                LoginPane.showAlert(Alert.AlertType.WARNING, "没有空闲床位，请先在床位管理中创建房间和床位");
+                return;
+            }
+            showCheckinDialog(table);
+        });
         setLevelBtn.setOnAction(e -> {
             Elderly sel = table.getSelectionModel().getSelectedItem();
             if (sel == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择老人"); return; }
@@ -396,11 +409,6 @@ public class AdminFrame {
         DatePicker checkinDate = new DatePicker(LocalDate.now());
         DatePicker contractEndDate = new DatePicker(LocalDate.now().plusYears(1));
 
-        grid.add(new Label("姓名："), 0, 0); grid.add(name, 1, 0);
-        grid.add(new Label("年龄："), 0, 1); grid.add(age, 1, 1);
-        grid.add(new Label("出生日期："), 2, 1); grid.add(birthDate, 3, 1);
-        grid.add(new Label("性别："), 0, 2); grid.add(gender, 1, 2);
-        grid.add(new Label("血型："), 2, 2); grid.add(bloodType, 3, 2);
         // 身份证校验 + 自动提取生日/性别
         Label idCardMsg = new Label();
         idCardMsg.setStyle("-fx-font-size:11px");
@@ -408,11 +416,21 @@ public class AdminFrame {
             String result = validateIdCard(nv);
             if (result == null) {
                 idCard.setStyle("-fx-border-color:red; -fx-border-width:1px");
-                idCardMsg.setText("身份证格式错误");
+                idCardMsg.setText(nv.length() == 18 ? "身份证格式错误" : "");
                 idCardMsg.setStyle("-fx-text-fill:red; -fx-font-size:11px");
             } else {
                 idCard.setStyle("");
-                idCardMsg.setText("✓ 出生: " + result);
+                // 自动提取并填充出生日期
+                String birth = nv.substring(6, 14);
+                LocalDate bd = LocalDate.parse(birth.substring(0, 4) + "-" + birth.substring(4, 6) + "-" + birth.substring(6, 8));
+                birthDate.setValue(bd);
+                // 自动计算年龄
+                int calculatedAge = LocalDate.now().getYear() - bd.getYear();
+                age.setText(String.valueOf(calculatedAge));
+                // 自动识别性别 (第17位，奇数为男)
+                int seqDigit = Integer.parseInt(nv.substring(14, 17));
+                gender.setValue(seqDigit % 2 == 1 ? "男" : "女");
+                idCardMsg.setText("✓ 出生: " + result + "  性别: " + gender.getValue() + "  年龄: " + calculatedAge);
                 idCardMsg.setStyle("-fx-text-fill:green; -fx-font-size:11px");
             }
         });
@@ -440,20 +458,9 @@ public class AdminFrame {
         dlg.setResultConverter(btn -> {
             if (btn != okBtn || name.getText().trim().isEmpty() || bedBox.getValue() == null) return null;
             String idCardText = idCard.getText().trim();
-            if (!idCardText.isEmpty()) {
-                String validated = validateIdCard(idCardText);
-                if (validated == null) {
-                    LoginPane.showAlert(Alert.AlertType.WARNING, "身份证号不合法，请检查！");
-                    return null;
-                }
-                // 从身份证自动提取生日和性别
-                String birthStr = idCardText.substring(6, 14);
-                try {
-                    LocalDate bd = LocalDate.parse(birthStr.substring(0, 4) + "-" + birthStr.substring(4, 6) + "-" + birthStr.substring(6, 8));
-                    birthDate.setValue(bd);
-                } catch (Exception ignored) {}
-                int seqDigit = Integer.parseInt(idCardText.substring(14, 17));
-                gender.setValue(seqDigit % 2 == 1 ? "男" : "女");
+            if (!idCardText.isEmpty() && validateIdCard(idCardText) == null) {
+                // 表单上已有红色提示，不弹窗，保持对话框打开
+                return null;
             }
 
             String bedId = bedBox.getValue().split(" - ")[0];
@@ -505,40 +512,46 @@ public class AdminFrame {
             // 已有护理级别 — 询问是否移除
             Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
                 e.getName() + " 当前护理级别为 " + e.getNursingLevelCode()
-                + "。\n\n需要先移除当前级别才能设置新级别。\n\n确定要移除吗？（会级联删除客户在当前级别的所有护理项目）",
+                + "。\n\n移除后将自动弹出新级别选择窗口。\n\n确定要移除吗？（会级联删除客户在当前级别的所有护理项目）",
                 ButtonType.YES, ButtonType.NO);
             confirm.showAndWait().ifPresent(r -> {
                 if (r == ButtonType.YES) {
                     removeCustomerLevel(e);
+                    // 移除后立即弹出设置新级别
+                    showSetLevelDialog(e);
                 }
             });
         } else {
             // 没有护理级别 — 设置新级别
-            List<NursingLevel> levels = ctx.getNursingLevelDao().findAll().stream()
-                .filter(l -> "启用".equals(l.getStatus())).toList();
-            if (levels.isEmpty()) { LoginPane.showAlert(Alert.AlertType.WARNING, "没有可用的护理级别"); return; }
-            ChoiceDialog<String> dlg = new ChoiceDialog<>(
-                levels.get(0).getCode() + " - " + levels.get(0).getName(),
-                levels.stream().map(l -> l.getCode() + " - " + l.getName()).toList());
-            dlg.setTitle("设置护理等级");
-            dlg.setHeaderText("为 " + e.getName() + " 设置护理等级");
-            dlg.showAndWait().ifPresent(sel -> {
-                String code = sel.split(" - ")[0];
-                e.setNursingLevelCode(code);
-                ctx.getElderlyDao().update(e);
-                // 批量添加该级别的护理项目
-                String now = LocalDateTime.now().format(fmt);
-                String expireDate = LocalDate.now().plusMonths(3).toString();
-                List<NursingContent> contents = ctx.getNursingContentDao().findByLevelCode(code);
-                for (NursingContent nc : contents) {
-                    CustomerCareProject ccp = new CustomerCareProject(null, e.getId(),
-                        nc.getCareProjectCode(), 1, now, expireDate);
-                    ctx.getCustomerCareProjectDao().insert(ccp);
-                }
-                PersistentIdGenerator.getInstance().save();
-                AuditLogger.log("设置护理等级", "老人管理", e.getName() + " → " + code);
-            });
+            showLevelSelection(e);
         }
+    }
+
+    private void showLevelSelection(Elderly e) {
+        List<NursingLevel> levels = ctx.getNursingLevelDao().findAll().stream()
+            .filter(l -> "启用".equals(l.getStatus())).toList();
+        if (levels.isEmpty()) { LoginPane.showAlert(Alert.AlertType.WARNING, "没有可用的护理级别"); return; }
+        ChoiceDialog<String> dlg = new ChoiceDialog<>(
+            levels.get(0).getCode() + " - " + levels.get(0).getName(),
+            levels.stream().map(l -> l.getCode() + " - " + l.getName()).toList());
+        dlg.setTitle("设置护理等级");
+        dlg.setHeaderText("为 " + e.getName() + " 设置护理等级");
+        dlg.showAndWait().ifPresent(sel -> {
+            String code = sel.split(" - ")[0];
+            e.setNursingLevelCode(code);
+            ctx.getElderlyDao().update(e);
+            // 批量添加该级别的护理项目
+            String now = LocalDateTime.now().format(fmt);
+            String expireDate = LocalDate.now().plusMonths(3).toString();
+            List<NursingContent> contents = ctx.getNursingContentDao().findByLevelCode(code);
+            for (NursingContent nc : contents) {
+                CustomerCareProject ccp = new CustomerCareProject(null, e.getId(),
+                    nc.getCareProjectCode(), 1, now, expireDate);
+                ctx.getCustomerCareProjectDao().insert(ccp);
+            }
+            PersistentIdGenerator.getInstance().save();
+            AuditLogger.log("设置护理等级", "老人管理", e.getName() + " → " + code);
+        });
     }
 
     private void removeCustomerLevel(Elderly e) {
@@ -580,16 +593,17 @@ public class AdminFrame {
 
         // 楼层选择
         HBox filterRow = new HBox(10);
-        ComboBox<Integer> floorBox = new ComboBox<>();
-        for (int i = 1; i <= 6; i++) floorBox.getItems().add(i);
-        floorBox.setValue(1);
-        floorBox.setPromptText("选择楼层");
+        ComboBox<String> floorBox = new ComboBox<>();
+        floorBox.getItems().add("全部");
+        for (int i = 1; i <= 6; i++) floorBox.getItems().add(i + "楼");
+        floorBox.setValue("全部");
 
         Button addBedBtn = new Button("添加床位");
+        Button delBedBtn = new Button("删除床位");
         Button swapBedBtn = new Button("床位调换");
         Button roomBtn = new Button("管理房间");
 
-        filterRow.getChildren().addAll(new Label("楼层："), floorBox, addBedBtn, swapBedBtn, roomBtn);
+        filterRow.getChildren().addAll(new Label("楼层："), floorBox, addBedBtn, delBedBtn, swapBedBtn, roomBtn);
 
         // 床位展示区
         VBox bedArea = new VBox(8);
@@ -597,14 +611,31 @@ public class AdminFrame {
 
         Runnable refreshBedArea = () -> {
             bedArea.getChildren().clear();
-            int floor = floorBox.getValue() != null ? floorBox.getValue() : 1;
+            String floorSel = floorBox.getValue() != null ? floorBox.getValue() : "全部";
             Building building = ctx.getBuildingDao().findAll().stream().findFirst().orElse(null);
             if (building == null) { bedArea.getChildren().add(new Label("无楼栋数据")); return; }
-            List<Room> rooms = ctx.getRoomDao().findByBuildingId(building.getBuildingId()).stream()
-                .filter(r -> r.getFloor() == floor).toList();
-            if (rooms.isEmpty()) { bedArea.getChildren().add(new Label("该楼层无房间")); return; }
+            List<Room> rooms = ctx.getRoomDao().findByBuildingId(building.getBuildingId());
+            if (!"全部".equals(floorSel)) {
+                int floor = Integer.parseInt(floorSel.replace("楼", ""));
+                rooms = rooms.stream().filter(r -> r.getFloor() == floor).toList();
+            }
+            if (rooms.isEmpty()) { bedArea.getChildren().add(new Label("无房间")); return; }
+            // 按床位占用状态排序：有空闲床位的房间在前，全占用的在后
+            rooms.sort((a, b) -> {
+                List<Bed> ba = ctx.getBedDao().findByRoomId(a.getRoomId());
+                List<Bed> bb = ctx.getBedDao().findByRoomId(b.getRoomId());
+                boolean aHasAvail = ba.stream().anyMatch(bd -> "available".equals(bd.getStatus()));
+                boolean bHasAvail = bb.stream().anyMatch(bd -> "available".equals(bd.getStatus()));
+                if (aHasAvail && !bHasAvail) return -1;
+                if (!aHasAvail && bHasAvail) return 1;
+                return a.getRoomNo().compareTo(b.getRoomNo());
+            });
             for (Room room : rooms) {
                 List<Bed> beds = ctx.getBedDao().findByRoomId(room.getRoomId());
+                // 空闲在前，占用在后
+                beds.sort((a, b) -> Integer.compare(
+                    "available".equals(a.getStatus()) ? 0 : "out".equals(a.getStatus()) ? 1 : 2,
+                    "available".equals(b.getStatus()) ? 0 : "out".equals(b.getStatus()) ? 1 : 2));
                 HBox roomRow = new HBox(8);
                 roomRow.setAlignment(Pos.CENTER_LEFT);
                 Label roomLabel = new Label("房间 " + room.getRoomNo() + " ");
@@ -615,14 +646,23 @@ public class AdminFrame {
                 } else {
                     for (Bed bed : beds) {
                         Label bedLabel = new Label(bed.getBedNo());
-                        bedLabel.setStyle("-fx-padding:4 10; -fx-background-radius:4; -fx-font-size:12px");
+                        bedLabel.setStyle("-fx-padding:8 18; -fx-background-radius:8; -fx-font-size:15px; -fx-font-weight:bold; -fx-min-width:70; -fx-alignment:center; -fx-border-radius:8");
                         switch (bed.getStatus()) {
-                            case "available": bedLabel.setStyle(bedLabel.getStyle() + "-fx-background-color:#2ecc71; -fx-text-fill:white"); break;
-                            case "occupied": bedLabel.setStyle(bedLabel.getStyle() + "-fx-background-color:#e74c3c; -fx-text-fill:white"); break;
-                            case "out": bedLabel.setStyle(bedLabel.getStyle() + "-fx-background-color:#f39c12; -fx-text-fill:white"); break;
-                            default: bedLabel.setStyle(bedLabel.getStyle() + "-fx-background-color:#95a5a6; -fx-text-fill:white"); break;
+                            case "available": bedLabel.setStyle(bedLabel.getStyle()
+                                + " -fx-background-color:#27ae60; -fx-text-fill:#1a1a2e; -fx-border-color:#1e8449; -fx-border-width:2"); break;
+                            case "occupied": bedLabel.setStyle(bedLabel.getStyle()
+                                + " -fx-background-color:#fff0f0; -fx-text-fill:#c0392b; -fx-border-color:#e74c3c; -fx-border-width:3"); break;
+                            case "out": bedLabel.setStyle(bedLabel.getStyle()
+                                + " -fx-background-color:#e67e22; -fx-text-fill:#1a1a2e; -fx-border-color:#ca6f1e; -fx-border-width:2"); break;
+                            default: bedLabel.setStyle(bedLabel.getStyle()
+                                + " -fx-background-color:#7f8c8d; -fx-text-fill:#1a1a2e; -fx-border-color:#6c7a7a; -fx-border-width:2"); break;
                         }
-                        roomRow.getChildren().add(bedLabel);
+                        // 状态小标签
+                        String statusText = bed.getStatus().equals("available") ? "空闲" : bed.getStatus().equals("occupied") ? "占用" : bed.getStatus().equals("out") ? "外出" : bed.getStatus();
+                        Label statusTag = new Label(statusText);
+                        String tagColor = "occupied".equals(bed.getStatus()) ? "#e74c3c" : "#555";
+                        statusTag.setStyle("-fx-font-size:12px; -fx-text-fill:" + tagColor + "; -fx-padding:0 0 0 6; -fx-font-weight:bold");
+                        roomRow.getChildren().addAll(bedLabel, statusTag);
                     }
                 }
                 bedArea.getChildren().add(roomRow);
@@ -635,6 +675,23 @@ public class AdminFrame {
             Building building = ctx.getBuildingDao().findAll().stream().findFirst().orElse(null);
             if (building == null) return;
             showAddBedDialog(building.getBuildingId(), refreshBedArea);
+        });
+
+        delBedBtn.setOnAction(e -> {
+            List<Bed> availBeds = ctx.getBedDao().findAll().stream()
+                .filter(b -> "available".equals(b.getStatus())).toList();
+            if (availBeds.isEmpty()) { LoginPane.showAlert(Alert.AlertType.WARNING, "没有可删除的空闲床位"); return; }
+            ChoiceDialog<String> dlg = new ChoiceDialog<>(
+                availBeds.get(0).getBedId() + " - " + availBeds.get(0).getBedNo(),
+                availBeds.stream().map(b -> b.getBedId() + " - " + b.getBedNo()).toList());
+            dlg.setTitle("删除床位");
+            dlg.setHeaderText("选择要删除的空闲床位（占用/外出中的床位不可删除）");
+            dlg.showAndWait().ifPresent(sel -> {
+                String bedId = sel.split(" - ")[0];
+                ctx.getBedDao().delete(bedId);
+                PersistentIdGenerator.getInstance().save();
+                refreshBedArea.run();
+            });
         });
 
         swapBedBtn.setOnAction(e -> showSwapBedDialog(refreshBedArea));
@@ -650,19 +707,37 @@ public class AdminFrame {
 
         ChoiceDialog<String> dlg = new ChoiceDialog<>(
             rooms.get(0).getRoomId() + " - " + rooms.get(0).getRoomNo(),
-            rooms.stream().map(r -> r.getRoomId() + " - " + r.getRoomNo() + " (" + r.getRoomType() + ")").toList());
+            rooms.stream().map(r -> r.getRoomId() + " - " + r.getRoomNo() + " (" + r.getRoomType()
+                + " " + ctx.getBedDao().findByRoomId(r.getRoomId()).size() + "/" + r.getCapacity() + ")").toList());
         dlg.setTitle("选择房间");
         dlg.setHeaderText("请选择要添加床位的房间");
 
         dlg.showAndWait().ifPresent(sel -> {
             String roomId = sel.split(" - ")[0];
+            Room room = ctx.getRoomDao().findById(roomId);
+            int currentBeds = ctx.getBedDao().findByRoomId(roomId).size();
+            if (room != null && currentBeds >= room.getCapacity()) {
+                LoginPane.showAlert(Alert.AlertType.WARNING,
+                    "该房间容量已满（" + currentBeds + "/" + room.getCapacity() + "），无法再添加床位");
+                return;
+            }
+            // 获取已有床位号集合
+            java.util.Set<String> existingNos = new java.util.HashSet<>();
+            ctx.getBedDao().findAll().forEach(b -> existingNos.add(b.getBedNo()));
+
             TextInputDialog bedDlg = new TextInputDialog();
             bedDlg.setTitle("添加床位");
-            bedDlg.setHeaderText("请输入床位号");
+            bedDlg.setHeaderText("请输入床位号（当前 " + currentBeds + "/" + room.getCapacity() + "）");
             bedDlg.showAndWait().ifPresent(bedNo -> {
+                String trimmed = bedNo.trim();
+                if (trimmed.isEmpty()) return;
+                if (existingNos.contains(trimmed)) {
+                    LoginPane.showAlert(Alert.AlertType.WARNING, "床位号「" + trimmed + "」已存在，请使用其他编号");
+                    return;
+                }
                 Bed bed = new Bed();
                 bed.setRoomId(roomId);
-                bed.setBedNo(bedNo.trim());
+                bed.setBedNo(trimmed);
                 bed.setStatus("available");
                 ctx.getBedDao().insert(bed);
                 PersistentIdGenerator.getInstance().save();
@@ -1034,7 +1109,7 @@ public class AdminFrame {
     }
 
     // ==================== 护理项目 ====================
-    private VBox buildNursingProjects() {
+         private VBox buildNursingProjects() {
         VBox box = new VBox(10);
         box.setPadding(new Insets(15));
 
@@ -1042,49 +1117,262 @@ public class AdminFrame {
         TableColumn<CareProject, String> c1 = tc("代码", "code");
         TableColumn<CareProject, String> c2 = tc("名称", "name");
         TableColumn<CareProject, String> c3 = tc("类别", "category");
-        TableColumn<CareProject, String> c4 = tc("价格", "price");
-        table.getColumns().addAll(c1, c2, c3, c4);
-        refreshTable(table, ctx.getCareProjectDao().findAll());
+        TableColumn<CareProject, String> c4 = tc("单位", "unit");
+        TableColumn<CareProject, String> c5 = tc("价格", "price");
+        TableColumn<CareProject, String> c6 = tc("周期", "cycle");
+        TableColumn<CareProject, String> c7 = tc("状态", "status");
+        table.getColumns().addAll(c1, c2, c3, c4, c5, c6, c7);
+
+        // 定义排序规则：LZ < YL < KF，同前缀按数字升序
+        java.util.Comparator<CareProject> projectComparator = (p1, p2) -> {
+            String code1 = p1.getCode();
+            String code2 = p2.getCode();
+
+            if (code1 == null || code2 == null) return 0;
+
+            // 提取前缀
+            String prefix1 = code1.contains("-") ? code1.split("-")[0] : code1;
+            String prefix2 = code2.contains("-") ? code2.split("-")[0] : code2;
+
+            // 定义前缀优先级：LZ=1, YL=2, KF=3, 其他=4
+            int priority1 = switch (prefix1) {
+                case "LZ" -> 1;
+                case "YL" -> 2;
+                case "KF" -> 3;
+                default -> 4;
+            };
+            int priority2 = switch (prefix2) {
+                case "LZ" -> 1;
+                case "YL" -> 2;
+                case "KF" -> 3;
+                default -> 4;
+            };
+
+            // 先按前缀优先级排序
+            if (priority1 != priority2) {
+                return Integer.compare(priority1, priority2);
+            }
+
+            // 前缀相同，按数字部分升序
+            try {
+                int num1 = code1.contains("-") ? Integer.parseInt(code1.split("-")[1]) : 0;
+                int num2 = code2.contains("-") ? Integer.parseInt(code2.split("-")[1]) : 0;
+                return Integer.compare(num1, num2);
+            } catch (NumberFormatException e) {
+                return code1.compareTo(code2);
+            }
+        };
+
+        // 使用排序后的列表刷新表格
+        Runnable refreshSortedTable = () -> {
+            List<CareProject> sortedList = ctx.getCareProjectDao().findAll().stream()
+                .sorted(projectComparator)
+                .toList();
+            refreshTable(table, sortedList);
+        };
+
+        refreshSortedTable.run();
 
         Button addBtn = new Button("新增护理项目");
+        Button editBtn = new Button("编辑护理项目");
+        Button delBtn = new Button("删除护理项目");
+        Button toggleBtn = new Button("启用/停用");
+
         addBtn.setOnAction(e -> {
             Dialog<CareProject> dlg = careProjectDialog(null);
             dlg.showAndWait().ifPresent(p -> {
                 ctx.getCareProjectDao().insert(p);
                 PersistentIdGenerator.getInstance().save();
-                refreshTable(table, ctx.getCareProjectDao().findAll());
+                refreshSortedTable.run();
+                LoginPane.showAlert(Alert.AlertType.INFORMATION, "护理项目添加成功");
             });
         });
 
-        box.getChildren().addAll(addBtn, table);
+        editBtn.setOnAction(e -> {
+            CareProject sel = table.getSelectionModel().getSelectedItem();
+            if (sel == null) {
+                LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择要编辑的护理项目");
+                return;
+            }
+            Dialog<CareProject> dlg = careProjectDialog(sel);
+            dlg.showAndWait().ifPresent(p -> {
+                ctx.getCareProjectDao().update(p);
+                PersistentIdGenerator.getInstance().save();
+                refreshSortedTable.run();
+                LoginPane.showAlert(Alert.AlertType.INFORMATION, "护理项目修改成功");
+            });
+        });
+
+        delBtn.setOnAction(e -> {
+            CareProject sel = table.getSelectionModel().getSelectedItem();
+            if (sel == null) {
+                LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择要删除的护理项目");
+                return;
+            }
+
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+            confirm.setTitle("删除确认");
+            confirm.setHeaderText("确定要删除护理项目「" + sel.getName() + "」吗？");
+            confirm.setContentText("项目代码：" + sel.getCode() + "\n此操作不可撤销！");
+            confirm.showAndWait().ifPresent(r -> {
+                if (r == ButtonType.OK) {
+                    ctx.getCareProjectDao().delete(sel.getCode());
+                    PersistentIdGenerator.getInstance().save();
+                    refreshSortedTable.run();
+                    LoginPane.showAlert(Alert.AlertType.INFORMATION, "护理项目删除成功");
+                }
+            });
+        });
+
+        toggleBtn.setOnAction(e -> {
+            CareProject sel = table.getSelectionModel().getSelectedItem();
+            if (sel == null) {
+                LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择护理项目");
+                return;
+            }
+            String newStatus = "启用".equals(sel.getStatus()) ? "停用" : "启用";
+            sel.setStatus(newStatus);
+            ctx.getCareProjectDao().update(sel);
+            PersistentIdGenerator.getInstance().save();
+            refreshSortedTable.run();
+            LoginPane.showAlert(Alert.AlertType.INFORMATION, "已将项目设置为：" + newStatus);
+        });
+
+        HBox btns = new HBox(10, addBtn, editBtn, delBtn, toggleBtn);
+        box.getChildren().addAll(btns, table);
         return box;
     }
 
-    private Dialog<CareProject> careProjectDialog(CareProject existing) {
+        private Dialog<CareProject> careProjectDialog(CareProject existing) {
         Dialog<CareProject> dlg = new Dialog<>();
         dlg.setTitle(existing == null ? "新增护理项目" : "编辑护理项目");
         GridPane grid = new GridPane();
         grid.setHgap(10); grid.setVgap(10); grid.setPadding(new Insets(20));
-        TextField code = new TextField(), name = new TextField(), cat = new TextField(),
-                   unit = new TextField(), price = new TextField(), cycle = new TextField(), remark = new TextField();
-        grid.add(new Label("代码："), 0, 0); grid.add(code, 1, 0);
-        grid.add(new Label("名称："), 0, 1); grid.add(name, 1, 1);
-        grid.add(new Label("类别："), 0, 2); grid.add(cat, 1, 2);
+
+        TextField name = new TextField();
+        ComboBox<String> categoryBox = new ComboBox<>();
+        categoryBox.getItems().addAll("生活照料", "医疗护理", "康复心理");
+        categoryBox.setValue("生活照料");
+
+        TextField code = new TextField();
+        code.setEditable(false);
+        code.setPromptText("自动生成");
+
+        TextField unit = new TextField();
+        unit.setPromptText("如：次、小时、天");
+        TextField price = new TextField();
+        price.setPromptText("0");
+        TextField cycle = new TextField();
+        cycle.setPromptText("如：每天、每周、按需");
+        TextField remark = new TextField();
+        remark.setPromptText("备注说明");
+
+        // 根据名称和类别自动生成代码
+        Runnable generateCode = () -> {
+            if (existing != null) return; // 编辑时不自动生成
+
+            String categoryName = categoryBox.getValue();
+            if (categoryName == null) return;
+
+            // 根据类别确定前缀
+            String prefix = switch (categoryName) {
+                case "生活照料" -> "LZ";
+                case "医疗护理" -> "YL";
+                case "康复心理" -> "KF";
+                default -> "QT";
+            };
+
+            // 查找该类别下最大的序号
+            int maxSeq = 0;
+            for (CareProject p : ctx.getCareProjectDao().findAll()) {
+                String pCode = p.getCode();
+                if (pCode != null && pCode.startsWith(prefix + "-")) {
+                    try {
+                        int seq = Integer.parseInt(pCode.substring(3));
+                        if (seq > maxSeq) {
+                            maxSeq = seq;
+                        }
+                    } catch (NumberFormatException ignored) {
+                    }
+                }
+            }
+
+            // 生成新代码：前缀-(最大序号+1)
+            String newCode = String.format("%s-%03d", prefix, maxSeq + 1);
+            code.setText(newCode);
+        };
+
+        // 类别改变时重新生成代码
+        categoryBox.setOnAction(e -> generateCode.run());
+
+        // 初始化时生成代码
+        if (existing == null) {
+            generateCode.run();
+        } else {
+            // 编辑模式：填充现有数据
+            name.setText(existing.getName());
+            categoryBox.setValue(existing.getCategory());
+            code.setText(existing.getCode());
+            code.setEditable(true); // 编辑时允许修改代码
+            unit.setText(existing.getUnit());
+            price.setText(String.valueOf(existing.getPrice()));
+            cycle.setText(existing.getCycle());
+            remark.setText(existing.getRemark());
+        }
+
+        grid.add(new Label("项目名称："), 0, 0); grid.add(name, 1, 0);
+        grid.add(new Label("项目类别："), 0, 1); grid.add(categoryBox, 1, 1);
+        grid.add(new Label("项目代码："), 0, 2); grid.add(code, 1, 2);
         grid.add(new Label("单位："), 0, 3); grid.add(unit, 1, 3);
         grid.add(new Label("价格："), 0, 4); grid.add(price, 1, 4);
         grid.add(new Label("周期："), 0, 5); grid.add(cycle, 1, 5);
         grid.add(new Label("备注："), 0, 6); grid.add(remark, 1, 6);
+
         dlg.getDialogPane().setContent(grid);
         ButtonType okBtn = new ButtonType("确定", ButtonBar.ButtonData.OK_DONE);
         dlg.getDialogPane().getButtonTypes().addAll(okBtn, ButtonType.CANCEL);
+
         dlg.setResultConverter(btn -> {
-            if (btn != okBtn || code.getText().trim().isEmpty()) return null;
-            return new CareProject(code.getText().trim(), name.getText().trim(), cat.getText().trim(),
-                unit.getText().trim(), Double.parseDouble(price.getText().isEmpty() ? "0" : price.getText()),
-                cycle.getText().trim(), 1, "启用", remark.getText().trim());
+            if (btn != okBtn || name.getText().trim().isEmpty()) {
+                LoginPane.showAlert(Alert.AlertType.WARNING, "请填写项目名称");
+                return null;
+            }
+
+            String codeText = code.getText().trim();
+
+            // 检查代码是否为空
+            if (codeText.isEmpty()) {
+                LoginPane.showAlert(Alert.AlertType.ERROR, "项目代码不能为空！");
+                return null;
+            }
+
+            // 检查代码格式（建议格式：前缀-序号，如 LZ-001）
+            if (!codeText.matches("^[A-Z]{2}-\\d{3}$")) {
+                LoginPane.showAlert(Alert.AlertType.ERROR,
+                    "项目代码格式不正确！\n建议使用格式：前缀-序号（如 LZ-001、YL-002）\n前缀为2个大写字母，序号为3位数字");
+                return null;
+            }
+
+            // 检查代码是否已存在（编辑时排除自己）
+            CareProject existingProject = ctx.getCareProjectDao().findByCode(codeText);
+            if (existingProject != null && (existing == null || !existingProject.getCode().equals(existing.getCode()))) {
+                LoginPane.showAlert(Alert.AlertType.ERROR,
+                    "项目代码「" + codeText + "」已存在，请使用其他代码！");
+                return null;
+            }
+
+            try {
+                double p = Double.parseDouble(price.getText().isEmpty() ? "0" : price.getText());
+                return new CareProject(codeText, name.getText().trim(), categoryBox.getValue(),
+                    unit.getText().trim(), p, cycle.getText().trim(), 1, "启用", remark.getText().trim());
+            } catch (NumberFormatException ex) {
+                LoginPane.showAlert(Alert.AlertType.ERROR, "价格格式不正确，请输入数字！");
+                return null;
+            }
         });
         return dlg;
     }
+
 
     // ==================== 护理记录 ====================
     private VBox buildNursingRecords() {
@@ -1173,6 +1461,15 @@ public class AdminFrame {
             if (sel == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择客户"); return; }
             String customerId = sel.split(" - ")[0];
             String customerName = sel.split(" - ")[1];
+            // 检查是否有未购买的项目
+            List<CustomerCareProject> owned = ctx.getCustomerCareProjectDao().findByCustomerId(customerId);
+            List<CareProject> available = ctx.getCareProjectDao().findAll().stream()
+                .filter(p -> owned.stream().noneMatch(o -> o.getProjectCode().equals(p.getCode())))
+                .toList();
+            if (available.isEmpty()) {
+                LoginPane.showAlert(Alert.AlertType.INFORMATION, "该客户已购买所有护理项目，无需再买");
+                return;
+            }
             showBuyProjectDialog(customerId, customerName, table);
         });
 
@@ -1292,12 +1589,15 @@ public class AdminFrame {
         HBox topRow = new HBox(10);
         ComboBox<String> butlerBox = new ComboBox<>();
         butlerBox.setPromptText("选择健康管家(护工)");
+        // 默认选项"无"显示全部
+        butlerBox.getItems().add("无 - 全部");
         // 用 Employee 表查找管家/护工，不用 User 表
         ctx.getEmployeeDao().findAll().forEach(emp -> {
             if (emp.getPosition() != null && (emp.getPosition().contains("管家") || emp.getPosition().contains("护工"))) {
                 butlerBox.getItems().add(emp.getEmployeeId() + " - " + emp.getName());
             }
         });
+        butlerBox.setValue("无 - 全部");
 
         topRow.getChildren().addAll(new Label("健康管家："), butlerBox);
 
@@ -1313,9 +1613,15 @@ public class AdminFrame {
         TableColumn<ServiceAssignment, String> c3 = tc("状态", "status");
         table.getColumns().addAll(c0, c1, c2, c3);
 
+        // 默认显示全部
+        refreshTable(table, ctx.getServiceAssignmentDao().findAll());
+
         butlerBox.setOnAction(e -> {
             String sel = butlerBox.getValue();
-            if (sel != null) {
+            if (sel == null) return;
+            if ("无 - 全部".equals(sel)) {
+                refreshTable(table, ctx.getServiceAssignmentDao().findAll());
+            } else {
                 String empId = sel.split(" - ")[0];
                 refreshTable(table, ctx.getServiceAssignmentDao().findByEmployeeId(empId));
             }
@@ -1326,7 +1632,7 @@ public class AdminFrame {
 
         addClientBtn.setOnAction(e -> {
             String sel = butlerBox.getValue();
-            if (sel == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择管家"); return; }
+            if (sel == null || "无 - 全部".equals(sel)) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择具体管家"); return; }
             String empId = sel.split(" - ")[0];
             String empName = sel.split(" - ")[1];
 
@@ -1369,7 +1675,9 @@ public class AdminFrame {
                     ctx.getServiceAssignmentDao().delete(sa.getAssignmentId());
                     PersistentIdGenerator.getInstance().save();
                     String selValue = butlerBox.getValue();
-                    if (selValue != null) refreshTable(table, ctx.getServiceAssignmentDao().findByEmployeeId(selValue.split(" - ")[0]));
+                    if (selValue == null) return;
+                    if ("无 - 全部".equals(selValue)) refreshTable(table, ctx.getServiceAssignmentDao().findAll());
+                    else refreshTable(table, ctx.getServiceAssignmentDao().findByEmployeeId(selValue.split(" - ")[0]));
                 }
             });
         });
@@ -1555,7 +1863,7 @@ public class AdminFrame {
             Elderly elder = ctx.getElderlyDao().findById(r.getCustomerId());
             if (elder != null && elder.getBedId() != null) {
                 Bed bed = ctx.getBedDao().findById(elder.getBedId());
-                if (bed != null) bed.setStatus("out");
+                if (bed != null) { bed.setStatus("out"); ctx.getBedDao().update(bed); }
             }
             PersistentIdGenerator.getInstance().save();
             refresh.run();
@@ -1613,7 +1921,7 @@ public class AdminFrame {
                     ctx.getElderlyDao().update(elder);
                     if (elder.getBedId() != null) {
                         Bed bed = ctx.getBedDao().findById(elder.getBedId());
-                        if (bed != null) bed.setStatus("available");
+                        if (bed != null) { bed.setStatus("available"); ctx.getBedDao().update(bed); }
                     }
                 }
             }

@@ -1,0 +1,148 @@
+@startuml 护理模块-核心
+
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontSize 10
+skinparam dpi 96
+
+skinparam class {
+    BorderColor #2C5F2D
+    BorderThickness 1.5
+    BackgroundColor #F2F9F2
+    FontSize 11
+    HeaderBackgroundColor #2C5F2D
+    HeaderFontColor #FFFFFF
+}
+
+skinparam abstractClass {
+    BorderColor #6B8E23
+    BorderThickness 1.5
+    BackgroundColor #F8FBF5
+    FontSize 11
+    HeaderBackgroundColor #6B8E23
+    HeaderFontColor #FFFFFF
+    FontStyle italic
+}
+
+skinparam package {
+    BorderThickness 1.5
+    BackgroundColor #F8FDF8
+    FontStyle bold
+    FontSize 12
+}
+
+skinparam arrow {
+    Color #6B8E23
+    Thickness 1.2
+}
+
+skinparam nodesep 20
+skinparam ranksep 25
+
+package "model" #E8F8E8 {
+    class NursingLevel {
+        - code : String
+        - name : String
+        - description : String
+        - frequency : String
+    }
+    class CareProject {
+        - code : String
+        - name : String
+        - category : String
+        - price : double
+        - unit : String
+        - cycle : String
+    }
+    class NursingContent {
+        - contentId : String
+        - contentName : String
+        - careProjectCode : String
+        - nursingLevelCode : String
+        - standardDuration : String
+    }
+    class CareRecord {
+        - id : String
+        - elderlyId : String
+        - projectCode : String
+        - executeTime : String
+        - nurseName : String
+    }
+}
+
+package "dao" #F0F4E8 {
+    abstract class BaseJsonDao<T> {
+        + findAll() : List\<T\>
+        + findById(String) : T
+        + insert(T) : boolean
+        + update / delete / exists
+        + load() / save()
+    }
+    class NursingLevelDao {
+        + findByCode(String)
+    }
+    class CareProjectDao {
+        + findByCode(String)
+        + findApplicable(String)
+    }
+    class NursingContentDao {
+        + findByProjectCode(String)
+        + findByLevelCode(String)
+    }
+    class CareRecordDao {
+        + findByElderlyId(String)
+        + findByNurseName(String)
+        + findByProjectCode(String)
+    }
+}
+
+package "service" #FEF5E8 {
+    class NursingLevelService {
+        - dao
+        + findAll() / findByCode()
+        + add / update / delete
+    }
+    class CareProjectService {
+        - dao
+        + findAll() / findByCode()
+        + findApplicable(String)
+        + add / update / delete
+    }
+    class NursingContentService {
+        - dao
+        + findAll()
+        + findByProjectCode / findByLevelCode
+        + add / update / delete
+    }
+    class CareRecordService {
+        - dao
+        + findAll()
+        + findByElderlyId / findByNurseName
+        + add / update / delete
+    }
+}
+
+' === 继承 ===
+BaseJsonDao <|-- NursingLevelDao
+BaseJsonDao <|-- CareProjectDao
+BaseJsonDao <|-- NursingContentDao
+BaseJsonDao <|-- CareRecordDao
+
+' === 泛型绑定 ===
+NursingLevelDao .......> NursingLevel
+CareProjectDao .......> CareProject
+NursingContentDao ....> NursingContent
+CareRecordDao ........> CareRecord
+
+' === Service → DAO ===
+NursingLevelService --> NursingLevelDao
+CareProjectService --> CareProjectDao
+NursingContentService --> NursingContentDao
+CareRecordService --> CareRecordDao
+
+' === 模型关联 ===
+NursingContent ..> CareProject : project
+NursingContent ..> NursingLevel : level
+CareRecord ......> CareProject : project
+
+@enduml

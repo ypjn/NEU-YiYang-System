@@ -1,0 +1,178 @@
+@startuml 客户管理-后端架构
+
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontSize 10
+skinparam dpi 96
+
+skinparam class {
+    BorderColor #8B4513
+    BorderThickness 1.5
+    BackgroundColor #FDF5E6
+    FontSize 11
+    HeaderBackgroundColor #8B4513
+    HeaderFontColor #FFFFFF
+}
+
+skinparam abstractClass {
+    BorderColor #A0522D
+    BorderThickness 1.5
+    BackgroundColor #FDF8F3
+    FontSize 11
+    HeaderBackgroundColor #A0522D
+    HeaderFontColor #FFFFFF
+    FontStyle italic
+}
+
+skinparam package {
+    BorderThickness 1.5
+    BackgroundColor #FDFAF5
+    FontStyle bold
+    FontSize 12
+}
+
+skinparam arrow {
+    Color #A0522D
+    Thickness 1.2
+}
+
+skinparam nodesep 15
+skinparam ranksep 20
+
+package "model" #FDF0E0 {
+    class Elderly <<客户核心>> {
+        - id / name / age / gender
+        - phone / idCard
+        - bedId / nursingLevelCode
+        - roomNo / status
+    }
+
+    together {
+        class BedDetail <<床位分配>> {
+            - detailId / bedId
+            - customerId
+            - assignDate / releaseDate
+        }
+        class CheckOut <<退住>> {
+            - checkoutId / customerId
+            - checkoutDate / reason
+        }
+        class OutRegistration <<外出>> {
+            - outId / customerId
+            - outTime / companion
+            - expectedReturnTime
+            - status
+        }
+    }
+
+    together {
+        class HealthRecord <<健康>> {
+            - healthId / customerId
+            - recordDate
+            - bloodPressure / heartRate
+            - bloodSugar / weight
+        }
+        class DietPreference <<膳食>> {
+            - preferenceId / customerId
+            - preferenceType
+            - allergies / taboos
+        }
+    }
+}
+
+package "dao" #F0EDE0 {
+    abstract class BaseJsonDao<T> {
+        + findAll() / findById()
+        + insert / update / delete
+        + exists() / load() / save()
+    }
+
+    together {
+        class ElderlyDao {
+            + findByName(String)
+            + findByNursingLevel(String)
+            + findByBedId(String) : Elderly
+            + findActive()
+        }
+        class BedDetailDao {
+            + findByCustomerId(String)
+        }
+        class CheckOutDao {
+            + findByCustomerId(String)
+        }
+    }
+
+    together {
+        class OutRegistrationDao {
+            + findByCustomerId(String)
+            + findByStatus(String)
+        }
+        class HealthRecordDao {
+            + findByCustomerId(String)
+            + findByDateRange(s, e)
+        }
+        class DietPreferenceDao {
+            + findByCustomerId(String)
+        }
+    }
+}
+
+package "service" #FDF5E6 {
+    together {
+        class ElderlyService {
+            + findAll() / findByName()
+            + findActive()
+            + add / update / delete
+        }
+        class BedDetailService {
+            + findAll()
+            + findByCustomerId()
+            + add / update / delete
+        }
+        class CheckOutService {
+            + findAll()
+            + findByCustomerId()
+            + add / update / delete
+        }
+    }
+
+    together {
+        class OutRegistrationService {
+            + findAll()
+            + findByCustomerId()
+            + add / update / delete
+        }
+        class HealthRecordService {
+            + findAll()
+            + findByDateRange()
+            + add / update / delete
+        }
+        class DietPreferenceService {
+            + findAll()
+            + findByCustomerId()
+            + add / update / delete
+        }
+    }
+}
+
+BaseJsonDao <|-- ElderlyDao
+BaseJsonDao <|-- BedDetailDao
+BaseJsonDao <|-- CheckOutDao
+BaseJsonDao <|-- OutRegistrationDao
+BaseJsonDao <|-- HealthRecordDao
+BaseJsonDao <|-- DietPreferenceDao
+
+ElderlyService --> ElderlyDao
+BedDetailService --> BedDetailDao
+CheckOutService --> CheckOutDao
+OutRegistrationService --> OutRegistrationDao
+HealthRecordService --> HealthRecordDao
+DietPreferenceService --> DietPreferenceDao
+
+BedDetail .......> Elderly : customerId
+CheckOut ........> Elderly : customerId
+OutRegistration .> Elderly : customerId
+HealthRecord ....> Elderly : customerId
+DietPreference ..> Elderly : customerId
+
+@enduml
