@@ -30,7 +30,7 @@ bin/
 .DS_Store
 
 ### Project data ###
-data/
+# data/ — 已开放，允许共享测试数据
 
 ### Maven ###
 target/

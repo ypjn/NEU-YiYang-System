@@ -1,0 +1,31 @@
+[ {
+  "userId" : "U0001",
+  "username" : "admin",
+  "password" : "admin",
+  "role" : "admin",
+  "realName" : "系统管理员",
+  "phone" : "13800000000",
+  "securityQuestion" : null,
+  "securityAnswer" : null,
+  "createTime" : "2026-05-24 20:35:34"
+}, {
+  "userId" : "U0002",
+  "username" : "nurse",
+  "password" : "nurse",
+  "role" : "nurse",
+  "realName" : "护工张三",
+  "phone" : "13800000001",
+  "securityQuestion" : null,
+  "securityAnswer" : null,
+  "createTime" : "2026-05-24 20:35:34"
+}, {
+  "userId" : "U0004",
+  "username" : "小苏",
+  "password" : "000000",
+  "role" : "nurse",
+  "realName" : "苏一一",
+  "phone" : "16666666666",
+  "securityQuestion" : null,
+  "securityAnswer" : null,
+  "createTime" : "2026-05-25 20:01:15"
+} ]

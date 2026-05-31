@@ -1,0 +1,111 @@
+[ {
+  "assignmentId" : "SA0007",
+  "employeeId" : "EMP0016",
+  "elderlyId" : "E0017",
+  "serviceType" : "日常护理",
+  "startDate" : "2025-03-15",
+  "endDate" : null,
+  "fee" : 0.0,
+  "status" : "服务中",
+  "remark" : null,
+  "operatorName" : "系统管理员"
+}, {
+  "assignmentId" : "SA0008",
+  "employeeId" : "EMP0016",
+  "elderlyId" : "E0021",
+  "serviceType" : "重病护理",
+  "startDate" : "2024-06-20",
+  "endDate" : null,
+  "fee" : 0.0,
+  "status" : "服务中",
+  "remark" : null,
+  "operatorName" : "系统管理员"
+}, {
+  "assignmentId" : "SA0009",
+  "employeeId" : "EMP0016",
+  "elderlyId" : "E0023",
+  "serviceType" : "日常护理",
+  "startDate" : "2025-01-10",
+  "endDate" : null,
+  "fee" : 0.0,
+  "status" : "服务中",
+  "remark" : null,
+  "operatorName" : "系统管理员"
+}, {
+  "assignmentId" : "SA0010",
+  "employeeId" : "EMP0017",
+  "elderlyId" : "E0018",
+  "serviceType" : "日常护理",
+  "startDate" : "2025-06-01",
+  "endDate" : null,
+  "fee" : 0.0,
+  "status" : "服务中",
+  "remark" : null,
+  "operatorName" : "系统管理员"
+}, {
+  "assignmentId" : "SA0011",
+  "employeeId" : "EMP0017",
+  "elderlyId" : "E0019",
+  "serviceType" : "日常护理",
+  "startDate" : "2024-09-01",
+  "endDate" : null,
+  "fee" : 0.0,
+  "status" : "服务中",
+  "remark" : null,
+  "operatorName" : "系统管理员"
+}, {
+  "assignmentId" : "SA0012",
+  "employeeId" : "EMP0017",
+  "elderlyId" : "E0020",
+  "serviceType" : "日常护理",
+  "startDate" : "2024-11-15",
+  "endDate" : null,
+  "fee" : 0.0,
+  "status" : "服务中",
+  "remark" : null,
+  "operatorName" : "系统管理员"
+}, {
+  "assignmentId" : "SA0013",
+  "employeeId" : "EMP0018",
+  "elderlyId" : "E0022",
+  "serviceType" : "重病护理",
+  "startDate" : "2024-03-01",
+  "endDate" : null,
+  "fee" : 0.0,
+  "status" : "服务中",
+  "remark" : null,
+  "operatorName" : "系统管理员"
+}, {
+  "assignmentId" : "SA0014",
+  "employeeId" : "EMP0019",
+  "elderlyId" : "E0024",
+  "serviceType" : "专业护理",
+  "startDate" : "2024-04-15",
+  "endDate" : null,
+  "fee" : 0.0,
+  "status" : "服务中",
+  "remark" : null,
+  "operatorName" : "系统管理员"
+}, {
+  "assignmentId" : "SA0015",
+  "employeeId" : "EMP0020",
+  "elderlyId" : "E0025",
+  "serviceType" : "日常护理",
+  "startDate" : "2025-07-01",
+  "endDate" : null,
+  "fee" : 0.0,
+  "status" : "服务中",
+  "remark" : null,
+  "operatorName" : "系统管理员"
+}, {
+  "assignmentId" : "SA0016",
+  "employeeId" : "EMP0020",
+  "elderlyId" : "E0026",
+  "serviceType" : "日常护理",
+  "startDate" : "2024-08-20",
+  "endDate" : null,
+  "fee" : 0.0,
+  "status" : "服务中",
+  "remark" : null,
+  "operatorName" : "系统管理员"
+} ]

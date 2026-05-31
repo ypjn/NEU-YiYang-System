@@ -1,0 +1,18 @@
+{
+  "bed" : 70,
+  "nursing_content" : 30,
+  "role" : 4,
+  "out_registration" : 3,
+  "log" : 12,
+  "elderly" : 26,
+  "customer_care_project" : 41,
+  "employee" : 20,
+  "message" : 1,
+  "building" : 4,
+  "food" : 20,
+  "room" : 34,
+  "health_record" : 12,
+  "care_record" : 8,
+  "user" : 7,
+  "service_assignment" : 16
+}

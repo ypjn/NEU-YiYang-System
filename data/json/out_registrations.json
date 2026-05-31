@@ -1,0 +1,13 @@
+[ {
+  "outId" : "OUT0003",
+  "customerId" : "E0016",
+  "outTime" : "2026-05-31 11:03",
+  "expectedReturnTime" : "2026-06-01 18:00",
+  "actualReturnTime" : null,
+  "companion" : "护工张三",
+  "reason" : "探亲",
+  "status" : "申请中",
+  "approvalStatus" : "通过",
+  "approvalTime" : "2026-05-31 11:04:09",
+  "approver" : "系统管理员"
+} ]

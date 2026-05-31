@@ -1,0 +1,241 @@
+[ {
+  "contentId" : "NC0001",
+  "contentName" : "晨间护理",
+  "careProjectCode" : "LZ-001",
+  "nursingLevelCode" : "ZL",
+  "description" : "每日基础晨间护理",
+  "standardDuration" : "30分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0002",
+  "contentName" : "晚间护理",
+  "careProjectCode" : "LZ-002",
+  "nursingLevelCode" : "ZL",
+  "description" : "每日基础晚间护理",
+  "standardDuration" : "30分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0003",
+  "contentName" : "生命体征监测",
+  "careProjectCode" : "YL-001",
+  "nursingLevelCode" : "ZL",
+  "description" : "每日1次测量血压心率",
+  "standardDuration" : "10分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0004",
+  "contentName" : "晨间护理",
+  "careProjectCode" : "LZ-001",
+  "nursingLevelCode" : "HL-1",
+  "description" : "每日晨间护理",
+  "standardDuration" : "30分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0005",
+  "contentName" : "晚间护理",
+  "careProjectCode" : "LZ-002",
+  "nursingLevelCode" : "HL-1",
+  "description" : "每日晚间护理",
+  "standardDuration" : "30分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0006",
+  "contentName" : "剪指甲/理发",
+  "careProjectCode" : "LZ-006",
+  "nursingLevelCode" : "HL-1",
+  "description" : "每周理发修甲",
+  "standardDuration" : "30分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0007",
+  "contentName" : "生命体征监测",
+  "careProjectCode" : "YL-001",
+  "nursingLevelCode" : "HL-1",
+  "description" : "每日2次测量",
+  "standardDuration" : "15分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0008",
+  "contentName" : "药物管理与喂药",
+  "careProjectCode" : "YL-002",
+  "nursingLevelCode" : "HL-1",
+  "description" : "按医嘱执行",
+  "standardDuration" : "15分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0009",
+  "contentName" : "晨间护理",
+  "careProjectCode" : "LZ-001",
+  "nursingLevelCode" : "HL-2",
+  "description" : "每日晨间护理",
+  "standardDuration" : "30分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0010",
+  "contentName" : "晚间护理",
+  "careProjectCode" : "LZ-002",
+  "nursingLevelCode" : "HL-2",
+  "description" : "每日晚间护理",
+  "standardDuration" : "30分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0011",
+  "contentName" : "床上擦浴",
+  "careProjectCode" : "LZ-003",
+  "nursingLevelCode" : "HL-2",
+  "description" : "隔天擦浴",
+  "standardDuration" : "30分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0012",
+  "contentName" : "协助进食",
+  "careProjectCode" : "LZ-004",
+  "nursingLevelCode" : "HL-2",
+  "description" : "每餐协助",
+  "standardDuration" : "30分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0013",
+  "contentName" : "协助如厕",
+  "careProjectCode" : "LZ-005",
+  "nursingLevelCode" : "HL-2",
+  "description" : "按需协助",
+  "standardDuration" : "15分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0014",
+  "contentName" : "生命体征监测",
+  "careProjectCode" : "YL-001",
+  "nursingLevelCode" : "HL-2",
+  "description" : "每日3次测量",
+  "standardDuration" : "15分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0015",
+  "contentName" : "药物管理与喂药",
+  "careProjectCode" : "YL-002",
+  "nursingLevelCode" : "HL-2",
+  "description" : "按医嘱执行",
+  "standardDuration" : "15分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0016",
+  "contentName" : "晨间护理",
+  "careProjectCode" : "LZ-001",
+  "nursingLevelCode" : "HL-3",
+  "description" : "每日晨间全套护理",
+  "standardDuration" : "45分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0017",
+  "contentName" : "晚间护理",
+  "careProjectCode" : "LZ-002",
+  "nursingLevelCode" : "HL-3",
+  "description" : "每日晚间全套护理",
+  "standardDuration" : "45分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0018",
+  "contentName" : "床上擦浴",
+  "careProjectCode" : "LZ-003",
+  "nursingLevelCode" : "HL-3",
+  "description" : "每日擦浴",
+  "standardDuration" : "30分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0019",
+  "contentName" : "鼻饲护理",
+  "careProjectCode" : "LZ-004",
+  "nursingLevelCode" : "HL-3",
+  "description" : "每餐鼻饲",
+  "standardDuration" : "30分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0020",
+  "contentName" : "更换尿布",
+  "careProjectCode" : "LZ-005",
+  "nursingLevelCode" : "HL-3",
+  "description" : "按需更换",
+  "standardDuration" : "15分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0021",
+  "contentName" : "翻身拍背防褥疮",
+  "careProjectCode" : "LZ-007",
+  "nursingLevelCode" : "HL-3",
+  "description" : "每2小时翻身",
+  "standardDuration" : "20分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0022",
+  "contentName" : "生命体征监测",
+  "careProjectCode" : "YL-001",
+  "nursingLevelCode" : "HL-3",
+  "description" : "每4小时测量",
+  "standardDuration" : "15分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0023",
+  "contentName" : "药物管理与喂药",
+  "careProjectCode" : "YL-002",
+  "nursingLevelCode" : "HL-3",
+  "description" : "按医嘱执行",
+  "standardDuration" : "15分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0024",
+  "contentName" : "生命体征监测",
+  "careProjectCode" : "YL-001",
+  "nursingLevelCode" : "YZ",
+  "description" : "定时测量",
+  "standardDuration" : "15分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0025",
+  "contentName" : "药物管理与喂药",
+  "careProjectCode" : "YL-002",
+  "nursingLevelCode" : "YZ",
+  "description" : "按医嘱执行",
+  "standardDuration" : "15分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0026",
+  "contentName" : "伤口换药",
+  "careProjectCode" : "YL-003",
+  "nursingLevelCode" : "YZ",
+  "description" : "隔天换药",
+  "standardDuration" : "30分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0027",
+  "contentName" : "导管护理",
+  "careProjectCode" : "YL-004",
+  "nursingLevelCode" : "YZ",
+  "description" : "每周维护",
+  "standardDuration" : "30分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0028",
+  "contentName" : "吸氧治疗",
+  "careProjectCode" : "YL-005",
+  "nursingLevelCode" : "YZ",
+  "description" : "按需执行",
+  "standardDuration" : "按需",
+  "remark" : ""
+}, {
+  "contentId" : "NC0029",
+  "contentName" : "肢体被动训练",
+  "careProjectCode" : "KF-001",
+  "nursingLevelCode" : "YZ",
+  "description" : "每日康复训练",
+  "standardDuration" : "30分钟",
+  "remark" : ""
+}, {
+  "contentId" : "NC0030",
+  "contentName" : "心理疏导",
+  "careProjectCode" : "KF-003",
+  "nursingLevelCode" : "YZ",
+  "description" : "每周心理疏导",
+  "standardDuration" : "40分钟",
+  "remark" : ""
+} ]

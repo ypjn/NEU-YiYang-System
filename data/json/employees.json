@@ -1,0 +1,56 @@
+[ {
+  "employeeId" : "EMP0016",
+  "name" : "李管家",
+  "gender" : "女",
+  "position" : "健康管家",
+  "phone" : "13900000001",
+  "idCard" : null,
+  "hireDate" : "2024-01-01",
+  "salary" : 6000.0,
+  "status" : "在岗",
+  "remark" : ""
+}, {
+  "employeeId" : "EMP0017",
+  "name" : "王管家",
+  "gender" : "男",
+  "position" : "健康管家",
+  "phone" : "13900000002",
+  "idCard" : null,
+  "hireDate" : "2024-03-01",
+  "salary" : 6000.0,
+  "status" : "在岗",
+  "remark" : ""
+}, {
+  "employeeId" : "EMP0018",
+  "name" : "张三",
+  "gender" : "男",
+  "position" : "护工",
+  "phone" : "13900000003",
+  "idCard" : null,
+  "hireDate" : "2024-02-01",
+  "salary" : 5000.0,
+  "status" : "在岗",
+  "remark" : ""
+}, {
+  "employeeId" : "EMP0019",
+  "name" : "赵护工",
+  "gender" : "女",
+  "position" : "护工",
+  "phone" : "13900000004",
+  "idCard" : null,
+  "hireDate" : "2024-06-01",
+  "salary" : 5000.0,
+  "status" : "在岗",
+  "remark" : ""
+}, {
+  "employeeId" : "EMP0020",
+  "name" : "钱护工",
+  "gender" : "男",
+  "position" : "护工",
+  "phone" : "13900000005",
+  "idCard" : null,
+  "hireDate" : "2025-01-01",
+  "salary" : 5000.0,
+  "status" : "在岗",
+  "remark" : ""
+} ]

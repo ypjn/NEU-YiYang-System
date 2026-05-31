@@ -1,0 +1,274 @@
+[ {
+  "id" : "CCP0003",
+  "customerId" : "E0017",
+  "projectCode" : "LZ-001",
+  "quantity" : 1,
+  "purchaseDate" : "2025-03-15 10:00:00",
+  "expireDate" : "2027-03-14"
+}, {
+  "id" : "CCP0004",
+  "customerId" : "E0017",
+  "projectCode" : "LZ-002",
+  "quantity" : 1,
+  "purchaseDate" : "2025-03-15 10:00:00",
+  "expireDate" : "2027-03-14"
+}, {
+  "id" : "CCP0005",
+  "customerId" : "E0017",
+  "projectCode" : "YL-001",
+  "quantity" : 1,
+  "purchaseDate" : "2025-03-15 10:00:00",
+  "expireDate" : "2027-03-14"
+}, {
+  "id" : "CCP0006",
+  "customerId" : "E0018",
+  "projectCode" : "LZ-001",
+  "quantity" : 1,
+  "purchaseDate" : "2025-06-01 10:00:00",
+  "expireDate" : "2027-05-31"
+}, {
+  "id" : "CCP0007",
+  "customerId" : "E0018",
+  "projectCode" : "YL-001",
+  "quantity" : 1,
+  "purchaseDate" : "2025-06-01 10:00:00",
+  "expireDate" : "2027-05-31"
+}, {
+  "id" : "CCP0008",
+  "customerId" : "E0018",
+  "projectCode" : "YL-002",
+  "quantity" : 1,
+  "purchaseDate" : "2025-06-01 10:00:00",
+  "expireDate" : "2027-05-31"
+}, {
+  "id" : "CCP0009",
+  "customerId" : "E0019",
+  "projectCode" : "LZ-001",
+  "quantity" : 1,
+  "purchaseDate" : "2024-09-01 10:00:00",
+  "expireDate" : "2026-08-31"
+}, {
+  "id" : "CCP0010",
+  "customerId" : "E0019",
+  "projectCode" : "YL-001",
+  "quantity" : 1,
+  "purchaseDate" : "2024-09-01 10:00:00",
+  "expireDate" : "2026-08-31"
+}, {
+  "id" : "CCP0011",
+  "customerId" : "E0020",
+  "projectCode" : "LZ-001",
+  "quantity" : 1,
+  "purchaseDate" : "2024-11-15 10:00:00",
+  "expireDate" : "2026-11-14"
+}, {
+  "id" : "CCP0012",
+  "customerId" : "E0020",
+  "projectCode" : "LZ-003",
+  "quantity" : 1,
+  "purchaseDate" : "2024-11-15 10:00:00",
+  "expireDate" : "2026-11-14"
+}, {
+  "id" : "CCP0013",
+  "customerId" : "E0020",
+  "projectCode" : "LZ-004",
+  "quantity" : 1,
+  "purchaseDate" : "2024-11-15 10:00:00",
+  "expireDate" : "2026-11-14"
+}, {
+  "id" : "CCP0014",
+  "customerId" : "E0020",
+  "projectCode" : "YL-001",
+  "quantity" : 1,
+  "purchaseDate" : "2024-11-15 10:00:00",
+  "expireDate" : "2026-11-14"
+}, {
+  "id" : "CCP0015",
+  "customerId" : "E0020",
+  "projectCode" : "YL-002",
+  "quantity" : 1,
+  "purchaseDate" : "2024-11-15 10:00:00",
+  "expireDate" : "2026-11-14"
+}, {
+  "id" : "CCP0016",
+  "customerId" : "E0021",
+  "projectCode" : "LZ-001",
+  "quantity" : 1,
+  "purchaseDate" : "2024-06-20 10:00:00",
+  "expireDate" : "2026-06-19"
+}, {
+  "id" : "CCP0017",
+  "customerId" : "E0021",
+  "projectCode" : "LZ-002",
+  "quantity" : 1,
+  "purchaseDate" : "2024-06-20 10:00:00",
+  "expireDate" : "2026-06-19"
+}, {
+  "id" : "CCP0018",
+  "customerId" : "E0021",
+  "projectCode" : "LZ-003",
+  "quantity" : 1,
+  "purchaseDate" : "2024-06-20 10:00:00",
+  "expireDate" : "2026-06-19"
+}, {
+  "id" : "CCP0019",
+  "customerId" : "E0021",
+  "projectCode" : "LZ-007",
+  "quantity" : 1,
+  "purchaseDate" : "2024-06-20 10:00:00",
+  "expireDate" : "2026-06-19"
+}, {
+  "id" : "CCP0020",
+  "customerId" : "E0021",
+  "projectCode" : "YL-001",
+  "quantity" : 1,
+  "purchaseDate" : "2024-06-20 10:00:00",
+  "expireDate" : "2026-06-19"
+}, {
+  "id" : "CCP0021",
+  "customerId" : "E0021",
+  "projectCode" : "YL-002",
+  "quantity" : 1,
+  "purchaseDate" : "2024-06-20 10:00:00",
+  "expireDate" : "2026-06-19"
+}, {
+  "id" : "CCP0022",
+  "customerId" : "E0022",
+  "projectCode" : "LZ-001",
+  "quantity" : 1,
+  "purchaseDate" : "2024-03-01 10:00:00",
+  "expireDate" : "2026-02-28"
+}, {
+  "id" : "CCP0023",
+  "customerId" : "E0022",
+  "projectCode" : "LZ-003",
+  "quantity" : 1,
+  "purchaseDate" : "2024-03-01 10:00:00",
+  "expireDate" : "2026-02-28"
+}, {
+  "id" : "CCP0024",
+  "customerId" : "E0022",
+  "projectCode" : "LZ-007",
+  "quantity" : 1,
+  "purchaseDate" : "2024-03-01 10:00:00",
+  "expireDate" : "2026-02-28"
+}, {
+  "id" : "CCP0025",
+  "customerId" : "E0022",
+  "projectCode" : "YL-001",
+  "quantity" : 2,
+  "purchaseDate" : "2024-03-01 10:00:00",
+  "expireDate" : "2026-02-28"
+}, {
+  "id" : "CCP0026",
+  "customerId" : "E0023",
+  "projectCode" : "LZ-001",
+  "quantity" : 1,
+  "purchaseDate" : "2025-01-10 10:00:00",
+  "expireDate" : "2027-01-09"
+}, {
+  "id" : "CCP0027",
+  "customerId" : "E0023",
+  "projectCode" : "YL-001",
+  "quantity" : 1,
+  "purchaseDate" : "2025-01-10 10:00:00",
+  "expireDate" : "2027-01-09"
+}, {
+  "id" : "CCP0028",
+  "customerId" : "E0023",
+  "projectCode" : "KF-001",
+  "quantity" : 1,
+  "purchaseDate" : "2025-01-10 10:00:00",
+  "expireDate" : "2027-01-09"
+}, {
+  "id" : "CCP0029",
+  "customerId" : "E0024",
+  "projectCode" : "YL-001",
+  "quantity" : 2,
+  "purchaseDate" : "2024-04-15 10:00:00",
+  "expireDate" : "2026-04-14"
+}, {
+  "id" : "CCP0030",
+  "customerId" : "E0024",
+  "projectCode" : "YL-002",
+  "quantity" : 1,
+  "purchaseDate" : "2024-04-15 10:00:00",
+  "expireDate" : "2026-04-14"
+}, {
+  "id" : "CCP0031",
+  "customerId" : "E0024",
+  "projectCode" : "YL-003",
+  "quantity" : 1,
+  "purchaseDate" : "2024-04-15 10:00:00",
+  "expireDate" : "2026-04-14"
+}, {
+  "id" : "CCP0032",
+  "customerId" : "E0024",
+  "projectCode" : "YL-004",
+  "quantity" : 1,
+  "purchaseDate" : "2024-04-15 10:00:00",
+  "expireDate" : "2026-04-14"
+}, {
+  "id" : "CCP0033",
+  "customerId" : "E0024",
+  "projectCode" : "LZ-001",
+  "quantity" : 1,
+  "purchaseDate" : "2024-04-15 10:00:00",
+  "expireDate" : "2026-04-14"
+}, {
+  "id" : "CCP0034",
+  "customerId" : "E0024",
+  "projectCode" : "LZ-007",
+  "quantity" : 1,
+  "purchaseDate" : "2024-04-15 10:00:00",
+  "expireDate" : "2026-04-14"
+}, {
+  "id" : "CCP0035",
+  "customerId" : "E0025",
+  "projectCode" : "LZ-001",
+  "quantity" : 1,
+  "purchaseDate" : "2025-07-01 10:00:00",
+  "expireDate" : "2027-06-30"
+}, {
+  "id" : "CCP0036",
+  "customerId" : "E0025",
+  "projectCode" : "YL-001",
+  "quantity" : 1,
+  "purchaseDate" : "2025-07-01 10:00:00",
+  "expireDate" : "2027-06-30"
+}, {
+  "id" : "CCP0037",
+  "customerId" : "E0025",
+  "projectCode" : "KF-003",
+  "quantity" : 1,
+  "purchaseDate" : "2025-07-01 10:00:00",
+  "expireDate" : "2027-06-30"
+}, {
+  "id" : "CCP0038",
+  "customerId" : "E0026",
+  "projectCode" : "LZ-001",
+  "quantity" : 1,
+  "purchaseDate" : "2024-08-20 10:00:00",
+  "expireDate" : "2026-08-19"
+}, {
+  "id" : "CCP0039",
+  "customerId" : "E0026",
+  "projectCode" : "LZ-003",
+  "quantity" : 1,
+  "purchaseDate" : "2024-08-20 10:00:00",
+  "expireDate" : "2026-08-19"
+}, {
+  "id" : "CCP0040",
+  "customerId" : "E0026",
+  "projectCode" : "YL-001",
+  "quantity" : 1,
+  "purchaseDate" : "2024-08-20 10:00:00",
+  "expireDate" : "2026-08-19"
+}, {
+  "id" : "CCP0041",
+  "customerId" : "E0026",
+  "projectCode" : "YL-002",
+  "quantity" : 1,
+  "purchaseDate" : "2024-08-20 10:00:00",
+  "expireDate" : "2026-08-19"
+} ]

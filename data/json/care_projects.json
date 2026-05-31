@@ -1,0 +1,151 @@
+[ {
+  "code" : "LZ-001",
+  "name" : "晨间护理",
+  "category" : "生活照料",
+  "unit" : "次",
+  "price" : 15.0,
+  "cycle" : "每天",
+  "executionCount" : 1,
+  "status" : "启用",
+  "remark" : "所有护理级"
+}, {
+  "code" : "LZ-002",
+  "name" : "晚间护理",
+  "category" : "生活照料",
+  "unit" : "次",
+  "price" : 10.0,
+  "cycle" : "每天",
+  "executionCount" : 1,
+  "status" : "启用",
+  "remark" : "所有护理级"
+}, {
+  "code" : "LZ-003",
+  "name" : "床上擦浴",
+  "category" : "生活照料",
+  "unit" : "次",
+  "price" : 20.0,
+  "cycle" : "隔天/每周",
+  "executionCount" : 1,
+  "status" : "启用",
+  "remark" : "HL-2, HL-3"
+}, {
+  "code" : "LZ-004",
+  "name" : "协助进食/鼻饲",
+  "category" : "生活照料",
+  "unit" : "次",
+  "price" : 10.0,
+  "cycle" : "按餐次",
+  "executionCount" : 1,
+  "status" : "启用",
+  "remark" : "HL-2, HL-3"
+}, {
+  "code" : "LZ-005",
+  "name" : "协助如厕/更换尿布",
+  "category" : "生活照料",
+  "unit" : "次",
+  "price" : 5.0,
+  "cycle" : "按需",
+  "executionCount" : 1,
+  "status" : "启用",
+  "remark" : "HL-2, HL-3"
+}, {
+  "code" : "LZ-006",
+  "name" : "剪指甲/理发",
+  "category" : "生活照料",
+  "unit" : "次",
+  "price" : 15.0,
+  "cycle" : "每周",
+  "executionCount" : 1,
+  "status" : "启用",
+  "remark" : "HL-1, HL-2"
+}, {
+  "code" : "LZ-007",
+  "name" : "翻身拍背 (防褥疮)",
+  "category" : "生活照料",
+  "unit" : "次",
+  "price" : 8.0,
+  "cycle" : "每2小时",
+  "executionCount" : 1,
+  "status" : "启用",
+  "remark" : "HL-3"
+}, {
+  "code" : "YL-001",
+  "name" : "生命体征监测",
+  "category" : "医疗护理",
+  "unit" : "次",
+  "price" : 5.0,
+  "cycle" : "每日1-2次",
+  "executionCount" : 1,
+  "status" : "启用",
+  "remark" : "所有护理级"
+}, {
+  "code" : "YL-002",
+  "name" : "药物管理与喂药",
+  "category" : "医疗护理",
+  "unit" : "次",
+  "price" : 10.0,
+  "cycle" : "按医嘱",
+  "executionCount" : 1,
+  "status" : "启用",
+  "remark" : "所有护理级"
+}, {
+  "code" : "YL-003",
+  "name" : "伤口换药",
+  "category" : "医疗护理",
+  "unit" : "次",
+  "price" : 50.0,
+  "cycle" : "隔天",
+  "executionCount" : 1,
+  "status" : "启用",
+  "remark" : "需医生开具处方"
+}, {
+  "code" : "YL-004",
+  "name" : "导尿管/胃管护理",
+  "category" : "医疗护理",
+  "unit" : "次",
+  "price" : 60.0,
+  "cycle" : "每周",
+  "executionCount" : 1,
+  "status" : "启用",
+  "remark" : "专业护理"
+}, {
+  "code" : "YL-005",
+  "name" : "吸氧",
+  "category" : "医疗护理",
+  "unit" : "小时",
+  "price" : 5.0,
+  "cycle" : "按需",
+  "executionCount" : 1,
+  "status" : "启用",
+  "remark" : "医生开具处方, 按需"
+}, {
+  "code" : "KF-001",
+  "name" : "肢体被动训练",
+  "category" : "康复心理",
+  "unit" : "次",
+  "price" : 30.0,
+  "cycle" : "每天",
+  "executionCount" : 1,
+  "status" : "启用",
+  "remark" : "防止肌肉萎缩"
+}, {
+  "code" : "KF-002",
+  "name" : "认知训练(益智游戏)",
+  "category" : "康复心理",
+  "unit" : "次",
+  "price" : 20.0,
+  "cycle" : "隔天",
+  "executionCount" : 1,
+  "status" : "启用",
+  "remark" : "针对失智老人"
+}, {
+  "code" : "KF-003",
+  "name" : "心理疏导",
+  "category" : "康复心理",
+  "unit" : "次",
+  "price" : 40.0,
+  "cycle" : "每周",
+  "executionCount" : 1,
+  "status" : "启用",
+  "remark" : "一对一谈心"
+} ]

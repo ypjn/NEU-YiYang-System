@@ -1,0 +1,81 @@
+[ {
+  "foodId" : "F0011",
+  "foodName" : "清蒸鲈鱼",
+  "category" : "荤菜",
+  "unit" : "份",
+  "price" : 25.0,
+  "nutrition" : "高蛋白低脂肪",
+  "remark" : "适合老人"
+}, {
+  "foodId" : "F0012",
+  "foodName" : "小米南瓜粥",
+  "category" : "主食",
+  "unit" : "碗",
+  "price" : 8.0,
+  "nutrition" : "易消化",
+  "remark" : "适合早餐"
+}, {
+  "foodId" : "F0013",
+  "foodName" : "番茄炒蛋",
+  "category" : "素菜",
+  "unit" : "份",
+  "price" : 12.0,
+  "nutrition" : "维生素丰富",
+  "remark" : ""
+}, {
+  "foodId" : "F0014",
+  "foodName" : "排骨冬瓜汤",
+  "category" : "汤品",
+  "unit" : "碗",
+  "price" : 15.0,
+  "nutrition" : "补钙",
+  "remark" : ""
+}, {
+  "foodId" : "F0015",
+  "foodName" : "清炒西兰花",
+  "category" : "素菜",
+  "unit" : "份",
+  "price" : 10.0,
+  "nutrition" : "富含纤维",
+  "remark" : ""
+}, {
+  "foodId" : "F0016",
+  "foodName" : "鸡蛋羹",
+  "category" : "荤菜",
+  "unit" : "份",
+  "price" : 8.0,
+  "nutrition" : "易消化高蛋白",
+  "remark" : "适合咀嚼困难老人"
+}, {
+  "foodId" : "F0017",
+  "foodName" : "馒头/花卷",
+  "category" : "主食",
+  "unit" : "个",
+  "price" : 2.0,
+  "nutrition" : "碳水化合物",
+  "remark" : ""
+}, {
+  "foodId" : "F0018",
+  "foodName" : "苹果",
+  "category" : "水果",
+  "unit" : "个",
+  "price" : 5.0,
+  "nutrition" : "富含维C",
+  "remark" : ""
+}, {
+  "foodId" : "F0019",
+  "foodName" : "酸奶",
+  "category" : "零食",
+  "unit" : "杯",
+  "price" : 6.0,
+  "nutrition" : "助消化",
+  "remark" : ""
+}, {
+  "foodId" : "F0020",
+  "foodName" : "药膳鸡汤",
+  "category" : "汤品",
+  "unit" : "碗",
+  "price" : 20.0,
+  "nutrition" : "滋补",
+  "remark" : "需预约"
+} ]
