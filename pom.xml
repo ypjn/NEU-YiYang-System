@@ -13,7 +13,7 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <javafx.version>21.0.2</javafx.version>
+        <javafx.version>26.0.1</javafx.version>
     </properties>
 
     <dependencies>
@@ -51,12 +51,20 @@
                 <version>0.0.8</version>
                 <configuration>
                     <mainClass>neu.YYZX.gui.MainApp</mainClass>
+                    <options>
+                        <option>-Dfile.encoding=UTF-8</option>
+                        <option>-Dprism.lcdtext=false</option>
+                        <option>-Dprism.text=t2k</option>
+                    </options>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
+                <configuration>
+                    <encoding>UTF-8</encoding>
+                </configuration>
             </plugin>
         </plugins>
     </build>

@@ -4,7 +4,12 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,8 +43,8 @@ public class JsonUtil {
         if (!file.exists()) {
             return new ArrayList<>();
         }
-        try {
-            List<T> list = MAPPER.readValue(file, typeRef);
+        try (InputStreamReader reader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8)) {
+            List<T> list = MAPPER.readValue(reader, typeRef);
             return list != null ? list : new ArrayList<>();
         } catch (IOException e) {
             System.out.println("读取 " + fileName + " 失败: " + e.getMessage());
@@ -55,8 +60,8 @@ public class JsonUtil {
     public static <T> void writeList(String fileName, List<T> list) {
         ensureDir();
         File file = new File(DATA_DIR, fileName);
-        try {
-            MAPPER.writerWithDefaultPrettyPrinter().writeValue(file, list);
+        try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8)) {
+            MAPPER.writerWithDefaultPrettyPrinter().writeValue(writer, list);
         } catch (IOException e) {
             System.out.println("保存 " + fileName + " 失败: " + e.getMessage());
         }
@@ -74,8 +79,8 @@ public class JsonUtil {
         if (!file.exists()) {
             return null;
         }
-        try {
-            return MAPPER.readValue(file, clazz);
+        try (InputStreamReader reader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8)) {
+            return MAPPER.readValue(reader, clazz);
         } catch (IOException e) {
             System.out.println("读取 " + fileName + " 失败: " + e.getMessage());
             return null;
@@ -90,8 +95,8 @@ public class JsonUtil {
     public static <T> void writeObject(String fileName, T object) {
         ensureDir();
         File file = new File(DATA_DIR, fileName);
-        try {
-            MAPPER.writerWithDefaultPrettyPrinter().writeValue(file, object);
+        try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8)) {
+            MAPPER.writerWithDefaultPrettyPrinter().writeValue(writer, object);
         } catch (IOException e) {
             System.out.println("保存 " + fileName + " 失败: " + e.getMessage());
         }

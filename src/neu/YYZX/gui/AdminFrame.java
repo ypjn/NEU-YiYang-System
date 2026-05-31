@@ -636,8 +636,8 @@ public class AdminFrame {
                     "available".equals(b.getStatus()) ? 0 : "out".equals(b.getStatus()) ? 1 : 2));
                 HBox roomRow = new HBox(8);
                 roomRow.setAlignment(Pos.CENTER_LEFT);
-                Label roomLabel = new Label("房间 " + room.getRoomNo() + " ");
-                roomLabel.setStyle("-fx-font-weight:bold; -fx-min-width:80");
+                Label roomLabel = new Label(room.getRoomNo());
+                roomLabel.setStyle("-fx-font-weight:bold; -fx-font-size:16px; -fx-text-fill:#1a5276; -fx-min-width:65; -fx-padding:4 0");
                 roomRow.getChildren().add(roomLabel);
                 if (beds.isEmpty()) {
                     roomRow.getChildren().add(new Label("（无床位）"));
@@ -1199,16 +1199,20 @@ public class AdminFrame {
 
         Runnable refreshCustomerBox = () -> {
             customerBox.getItems().clear();
+            customerBox.getItems().add("无 - 全部");
             ctx.getElderlyDao().findAll().forEach(e ->
                 customerBox.getItems().add(e.getId() + " - " + e.getName()));
         };
         refreshCustomerBox.run();
+        customerBox.setValue("无 - 全部");
 
         searchField.textProperty().addListener((o, ov, nv) -> {
             customerBox.getItems().clear();
+            customerBox.getItems().add("无 - 全部");
             List<Elderly> list = nv.trim().isEmpty() ? ctx.getElderlyDao().findAll()
                 : ctx.getElderlyDao().findByName(nv.trim());
             list.forEach(e -> customerBox.getItems().add(e.getId() + " - " + e.getName()));
+            customerBox.setValue("无 - 全部");
         });
         searchRow.getChildren().addAll(new Label("客户："), searchField, customerBox);
 
@@ -1234,10 +1238,16 @@ public class AdminFrame {
         });
         table.getColumns().addAll(tc1, tc2, tc3, tc4, tc5);
 
+        // 默认显示全部
+        refreshTable(table, ctx.getCustomerCareProjectDao().findAll());
+
         // 选中客户时加载其服务项目
         customerBox.setOnAction(e -> {
             String sel = customerBox.getValue();
-            if (sel != null) {
+            if (sel == null) return;
+            if ("无 - 全部".equals(sel)) {
+                refreshTable(table, ctx.getCustomerCareProjectDao().findAll());
+            } else {
                 String customerId = sel.split(" - ")[0];
                 refreshTable(table, ctx.getCustomerCareProjectDao().findByCustomerId(customerId));
             }
@@ -1250,7 +1260,7 @@ public class AdminFrame {
 
         buyBtn.setOnAction(e -> {
             String sel = customerBox.getValue();
-            if (sel == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择客户"); return; }
+            if (sel == null || "无 - 全部".equals(sel)) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择具体客户"); return; }
             String customerId = sel.split(" - ")[0];
             String customerName = sel.split(" - ")[1];
             // 检查是否有未购买的项目
@@ -1280,7 +1290,9 @@ public class AdminFrame {
                     ctx.getCustomerCareProjectDao().delete(ccp.getId());
                     PersistentIdGenerator.getInstance().save();
                     String sel = customerBox.getValue();
-                    if (sel != null) refreshTable(table, ctx.getCustomerCareProjectDao().findByCustomerId(sel.split(" - ")[0]));
+                    if (sel == null) return;
+                    if ("无 - 全部".equals(sel)) refreshTable(table, ctx.getCustomerCareProjectDao().findAll());
+                    else refreshTable(table, ctx.getCustomerCareProjectDao().findByCustomerId(sel.split(" - ")[0]));
                 }
             });
         });
@@ -1381,15 +1393,22 @@ public class AdminFrame {
         HBox topRow = new HBox(10);
         ComboBox<String> butlerBox = new ComboBox<>();
         butlerBox.setPromptText("选择健康管家(护工)");
-        // 默认选项"无"显示全部
         butlerBox.getItems().add("无 - 全部");
-        // 用 Employee 表查找管家/护工，不用 User 表
-        ctx.getEmployeeDao().findAll().forEach(emp -> {
+        java.util.List<Employee> allEmps = ctx.getEmployeeDao().findAll();
+        for (Employee emp : allEmps) {
             if (emp.getPosition() != null && (emp.getPosition().contains("管家") || emp.getPosition().contains("护工"))) {
                 butlerBox.getItems().add(emp.getEmployeeId() + " - " + emp.getName());
             }
-        });
+        }
         butlerBox.setValue("无 - 全部");
+        butlerBox.setCellFactory(param -> new javafx.scene.control.ListCell<String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) { setText(null); }
+                else { setText(item); }
+            }
+        });
 
         topRow.getChildren().addAll(new Label("健康管家："), butlerBox);
 
@@ -1760,14 +1779,127 @@ public class AdminFrame {
     private VBox buildHealthRecords() {
         VBox box = new VBox(10);
         box.setPadding(new Insets(15));
+
+        HBox topRow = new HBox(10);
+        ComboBox<String> customerBox = new ComboBox<>();
+        customerBox.setPromptText("选择老人");
+        customerBox.getItems().add("无 - 全部");
+        ctx.getElderlyDao().findAll().forEach(e ->
+            customerBox.getItems().add(e.getId() + " - " + e.getName()));
+        customerBox.setValue("无 - 全部");
+
+        topRow.getChildren().addAll(new Label("老人："), customerBox);
+
         TableView<HealthRecord> table = new TableView<>();
-        TableColumn<HealthRecord, String> c1 = tc("老人ID", "customerId");
-        TableColumn<HealthRecord, String> c2 = tc("记录日期", "recordDate");
-        TableColumn<HealthRecord, String> c3 = tc("血压", "bloodPressure");
-        TableColumn<HealthRecord, String> c4 = tc("心率", "heartRate");
-        table.getColumns().addAll(c1, c2, c3, c4);
+        TableColumn<HealthRecord, String> c0 = new TableColumn<>("老人姓名");
+        c0.setCellValueFactory(data -> {
+            Elderly e = ctx.getElderlyDao().findById(data.getValue().getCustomerId());
+            return new SimpleStringProperty(e != null ? e.getName() : data.getValue().getCustomerId());
+        });
+        TableColumn<HealthRecord, String> c1 = tc("记录日期", "recordDate");
+        TableColumn<HealthRecord, String> c2 = tc("血压", "bloodPressure");
+        TableColumn<HealthRecord, String> c3 = tc("心率", "heartRate");
+        TableColumn<HealthRecord, String> c4 = tc("血糖", "bloodSugar");
+        TableColumn<HealthRecord, String> c5 = tc("体重(kg)", "weight");
+        TableColumn<HealthRecord, String> c6 = tc("体温(℃)", "temperature");
+        TableColumn<HealthRecord, String> c7 = tc("备注", "remark");
+        table.getColumns().addAll(c0, c1, c2, c3, c4, c5, c6, c7);
         refreshTable(table, ctx.getHealthRecordDao().findAll());
-        box.getChildren().add(table);
+
+        customerBox.setOnAction(e -> {
+            String sel = customerBox.getValue();
+            if (sel == null) return;
+            if ("无 - 全部".equals(sel)) refreshTable(table, ctx.getHealthRecordDao().findAll());
+            else refreshTable(table, ctx.getHealthRecordDao().findByCustomerId(sel.split(" - ")[0]));
+        });
+
+        Button addBtn = new Button("登记健康记录");
+        Button delBtn = new Button("删除记录");
+
+        addBtn.setOnAction(e -> {
+            Dialog<HealthRecord> dlg = new Dialog<>();
+            dlg.setTitle("登记健康记录");
+            dlg.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+            GridPane grid = new GridPane();
+            grid.setHgap(10); grid.setVgap(10); grid.setPadding(new Insets(20));
+
+            ComboBox<String> elderBox = new ComboBox<>();
+            elderBox.setPromptText("选择老人");
+            ctx.getElderlyDao().findAll().forEach(el ->
+                elderBox.getItems().add(el.getId() + " - " + el.getName()));
+            if (elderBox.getItems().isEmpty()) {
+                LoginPane.showAlert(Alert.AlertType.WARNING, "请先在老人管理中录入老人信息");
+                return;
+            }
+            elderBox.setValue(elderBox.getItems().get(0));
+
+            DatePicker datePick = new DatePicker(LocalDate.now());
+            TextField bpField = new TextField();
+            bpField.setPromptText("如 120/80");
+            TextField hrField = new TextField();
+            hrField.setPromptText("次/分钟");
+            TextField bsField = new TextField();
+            bsField.setPromptText("mmol/L");
+            TextField weightField = new TextField();
+            weightField.setPromptText("kg");
+            TextField tempField = new TextField();
+            tempField.setPromptText("℃");
+            TextField remarkField = new TextField();
+
+            grid.add(new Label("老人："), 0, 0); grid.add(elderBox, 1, 0);
+            grid.add(new Label("日期："), 0, 1); grid.add(datePick, 1, 1);
+            grid.add(new Label("血压："), 0, 2); grid.add(bpField, 1, 2);
+            grid.add(new Label("心率："), 0, 3); grid.add(hrField, 1, 3);
+            grid.add(new Label("血糖："), 0, 4); grid.add(bsField, 1, 4);
+            grid.add(new Label("体重："), 0, 5); grid.add(weightField, 1, 5);
+            grid.add(new Label("体温："), 0, 6); grid.add(tempField, 1, 6);
+            grid.add(new Label("备注："), 0, 7); grid.add(remarkField, 1, 7);
+            dlg.getDialogPane().setContent(grid);
+
+            dlg.setResultConverter(bt -> {
+                if (bt == ButtonType.OK) {
+                    HealthRecord hr = new HealthRecord();
+                    hr.setCustomerId(elderBox.getValue().split(" - ")[0]);
+                    hr.setRecordDate(datePick.getValue().toString());
+                    hr.setBloodPressure(bpField.getText().trim());
+                    hr.setHeartRate(hrField.getText().trim());
+                    hr.setBloodSugar(bsField.getText().trim());
+                    hr.setWeight(weightField.getText().trim());
+                    hr.setTemperature(tempField.getText().trim());
+                    hr.setRemark(remarkField.getText().trim());
+                    return hr;
+                }
+                return null;
+            });
+
+            dlg.showAndWait().ifPresent(hr -> {
+                ctx.getHealthRecordDao().insert(hr);
+                PersistentIdGenerator.getInstance().save();
+                String sel = customerBox.getValue();
+                if (sel == null || "无 - 全部".equals(sel)) refreshTable(table, ctx.getHealthRecordDao().findAll());
+                else refreshTable(table, ctx.getHealthRecordDao().findByCustomerId(sel.split(" - ")[0]));
+                AuditLogger.log("登记健康记录", "健康记录", elderBox.getValue());
+            });
+        });
+
+        delBtn.setOnAction(e -> {
+            HealthRecord sel = table.getSelectionModel().getSelectedItem();
+            if (sel == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择要删除的记录"); return; }
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "确定删除此健康记录吗？", ButtonType.YES, ButtonType.NO);
+            confirm.showAndWait().ifPresent(r -> {
+                if (r == ButtonType.YES) {
+                    ctx.getHealthRecordDao().delete(sel.getHealthId());
+                    PersistentIdGenerator.getInstance().save();
+                    String selValue = customerBox.getValue();
+                    if (selValue == null || "无 - 全部".equals(selValue)) refreshTable(table, ctx.getHealthRecordDao().findAll());
+                    else refreshTable(table, ctx.getHealthRecordDao().findByCustomerId(selValue.split(" - ")[0]));
+                }
+            });
+        });
+
+        HBox btnRow = new HBox(10, addBtn, delBtn);
+        box.getChildren().addAll(topRow, table, btnRow);
         return box;
     }
 
