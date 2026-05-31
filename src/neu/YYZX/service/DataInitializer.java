@@ -119,6 +119,7 @@ public class DataInitializer {
         ensureDefaultNursingLevels();
         ensureDefaultCareProjects();
         ensureDefaultBuildings();
+        ensureDefaultRoomsAndBeds();
         ensureDefaultFoods();
     }
 
@@ -182,6 +183,36 @@ public class DataInitializer {
     private void ensureDefaultBuildings() {
         if (buildingDao.size() == 0) {
             buildingDao.insert(new Building(null, "606", 6, "颐养中心主楼"));
+        }
+    }
+
+    private void ensureDefaultRoomsAndBeds() {
+        if (roomDao.size() == 0) {
+            Building building = buildingDao.findAll().stream().findFirst().orElse(null);
+            if (building == null) return;
+            String buildingId = building.getBuildingId();
+            for (int floor = 1; floor <= 6; floor++) {
+                for (int r = 1; r <= 2; r++) {
+                    String roomNo = floor + "0" + r;
+                    Room room = new Room();
+                    room.setRoomNo(roomNo);
+                    room.setBuildingId(buildingId);
+                    room.setFloor(floor);
+                    room.setRoomType(floor <= 2 ? "双人间" : "三人间");
+                    room.setCapacity(floor <= 2 ? 2 : 3);
+                    room.setPrice(floor <= 2 ? 3000 : 2000);
+                    room.setStatus("active");
+                    roomDao.insert(room);
+                    // 每个房间创建2个床位
+                    for (int b = 1; b <= 2; b++) {
+                        Bed bed = new Bed();
+                        bed.setRoomId(room.getRoomId());
+                        bed.setBedNo(roomNo + "-" + b);
+                        bed.setStatus("available");
+                        bedDao.insert(bed);
+                    }
+                }
+            }
         }
     }
 

@@ -401,15 +401,37 @@ public class AdminFrame {
         grid.add(new Label("出生日期："), 2, 1); grid.add(birthDate, 3, 1);
         grid.add(new Label("性别："), 0, 2); grid.add(gender, 1, 2);
         grid.add(new Label("血型："), 2, 2); grid.add(bloodType, 3, 2);
+        // 身份证校验 + 自动提取生日/性别
+        Label idCardMsg = new Label();
+        idCardMsg.setStyle("-fx-font-size:11px");
+        idCard.textProperty().addListener((o, ov, nv) -> {
+            String result = validateIdCard(nv);
+            if (result == null) {
+                idCard.setStyle("-fx-border-color:red; -fx-border-width:1px");
+                idCardMsg.setText("身份证格式错误");
+                idCardMsg.setStyle("-fx-text-fill:red; -fx-font-size:11px");
+            } else {
+                idCard.setStyle("");
+                idCardMsg.setText("✓ 出生: " + result);
+                idCardMsg.setStyle("-fx-text-fill:green; -fx-font-size:11px");
+            }
+        });
+
+        grid.add(new Label("姓名："), 0, 0); grid.add(name, 1, 0);
+        grid.add(new Label("年龄："), 0, 1); grid.add(age, 1, 1);
+        grid.add(new Label("出生日期："), 2, 1); grid.add(birthDate, 3, 1);
+        grid.add(new Label("性别："), 0, 2); grid.add(gender, 1, 2);
+        grid.add(new Label("血型："), 2, 2); grid.add(bloodType, 3, 2);
         grid.add(new Label("身份证："), 0, 3); grid.add(idCard, 1, 3);
-        grid.add(new Label("电话："), 2, 3); grid.add(phone, 3, 3);
-        grid.add(new Label("地址："), 0, 4); grid.add(address, 1, 4);
-        grid.add(new Label("家属："), 2, 4); grid.add(familyMember, 3, 4);
-        grid.add(new Label("紧急联系人："), 0, 5); grid.add(emContact, 1, 5);
-        grid.add(new Label("紧急电话："), 2, 5); grid.add(emPhone, 3, 5);
-        grid.add(new Label("床位："), 0, 6); grid.add(bedBox, 1, 6);
-        grid.add(new Label("入住日期："), 2, 6); grid.add(checkinDate, 3, 6);
-        grid.add(new Label("合同到期："), 0, 7); grid.add(contractEndDate, 1, 7);
+        grid.add(idCardMsg, 2, 3, 2, 1);
+        grid.add(new Label("电话："), 0, 4); grid.add(phone, 1, 4);
+        grid.add(new Label("地址："), 2, 4); grid.add(address, 3, 4);
+        grid.add(new Label("家属："), 0, 5); grid.add(familyMember, 1, 5);
+        grid.add(new Label("紧急联系人："), 2, 5); grid.add(emContact, 3, 5);
+        grid.add(new Label("紧急电话："), 0, 6); grid.add(emPhone, 1, 6);
+        grid.add(new Label("床位："), 2, 6); grid.add(bedBox, 3, 6);
+        grid.add(new Label("入住日期："), 0, 7); grid.add(checkinDate, 1, 7);
+        grid.add(new Label("合同到期："), 2, 7); grid.add(contractEndDate, 3, 7);
 
         dlg.getDialogPane().setContent(grid);
         ButtonType okBtn = new ButtonType("入住", ButtonBar.ButtonData.OK_DONE);
@@ -417,19 +439,40 @@ public class AdminFrame {
 
         dlg.setResultConverter(btn -> {
             if (btn != okBtn || name.getText().trim().isEmpty() || bedBox.getValue() == null) return null;
+            String idCardText = idCard.getText().trim();
+            if (!idCardText.isEmpty()) {
+                String validated = validateIdCard(idCardText);
+                if (validated == null) {
+                    LoginPane.showAlert(Alert.AlertType.WARNING, "身份证号不合法，请检查！");
+                    return null;
+                }
+                // 从身份证自动提取生日和性别
+                String birthStr = idCardText.substring(6, 14);
+                try {
+                    LocalDate bd = LocalDate.parse(birthStr.substring(0, 4) + "-" + birthStr.substring(4, 6) + "-" + birthStr.substring(6, 8));
+                    birthDate.setValue(bd);
+                } catch (Exception ignored) {}
+                int seqDigit = Integer.parseInt(idCardText.substring(14, 17));
+                gender.setValue(seqDigit % 2 == 1 ? "男" : "女");
+            }
+
             String bedId = bedBox.getValue().split(" - ")[0];
             Bed bed = ctx.getBedDao().findById(bedId);
-            if (bed != null) bed.setStatus("occupied");
+            if (bed != null) {
+                bed.setStatus("occupied");
+                ctx.getBedDao().update(bed);
+            }
 
             Elderly e = new Elderly();
             e.setName(name.getText().trim());
-            try { e.setAge(Integer.parseInt(age.getText())); } catch (Exception ex) { e.setAge(0); }
             e.setGender(gender.getValue());
-            e.setIdCard(idCard.getText().trim());
+            e.setIdCard(idCardText);
             e.setBloodType(bloodType.getValue());
             if (birthDate.getValue() != null) {
                 e.setBirthDate(birthDate.getValue().toString());
                 e.setAge(LocalDate.now().getYear() - birthDate.getValue().getYear());
+            } else {
+                try { e.setAge(Integer.parseInt(age.getText())); } catch (Exception ex) { e.setAge(0); }
             }
             e.setPhone(phone.getText().trim());
             e.setAddress(address.getText().trim());
@@ -437,7 +480,6 @@ public class AdminFrame {
             e.setEmergencyContact(emContact.getText().trim());
             e.setEmergencyPhone(emPhone.getText().trim());
             e.setBedId(bedId);
-            // 通过床位推导房间号和楼栋
             if (bed != null) {
                 Room room = ctx.getRoomDao().findById(bed.getRoomId());
                 if (room != null) {
@@ -545,8 +587,9 @@ public class AdminFrame {
 
         Button addBedBtn = new Button("添加床位");
         Button swapBedBtn = new Button("床位调换");
+        Button roomBtn = new Button("管理房间");
 
-        filterRow.getChildren().addAll(new Label("楼层："), floorBox, addBedBtn, swapBedBtn);
+        filterRow.getChildren().addAll(new Label("楼层："), floorBox, addBedBtn, swapBedBtn, roomBtn);
 
         // 床位展示区
         VBox bedArea = new VBox(8);
@@ -595,6 +638,7 @@ public class AdminFrame {
         });
 
         swapBedBtn.setOnAction(e -> showSwapBedDialog(refreshBedArea));
+        roomBtn.setOnAction(e -> { showRoomManageDialog(); refreshBedArea.run(); });
 
         box.getChildren().addAll(statRow, filterRow, bedArea);
         return box;
@@ -625,6 +669,106 @@ public class AdminFrame {
                 onDone.run();
             });
         });
+    }
+
+    private void showRoomManageDialog() {
+        Building building = ctx.getBuildingDao().findAll().stream().findFirst().orElse(null);
+        if (building == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先创建楼栋"); return; }
+
+        Dialog<Void> dlg = new Dialog<>();
+        dlg.setTitle("房间管理 — " + building.getBuildingName());
+        dlg.setResizable(true);
+
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(15));
+
+        TableView<Room> table = new TableView<>();
+        TableColumn<Room, String> r1 = tc("楼层", "floor");
+        TableColumn<Room, String> r2 = tc("房间号", "roomNo");
+        TableColumn<Room, String> r3 = tc("类型", "roomType");
+        TableColumn<Room, String> r4 = tc("容量", "capacity");
+        TableColumn<Room, String> r5 = tc("月费", "price");
+        table.getColumns().addAll(r1, r2, r3, r4, r5);
+
+        Runnable refreshRooms = () -> {
+            List<Room> rooms = ctx.getRoomDao().findByBuildingId(building.getBuildingId());
+            rooms.sort((a, b) -> {
+                int fa = a.getFloor() != 0 ? a.getFloor() : Integer.MAX_VALUE;
+                int fb = b.getFloor() != 0 ? b.getFloor() : Integer.MAX_VALUE;
+                if (fa != fb) return fa - fb;
+                String na = a.getRoomNo() != null ? a.getRoomNo() : "";
+                String nb = b.getRoomNo() != null ? b.getRoomNo() : "";
+                return na.compareTo(nb);
+            });
+            refreshTable(table, rooms);
+        };
+        refreshRooms.run();
+
+        Button addBtn = new Button("添加房间");
+        Button delBtn = new Button("删除房间");
+
+        addBtn.setOnAction(e -> {
+            Dialog<Void> addDlg = new Dialog<>();
+            addDlg.setTitle("添加房间");
+            GridPane g = new GridPane();
+            g.setHgap(10); g.setVgap(10); g.setPadding(new Insets(15));
+            ComboBox<Integer> floorSel = new ComboBox<>();
+            for (int i = 1; i <= building.getFloorCount(); i++) floorSel.getItems().add(i);
+            floorSel.setValue(1);
+            TextField roomNo = new TextField();
+            ComboBox<String> typeSel = new ComboBox<>();
+            typeSel.getItems().addAll("单人间", "双人间", "三人间");
+            typeSel.setValue("双人间");
+            TextField capacity = new TextField("2");
+            TextField price = new TextField("3000");
+
+            g.add(new Label("楼层："), 0, 0); g.add(floorSel, 1, 0);
+            g.add(new Label("房间号："), 0, 1); g.add(roomNo, 1, 1);
+            g.add(new Label("类型："), 0, 2); g.add(typeSel, 1, 2);
+            g.add(new Label("容量："), 0, 3); g.add(capacity, 1, 3);
+            g.add(new Label("月费："), 0, 4); g.add(price, 1, 4);
+
+            addDlg.getDialogPane().setContent(g);
+            ButtonType ok = new ButtonType("确定", ButtonBar.ButtonData.OK_DONE);
+            addDlg.getDialogPane().getButtonTypes().addAll(ok, ButtonType.CANCEL);
+            addDlg.setResultConverter(b -> {
+                if (b == ok && !roomNo.getText().trim().isEmpty()) {
+                    Room room = new Room();
+                    room.setBuildingId(building.getBuildingId());
+                    room.setFloor(floorSel.getValue());
+                    room.setRoomNo(roomNo.getText().trim());
+                    room.setRoomType(typeSel.getValue());
+                    try { room.setCapacity(Integer.parseInt(capacity.getText())); } catch (Exception ex) { room.setCapacity(2); }
+                    try { room.setPrice(Double.parseDouble(price.getText())); } catch (Exception ex) { room.setPrice(3000); }
+                    room.setStatus("active");
+                    ctx.getRoomDao().insert(room);
+                    PersistentIdGenerator.getInstance().save();
+                    refreshRooms.run();
+                }
+                return null;
+            });
+            addDlg.showAndWait();
+        });
+
+        delBtn.setOnAction(e -> {
+            Room sel = table.getSelectionModel().getSelectedItem();
+            if (sel == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择房间"); return; }
+            // 检查是否有床位
+            List<Bed> beds = ctx.getBedDao().findByRoomId(sel.getRoomId());
+            if (!beds.isEmpty()) {
+                LoginPane.showAlert(Alert.AlertType.WARNING, "该房间还有 " + beds.size() + " 个床位，请先删除床位");
+                return;
+            }
+            ctx.getRoomDao().delete(sel.getRoomId());
+            PersistentIdGenerator.getInstance().save();
+            refreshRooms.run();
+        });
+
+        HBox btnRow = new HBox(10, addBtn, delBtn);
+        content.getChildren().addAll(btnRow, table);
+        dlg.getDialogPane().setContent(content);
+        dlg.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        dlg.showAndWait();
     }
 
     private void showSwapBedDialog(Runnable onDone) {
@@ -1145,22 +1289,29 @@ public class AdminFrame {
         VBox box = new VBox(10);
         box.setPadding(new Insets(15));
 
-        // 管家列表
         HBox topRow = new HBox(10);
         ComboBox<String> butlerBox = new ComboBox<>();
         butlerBox.setPromptText("选择健康管家(护工)");
-        ctx.getUserDao().findByRole("nurse").forEach(u ->
-            butlerBox.getItems().add(u.getUserId() + " - " + u.getRealName()));
+        // 用 Employee 表查找管家/护工，不用 User 表
+        ctx.getEmployeeDao().findAll().forEach(emp -> {
+            if (emp.getPosition() != null && (emp.getPosition().contains("管家") || emp.getPosition().contains("护工"))) {
+                butlerBox.getItems().add(emp.getEmployeeId() + " - " + emp.getName());
+            }
+        });
 
         topRow.getChildren().addAll(new Label("健康管家："), butlerBox);
 
-        // 服务客户列表
+        // 服务客户列表 — 用自定义列解析名称
         TableView<ServiceAssignment> table = new TableView<>();
-        TableColumn<ServiceAssignment, String> c1 = tc("老人ID", "elderlyId");
-        TableColumn<ServiceAssignment, String> c2 = tc("服务类型", "serviceType");
-        TableColumn<ServiceAssignment, String> c3 = tc("开始日期", "startDate");
-        TableColumn<ServiceAssignment, String> c4 = tc("状态", "status");
-        table.getColumns().addAll(c1, c2, c3, c4);
+        TableColumn<ServiceAssignment, String> c0 = new TableColumn<>("老人姓名");
+        c0.setCellValueFactory(data -> {
+            Elderly e = ctx.getElderlyDao().findById(data.getValue().getElderlyId());
+            return new SimpleStringProperty(e != null ? e.getName() : data.getValue().getElderlyId());
+        });
+        TableColumn<ServiceAssignment, String> c1 = tc("服务类型", "serviceType");
+        TableColumn<ServiceAssignment, String> c2 = tc("开始日期", "startDate");
+        TableColumn<ServiceAssignment, String> c3 = tc("状态", "status");
+        table.getColumns().addAll(c0, c1, c2, c3);
 
         butlerBox.setOnAction(e -> {
             String sel = butlerBox.getValue();
@@ -1179,14 +1330,15 @@ public class AdminFrame {
             String empId = sel.split(" - ")[0];
             String empName = sel.split(" - ")[1];
 
-            // 查询无管家客户
-            List<Elderly> allElders = ctx.getElderlyDao().findAll();
+            // 查询无管家客户（只查在住老人）
+            List<Elderly> allElders = ctx.getElderlyDao().findAll().stream()
+                .filter(el -> "在住".equals(el.getStatus())).toList();
             List<ServiceAssignment> allAssigns = ctx.getServiceAssignmentDao().findAll();
             List<Elderly> unassigned = allElders.stream()
                 .filter(el -> allAssigns.stream().noneMatch(a -> a.getElderlyId().equals(el.getId())))
                 .toList();
 
-            if (unassigned.isEmpty()) { LoginPane.showAlert(Alert.AlertType.INFORMATION, "没有未分配管家的客户"); return; }
+            if (unassigned.isEmpty()) { LoginPane.showAlert(Alert.AlertType.INFORMATION, "没有未分配管家的在住客户"); return; }
 
             ChoiceDialog<String> dlg = new ChoiceDialog<>(
                 unassigned.get(0).getId() + " - " + unassigned.get(0).getName(),
@@ -1200,7 +1352,7 @@ public class AdminFrame {
                 sa.setElderlyId(elderId);
                 sa.setServiceType("日常护理");
                 sa.setStartDate(LocalDate.now().toString());
-                sa.setStatus("active");
+                sa.setStatus("服务中");
                 ctx.getServiceAssignmentDao().insert(sa);
                 PersistentIdGenerator.getInstance().save();
                 refreshTable(table, ctx.getServiceAssignmentDao().findByEmployeeId(empId));
@@ -1216,8 +1368,8 @@ public class AdminFrame {
                 if (r == ButtonType.YES) {
                     ctx.getServiceAssignmentDao().delete(sa.getAssignmentId());
                     PersistentIdGenerator.getInstance().save();
-                    String sel = butlerBox.getValue();
-                    if (sel != null) refreshTable(table, ctx.getServiceAssignmentDao().findByEmployeeId(sel.split(" - ")[0]));
+                    String selValue = butlerBox.getValue();
+                    if (selValue != null) refreshTable(table, ctx.getServiceAssignmentDao().findByEmployeeId(selValue.split(" - ")[0]));
                 }
             });
         });
@@ -1516,6 +1668,38 @@ public class AdminFrame {
     }
 
     // ==================== 辅助方法 ====================
+
+    /** 校验18位身份证号，合法返回出生日期字符串(YYYY-MM-DD)，否则返回null */
+    private String validateIdCard(String id) {
+        if (id == null || id.length() != 18) return null;
+        for (int i = 0; i < 17; i++) {
+            if (!Character.isDigit(id.charAt(i))) return null;
+        }
+        char last = id.charAt(17);
+        if (!Character.isDigit(last) && last != 'X' && last != 'x') return null;
+
+        // 提取出生日期
+        String birth = id.substring(6, 14);
+        try {
+            LocalDate.parse(birth.substring(0, 4) + "-" + birth.substring(4, 6) + "-" + birth.substring(6, 8));
+        } catch (Exception e) {
+            return null;
+        }
+
+        // 校验码
+        int[] weights = {7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2};
+        char[] checkCodes = {'1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'};
+        int sum = 0;
+        for (int i = 0; i < 17; i++) {
+            sum += (id.charAt(i) - '0') * weights[i];
+        }
+        char expected = checkCodes[sum % 11];
+        if (expected == 'X' && (last == 'X' || last == 'x')) return birth.substring(0, 4) + "-" + birth.substring(4, 6) + "-" + birth.substring(6, 8);
+        if (Character.toUpperCase(last) != expected) return null;
+
+        return birth.substring(0, 4) + "-" + birth.substring(4, 6) + "-" + birth.substring(6, 8);
+    }
+
     private <T> TableColumn<T, String> tc(String title, String property) {
         TableColumn<T, String> col = new TableColumn<>(title);
         col.setCellValueFactory(new PropertyValueFactory<>(property));
