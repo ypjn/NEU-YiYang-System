@@ -118,6 +118,7 @@ public class DataInitializer {
         ensureDefaultRoles();
         ensureDefaultNursingLevels();
         ensureDefaultCareProjects();
+        ensureDefaultNursingContents();
         ensureDefaultBuildings();
         ensureDefaultRoomsAndBeds();
         ensureDefaultFoods();
@@ -178,6 +179,46 @@ public class DataInitializer {
             careProjectDao.insert(new CareProject("KF-001", "肢体被动训练", "康复心理", "次", 30, "每天", 1, "启用", "防止肌肉萎缩"));
             careProjectDao.insert(new CareProject("KF-002", "认知训练(益智游戏)", "康复心理", "次", 20, "隔天", 1, "启用", "针对失智老人"));
             careProjectDao.insert(new CareProject("KF-003", "心理疏导", "康复心理", "次", 40, "每周", 1, "启用", "一对一谈心"));
+        }
+    }
+
+    private void ensureDefaultNursingContents() {
+        if (nursingContentDao.size() == 0) {
+            // ZL 自理型
+            nursingContentDao.insert(new NursingContent(null, "晨间护理", "LZ-001", "ZL", "每日基础晨间护理", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "晚间护理", "LZ-002", "ZL", "每日基础晚间护理", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "生命体征监测", "YL-001", "ZL", "每日1次测量血压心率", "10分钟", ""));
+            // HL-1 一级护理
+            nursingContentDao.insert(new NursingContent(null, "晨间护理", "LZ-001", "HL-1", "每日晨间护理", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "晚间护理", "LZ-002", "HL-1", "每日晚间护理", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "剪指甲/理发", "LZ-006", "HL-1", "每周理发修甲", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "生命体征监测", "YL-001", "HL-1", "每日2次测量", "15分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "药物管理与喂药", "YL-002", "HL-1", "按医嘱执行", "15分钟", ""));
+            // HL-2 二级护理
+            nursingContentDao.insert(new NursingContent(null, "晨间护理", "LZ-001", "HL-2", "每日晨间护理", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "晚间护理", "LZ-002", "HL-2", "每日晚间护理", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "床上擦浴", "LZ-003", "HL-2", "隔天擦浴", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "协助进食", "LZ-004", "HL-2", "每餐协助", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "协助如厕", "LZ-005", "HL-2", "按需协助", "15分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "生命体征监测", "YL-001", "HL-2", "每日3次测量", "15分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "药物管理与喂药", "YL-002", "HL-2", "按医嘱执行", "15分钟", ""));
+            // HL-3 三级护理
+            nursingContentDao.insert(new NursingContent(null, "晨间护理", "LZ-001", "HL-3", "每日晨间全套护理", "45分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "晚间护理", "LZ-002", "HL-3", "每日晚间全套护理", "45分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "床上擦浴", "LZ-003", "HL-3", "每日擦浴", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "鼻饲护理", "LZ-004", "HL-3", "每餐鼻饲", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "更换尿布", "LZ-005", "HL-3", "按需更换", "15分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "翻身拍背防褥疮", "LZ-007", "HL-3", "每2小时翻身", "20分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "生命体征监测", "YL-001", "HL-3", "每4小时测量", "15分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "药物管理与喂药", "YL-002", "HL-3", "按医嘱执行", "15分钟", ""));
+            // YZ 医疗专护
+            nursingContentDao.insert(new NursingContent(null, "生命体征监测", "YL-001", "YZ", "定时测量", "15分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "药物管理与喂药", "YL-002", "YZ", "按医嘱执行", "15分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "伤口换药", "YL-003", "YZ", "隔天换药", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "导管护理", "YL-004", "YZ", "每周维护", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "吸氧治疗", "YL-005", "YZ", "按需执行", "按需", ""));
+            nursingContentDao.insert(new NursingContent(null, "肢体被动训练", "KF-001", "YZ", "每日康复训练", "30分钟", ""));
+            nursingContentDao.insert(new NursingContent(null, "心理疏导", "KF-003", "YZ", "每周心理疏导", "40分钟", ""));
         }
     }
 

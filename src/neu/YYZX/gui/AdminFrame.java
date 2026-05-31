@@ -512,40 +512,46 @@ public class AdminFrame {
             // 已有护理级别 — 询问是否移除
             Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
                 e.getName() + " 当前护理级别为 " + e.getNursingLevelCode()
-                + "。\n\n需要先移除当前级别才能设置新级别。\n\n确定要移除吗？（会级联删除客户在当前级别的所有护理项目）",
+                + "。\n\n移除后将自动弹出新级别选择窗口。\n\n确定要移除吗？（会级联删除客户在当前级别的所有护理项目）",
                 ButtonType.YES, ButtonType.NO);
             confirm.showAndWait().ifPresent(r -> {
                 if (r == ButtonType.YES) {
                     removeCustomerLevel(e);
+                    // 移除后立即弹出设置新级别
+                    showSetLevelDialog(e);
                 }
             });
         } else {
             // 没有护理级别 — 设置新级别
-            List<NursingLevel> levels = ctx.getNursingLevelDao().findAll().stream()
-                .filter(l -> "启用".equals(l.getStatus())).toList();
-            if (levels.isEmpty()) { LoginPane.showAlert(Alert.AlertType.WARNING, "没有可用的护理级别"); return; }
-            ChoiceDialog<String> dlg = new ChoiceDialog<>(
-                levels.get(0).getCode() + " - " + levels.get(0).getName(),
-                levels.stream().map(l -> l.getCode() + " - " + l.getName()).toList());
-            dlg.setTitle("设置护理等级");
-            dlg.setHeaderText("为 " + e.getName() + " 设置护理等级");
-            dlg.showAndWait().ifPresent(sel -> {
-                String code = sel.split(" - ")[0];
-                e.setNursingLevelCode(code);
-                ctx.getElderlyDao().update(e);
-                // 批量添加该级别的护理项目
-                String now = LocalDateTime.now().format(fmt);
-                String expireDate = LocalDate.now().plusMonths(3).toString();
-                List<NursingContent> contents = ctx.getNursingContentDao().findByLevelCode(code);
-                for (NursingContent nc : contents) {
-                    CustomerCareProject ccp = new CustomerCareProject(null, e.getId(),
-                        nc.getCareProjectCode(), 1, now, expireDate);
-                    ctx.getCustomerCareProjectDao().insert(ccp);
-                }
-                PersistentIdGenerator.getInstance().save();
-                AuditLogger.log("设置护理等级", "老人管理", e.getName() + " → " + code);
-            });
+            showLevelSelection(e);
         }
+    }
+
+    private void showLevelSelection(Elderly e) {
+        List<NursingLevel> levels = ctx.getNursingLevelDao().findAll().stream()
+            .filter(l -> "启用".equals(l.getStatus())).toList();
+        if (levels.isEmpty()) { LoginPane.showAlert(Alert.AlertType.WARNING, "没有可用的护理级别"); return; }
+        ChoiceDialog<String> dlg = new ChoiceDialog<>(
+            levels.get(0).getCode() + " - " + levels.get(0).getName(),
+            levels.stream().map(l -> l.getCode() + " - " + l.getName()).toList());
+        dlg.setTitle("设置护理等级");
+        dlg.setHeaderText("为 " + e.getName() + " 设置护理等级");
+        dlg.showAndWait().ifPresent(sel -> {
+            String code = sel.split(" - ")[0];
+            e.setNursingLevelCode(code);
+            ctx.getElderlyDao().update(e);
+            // 批量添加该级别的护理项目
+            String now = LocalDateTime.now().format(fmt);
+            String expireDate = LocalDate.now().plusMonths(3).toString();
+            List<NursingContent> contents = ctx.getNursingContentDao().findByLevelCode(code);
+            for (NursingContent nc : contents) {
+                CustomerCareProject ccp = new CustomerCareProject(null, e.getId(),
+                    nc.getCareProjectCode(), 1, now, expireDate);
+                ctx.getCustomerCareProjectDao().insert(ccp);
+            }
+            PersistentIdGenerator.getInstance().save();
+            AuditLogger.log("设置护理等级", "老人管理", e.getName() + " → " + code);
+        });
     }
 
     private void removeCustomerLevel(Elderly e) {
@@ -587,10 +593,10 @@ public class AdminFrame {
 
         // 楼层选择
         HBox filterRow = new HBox(10);
-        ComboBox<Integer> floorBox = new ComboBox<>();
-        for (int i = 1; i <= 6; i++) floorBox.getItems().add(i);
-        floorBox.setValue(1);
-        floorBox.setPromptText("选择楼层");
+        ComboBox<String> floorBox = new ComboBox<>();
+        floorBox.getItems().add("全部");
+        for (int i = 1; i <= 6; i++) floorBox.getItems().add(i + "楼");
+        floorBox.setValue("全部");
 
         Button addBedBtn = new Button("添加床位");
         Button delBedBtn = new Button("删除床位");
@@ -605,14 +611,31 @@ public class AdminFrame {
 
         Runnable refreshBedArea = () -> {
             bedArea.getChildren().clear();
-            int floor = floorBox.getValue() != null ? floorBox.getValue() : 1;
+            String floorSel = floorBox.getValue() != null ? floorBox.getValue() : "全部";
             Building building = ctx.getBuildingDao().findAll().stream().findFirst().orElse(null);
             if (building == null) { bedArea.getChildren().add(new Label("无楼栋数据")); return; }
-            List<Room> rooms = ctx.getRoomDao().findByBuildingId(building.getBuildingId()).stream()
-                .filter(r -> r.getFloor() == floor).toList();
-            if (rooms.isEmpty()) { bedArea.getChildren().add(new Label("该楼层无房间")); return; }
+            List<Room> rooms = ctx.getRoomDao().findByBuildingId(building.getBuildingId());
+            if (!"全部".equals(floorSel)) {
+                int floor = Integer.parseInt(floorSel.replace("楼", ""));
+                rooms = rooms.stream().filter(r -> r.getFloor() == floor).toList();
+            }
+            if (rooms.isEmpty()) { bedArea.getChildren().add(new Label("无房间")); return; }
+            // 按床位占用状态排序：有空闲床位的房间在前，全占用的在后
+            rooms.sort((a, b) -> {
+                List<Bed> ba = ctx.getBedDao().findByRoomId(a.getRoomId());
+                List<Bed> bb = ctx.getBedDao().findByRoomId(b.getRoomId());
+                boolean aHasAvail = ba.stream().anyMatch(bd -> "available".equals(bd.getStatus()));
+                boolean bHasAvail = bb.stream().anyMatch(bd -> "available".equals(bd.getStatus()));
+                if (aHasAvail && !bHasAvail) return -1;
+                if (!aHasAvail && bHasAvail) return 1;
+                return a.getRoomNo().compareTo(b.getRoomNo());
+            });
             for (Room room : rooms) {
                 List<Bed> beds = ctx.getBedDao().findByRoomId(room.getRoomId());
+                // 空闲在前，占用在后
+                beds.sort((a, b) -> Integer.compare(
+                    "available".equals(a.getStatus()) ? 0 : "out".equals(a.getStatus()) ? 1 : 2,
+                    "available".equals(b.getStatus()) ? 0 : "out".equals(b.getStatus()) ? 1 : 2));
                 HBox roomRow = new HBox(8);
                 roomRow.setAlignment(Pos.CENTER_LEFT);
                 Label roomLabel = new Label("房间 " + room.getRoomNo() + " ");
@@ -628,7 +651,7 @@ public class AdminFrame {
                             case "available": bedLabel.setStyle(bedLabel.getStyle()
                                 + " -fx-background-color:#27ae60; -fx-text-fill:#1a1a2e; -fx-border-color:#1e8449; -fx-border-width:2"); break;
                             case "occupied": bedLabel.setStyle(bedLabel.getStyle()
-                                + " -fx-background-color:#c0392b; -fx-text-fill:#1a1a2e; -fx-border-color:#922b21; -fx-border-width:2"); break;
+                                + " -fx-background-color:#fff0f0; -fx-text-fill:#c0392b; -fx-border-color:#e74c3c; -fx-border-width:3"); break;
                             case "out": bedLabel.setStyle(bedLabel.getStyle()
                                 + " -fx-background-color:#e67e22; -fx-text-fill:#1a1a2e; -fx-border-color:#ca6f1e; -fx-border-width:2"); break;
                             default: bedLabel.setStyle(bedLabel.getStyle()
@@ -637,7 +660,8 @@ public class AdminFrame {
                         // 状态小标签
                         String statusText = bed.getStatus().equals("available") ? "空闲" : bed.getStatus().equals("occupied") ? "占用" : bed.getStatus().equals("out") ? "外出" : bed.getStatus();
                         Label statusTag = new Label(statusText);
-                        statusTag.setStyle("-fx-font-size:12px; -fx-text-fill:#555; -fx-padding:0 0 0 6; -fx-font-weight:bold");
+                        String tagColor = "occupied".equals(bed.getStatus()) ? "#e74c3c" : "#555";
+                        statusTag.setStyle("-fx-font-size:12px; -fx-text-fill:" + tagColor + "; -fx-padding:0 0 0 6; -fx-font-weight:bold");
                         roomRow.getChildren().addAll(bedLabel, statusTag);
                     }
                 }
@@ -683,19 +707,37 @@ public class AdminFrame {
 
         ChoiceDialog<String> dlg = new ChoiceDialog<>(
             rooms.get(0).getRoomId() + " - " + rooms.get(0).getRoomNo(),
-            rooms.stream().map(r -> r.getRoomId() + " - " + r.getRoomNo() + " (" + r.getRoomType() + ")").toList());
+            rooms.stream().map(r -> r.getRoomId() + " - " + r.getRoomNo() + " (" + r.getRoomType()
+                + " " + ctx.getBedDao().findByRoomId(r.getRoomId()).size() + "/" + r.getCapacity() + ")").toList());
         dlg.setTitle("选择房间");
         dlg.setHeaderText("请选择要添加床位的房间");
 
         dlg.showAndWait().ifPresent(sel -> {
             String roomId = sel.split(" - ")[0];
+            Room room = ctx.getRoomDao().findById(roomId);
+            int currentBeds = ctx.getBedDao().findByRoomId(roomId).size();
+            if (room != null && currentBeds >= room.getCapacity()) {
+                LoginPane.showAlert(Alert.AlertType.WARNING,
+                    "该房间容量已满（" + currentBeds + "/" + room.getCapacity() + "），无法再添加床位");
+                return;
+            }
+            // 获取已有床位号集合
+            java.util.Set<String> existingNos = new java.util.HashSet<>();
+            ctx.getBedDao().findAll().forEach(b -> existingNos.add(b.getBedNo()));
+
             TextInputDialog bedDlg = new TextInputDialog();
             bedDlg.setTitle("添加床位");
-            bedDlg.setHeaderText("请输入床位号");
+            bedDlg.setHeaderText("请输入床位号（当前 " + currentBeds + "/" + room.getCapacity() + "）");
             bedDlg.showAndWait().ifPresent(bedNo -> {
+                String trimmed = bedNo.trim();
+                if (trimmed.isEmpty()) return;
+                if (existingNos.contains(trimmed)) {
+                    LoginPane.showAlert(Alert.AlertType.WARNING, "床位号「" + trimmed + "」已存在，请使用其他编号");
+                    return;
+                }
                 Bed bed = new Bed();
                 bed.setRoomId(roomId);
-                bed.setBedNo(bedNo.trim());
+                bed.setBedNo(trimmed);
                 bed.setStatus("available");
                 ctx.getBedDao().insert(bed);
                 PersistentIdGenerator.getInstance().save();
