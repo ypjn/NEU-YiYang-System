@@ -247,14 +247,20 @@ public class AdminFrame {
         Button delBtn = new Button("删除用户");
         Button chgPwdBtn = new Button("修改密码");
 
-        addBtn.setOnAction(e -> {
+               addBtn.setOnAction(e -> {
             Dialog<User> dlg = userEditDialog(null);
             dlg.showAndWait().ifPresent(u -> {
-                userService.addUser(u);
+                boolean success = userService.addUser(u);
+                if (!success) {
+                    LoginPane.showAlert(Alert.AlertType.ERROR, "添加失败：账号「" + u.getUsername() + "」已存在，请使用其他账号名");
+                    return;
+                }
                 PersistentIdGenerator.getInstance().save();
                 refreshTable(table, ctx.getUserDao().findAll());
+                LoginPane.showAlert(Alert.AlertType.INFORMATION, "用户添加成功");
             });
         });
+
 
         delBtn.setOnAction(e -> {
             User sel = table.getSelectionModel().getSelectedItem();
