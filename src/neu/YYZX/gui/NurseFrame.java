@@ -14,6 +14,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import neu.YYZX.common.AuditLogger;
 import neu.YYZX.common.PersistentIdGenerator;
 import neu.YYZX.model.*;
 import neu.YYZX.service.*;
@@ -476,13 +477,129 @@ public class NurseFrame {
         box.setPadding(new Insets(15));
 
         TableView<DietPreference> table = new TableView<>();
-        TableColumn<DietPreference, String> c1 = col("老人ID", "customerId");
+        TableColumn<DietPreference, String> c1 = new TableColumn<>("老人姓名");
+        c1.setCellValueFactory(data -> {
+            Elderly e = ctx.getElderlyDao().findById(data.getValue().getCustomerId());
+            return new SimpleStringProperty(e != null ? e.getName() : data.getValue().getCustomerId());
+        });
         TableColumn<DietPreference, String> c2 = col("偏好类型", "preferenceType");
         TableColumn<DietPreference, String> c3 = col("描述", "description");
-        table.getColumns().addAll(c1, c2, c3);
+        TableColumn<DietPreference, String> c4 = col("过敏源", "allergies");
+        TableColumn<DietPreference, String> c5 = col("禁忌", "taboos");
+        table.getColumns().addAll(c1, c2, c3, c4, c5);
         refresh(table, ctx.getDietPreferenceDao().findAll());
 
-        box.getChildren().add(table);
+        Button addBtn = new Button("添加膳食偏好");
+        addBtn.setOnAction(e -> {
+            List<Elderly> activeElders = ctx.getElderlyDao().findAll().stream()
+                .filter(el -> "在住".equals(el.getStatus())).toList();
+            if (activeElders.isEmpty()) { LoginPane.showAlert(Alert.AlertType.WARNING, "没有在住老人"); return; }
+
+            ChoiceDialog<String> selDlg = new ChoiceDialog<>(
+                activeElders.get(0).getId() + " - " + activeElders.get(0).getName(),
+                activeElders.stream().map(el -> el.getId() + " - " + el.getName()).toList());
+            selDlg.setTitle("选择老人");
+            selDlg.setHeaderText("请选择要添加膳食偏好的老人");
+            selDlg.showAndWait().ifPresent(elderSel -> {
+                String elderId = elderSel.split(" - ")[0];
+                String elderName = elderSel.split(" - ")[1];
+                Dialog<DietPreference> dlg = new Dialog<>();
+                dlg.initOwner(stage);
+                dlg.setTitle("添加膳食偏好 - " + elderName);
+                GridPane grid = new GridPane();
+                grid.setHgap(10); grid.setVgap(10); grid.setPadding(new Insets(20));
+                ComboBox<String> prefType = new ComboBox<>();
+                prefType.getItems().addAll("喜爱", "一般", "厌恶");
+                prefType.setValue("喜爱");
+                TextField desc = new TextField();
+                desc.setPromptText("如：偏清淡、喜甜食");
+                TextField allergies = new TextField();
+                allergies.setPromptText("如：花生、海鲜");
+                TextField taboos = new TextField();
+                taboos.setPromptText("如：忌辛辣、忌油腻");
+                grid.add(new Label("偏好类型："), 0, 0); grid.add(prefType, 1, 0);
+                grid.add(new Label("描述："), 0, 1); grid.add(desc, 1, 1);
+                grid.add(new Label("过敏源："), 0, 2); grid.add(allergies, 1, 2);
+                grid.add(new Label("禁忌："), 0, 3); grid.add(taboos, 1, 3);
+                dlg.getDialogPane().setContent(grid);
+                ButtonType okBtn = new ButtonType("确定", ButtonBar.ButtonData.OK_DONE);
+                dlg.getDialogPane().getButtonTypes().addAll(okBtn, ButtonType.CANCEL);
+                dlg.setResultConverter(btn -> {
+                    if (btn != okBtn) return null;
+                    DietPreference dp = new DietPreference();
+                    dp.setCustomerId(elderId);
+                    dp.setPreferenceType(prefType.getValue());
+                    dp.setDescription(desc.getText().trim());
+                    dp.setAllergies(allergies.getText().trim());
+                    dp.setTaboos(taboos.getText().trim());
+                    return dp;
+                });
+                dlg.showAndWait().ifPresent(dp -> {
+                    ctx.getDietPreferenceDao().insert(dp);
+                    PersistentIdGenerator.getInstance().save();
+                    refresh(table, ctx.getDietPreferenceDao().findAll());
+                    AuditLogger.log("添加膳食偏好", "膳食管理", elderName + " - " + dp.getPreferenceType());
+                });
+            });
+        });
+
+        Button editBtn = new Button("修改");
+        editBtn.setOnAction(e -> {
+            DietPreference sel = table.getSelectionModel().getSelectedItem();
+            if (sel == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择记录"); return; }
+            Elderly elder = ctx.getElderlyDao().findById(sel.getCustomerId());
+            String elderName = elder != null ? elder.getName() : sel.getCustomerId();
+
+            Dialog<DietPreference> dlg = new Dialog<>();
+            dlg.initOwner(stage);
+            dlg.setTitle("修改膳食偏好 - " + elderName);
+            GridPane grid = new GridPane();
+            grid.setHgap(10); grid.setVgap(10); grid.setPadding(new Insets(20));
+            ComboBox<String> prefType = new ComboBox<>();
+            prefType.getItems().addAll("喜爱", "一般", "厌恶");
+            prefType.setValue(sel.getPreferenceType() != null ? sel.getPreferenceType() : "喜爱");
+            TextField desc = new TextField(sel.getDescription() != null ? sel.getDescription() : "");
+            TextField allergies = new TextField(sel.getAllergies() != null ? sel.getAllergies() : "");
+            TextField taboos = new TextField(sel.getTaboos() != null ? sel.getTaboos() : "");
+            grid.add(new Label("偏好类型："), 0, 0); grid.add(prefType, 1, 0);
+            grid.add(new Label("描述："), 0, 1); grid.add(desc, 1, 1);
+            grid.add(new Label("过敏源："), 0, 2); grid.add(allergies, 1, 2);
+            grid.add(new Label("禁忌："), 0, 3); grid.add(taboos, 1, 3);
+            dlg.getDialogPane().setContent(grid);
+            ButtonType okBtn = new ButtonType("保存", ButtonBar.ButtonData.OK_DONE);
+            dlg.getDialogPane().getButtonTypes().addAll(okBtn, ButtonType.CANCEL);
+            dlg.setResultConverter(btn -> {
+                if (btn != okBtn) return null;
+                sel.setPreferenceType(prefType.getValue());
+                sel.setDescription(desc.getText().trim());
+                sel.setAllergies(allergies.getText().trim());
+                sel.setTaboos(taboos.getText().trim());
+                return sel;
+            });
+            dlg.showAndWait().ifPresent(dp -> {
+                ctx.getDietPreferenceDao().update(dp);
+                PersistentIdGenerator.getInstance().save();
+                refresh(table, ctx.getDietPreferenceDao().findAll());
+            });
+        });
+
+        Button delBtn = new Button("删除");
+        delBtn.setOnAction(e -> {
+            DietPreference sel = table.getSelectionModel().getSelectedItem();
+            if (sel == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择记录"); return; }
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "确定删除此膳食偏好吗？", ButtonType.YES, ButtonType.NO);
+            confirm.initOwner(stage);
+            confirm.showAndWait().ifPresent(r -> {
+                if (r == ButtonType.YES) {
+                    ctx.getDietPreferenceDao().delete(sel.getPreferenceId());
+                    PersistentIdGenerator.getInstance().save();
+                    refresh(table, ctx.getDietPreferenceDao().findAll());
+                }
+            });
+        });
+
+        HBox btns = new HBox(10, addBtn, editBtn, delBtn);
+        box.getChildren().addAll(btns, table);
         return box;
     }
 
