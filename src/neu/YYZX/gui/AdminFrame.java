@@ -587,10 +587,11 @@ public class AdminFrame {
         floorBox.setPromptText("选择楼层");
 
         Button addBedBtn = new Button("添加床位");
+        Button delBedBtn = new Button("删除床位");
         Button swapBedBtn = new Button("床位调换");
         Button roomBtn = new Button("管理房间");
 
-        filterRow.getChildren().addAll(new Label("楼层："), floorBox, addBedBtn, swapBedBtn, roomBtn);
+        filterRow.getChildren().addAll(new Label("楼层："), floorBox, addBedBtn, delBedBtn, swapBedBtn, roomBtn);
 
         // 床位展示区
         VBox bedArea = new VBox(8);
@@ -644,6 +645,23 @@ public class AdminFrame {
             Building building = ctx.getBuildingDao().findAll().stream().findFirst().orElse(null);
             if (building == null) return;
             showAddBedDialog(building.getBuildingId(), refreshBedArea);
+        });
+
+        delBedBtn.setOnAction(e -> {
+            List<Bed> availBeds = ctx.getBedDao().findAll().stream()
+                .filter(b -> "available".equals(b.getStatus())).toList();
+            if (availBeds.isEmpty()) { LoginPane.showAlert(Alert.AlertType.WARNING, "没有可删除的空闲床位"); return; }
+            ChoiceDialog<String> dlg = new ChoiceDialog<>(
+                availBeds.get(0).getBedId() + " - " + availBeds.get(0).getBedNo(),
+                availBeds.stream().map(b -> b.getBedId() + " - " + b.getBedNo()).toList());
+            dlg.setTitle("删除床位");
+            dlg.setHeaderText("选择要删除的空闲床位（占用/外出中的床位不可删除）");
+            dlg.showAndWait().ifPresent(sel -> {
+                String bedId = sel.split(" - ")[0];
+                ctx.getBedDao().delete(bedId);
+                PersistentIdGenerator.getInstance().save();
+                refreshBedArea.run();
+            });
         });
 
         swapBedBtn.setOnAction(e -> showSwapBedDialog(refreshBedArea));
