@@ -608,8 +608,22 @@ public class AdminFrame {
                 rooms = rooms.stream().filter(r -> r.getFloor() == floor).toList();
             }
             if (rooms.isEmpty()) { bedArea.getChildren().add(new Label("无房间")); return; }
+            // 按床位占用状态排序：有空闲床位的房间在前，全占用的在后
+            rooms.sort((a, b) -> {
+                List<Bed> ba = ctx.getBedDao().findByRoomId(a.getRoomId());
+                List<Bed> bb = ctx.getBedDao().findByRoomId(b.getRoomId());
+                boolean aHasAvail = ba.stream().anyMatch(bd -> "available".equals(bd.getStatus()));
+                boolean bHasAvail = bb.stream().anyMatch(bd -> "available".equals(bd.getStatus()));
+                if (aHasAvail && !bHasAvail) return -1;
+                if (!aHasAvail && bHasAvail) return 1;
+                return a.getRoomNo().compareTo(b.getRoomNo());
+            });
             for (Room room : rooms) {
                 List<Bed> beds = ctx.getBedDao().findByRoomId(room.getRoomId());
+                // 空闲在前，占用在后
+                beds.sort((a, b) -> Integer.compare(
+                    "available".equals(a.getStatus()) ? 0 : "out".equals(a.getStatus()) ? 1 : 2,
+                    "available".equals(b.getStatus()) ? 0 : "out".equals(b.getStatus()) ? 1 : 2));
                 HBox roomRow = new HBox(8);
                 roomRow.setAlignment(Pos.CENTER_LEFT);
                 Label roomLabel = new Label("房间 " + room.getRoomNo() + " ");
@@ -625,7 +639,7 @@ public class AdminFrame {
                             case "available": bedLabel.setStyle(bedLabel.getStyle()
                                 + " -fx-background-color:#27ae60; -fx-text-fill:#1a1a2e; -fx-border-color:#1e8449; -fx-border-width:2"); break;
                             case "occupied": bedLabel.setStyle(bedLabel.getStyle()
-                                + " -fx-background-color:#c0392b; -fx-text-fill:#1a1a2e; -fx-border-color:#922b21; -fx-border-width:2"); break;
+                                + " -fx-background-color:#fff0f0; -fx-text-fill:#c0392b; -fx-border-color:#e74c3c; -fx-border-width:3"); break;
                             case "out": bedLabel.setStyle(bedLabel.getStyle()
                                 + " -fx-background-color:#e67e22; -fx-text-fill:#1a1a2e; -fx-border-color:#ca6f1e; -fx-border-width:2"); break;
                             default: bedLabel.setStyle(bedLabel.getStyle()
@@ -634,7 +648,8 @@ public class AdminFrame {
                         // 状态小标签
                         String statusText = bed.getStatus().equals("available") ? "空闲" : bed.getStatus().equals("occupied") ? "占用" : bed.getStatus().equals("out") ? "外出" : bed.getStatus();
                         Label statusTag = new Label(statusText);
-                        statusTag.setStyle("-fx-font-size:12px; -fx-text-fill:#555; -fx-padding:0 0 0 6; -fx-font-weight:bold");
+                        String tagColor = "occupied".equals(bed.getStatus()) ? "#e74c3c" : "#555";
+                        statusTag.setStyle("-fx-font-size:12px; -fx-text-fill:" + tagColor + "; -fx-padding:0 0 0 6; -fx-font-weight:bold");
                         roomRow.getChildren().addAll(bedLabel, statusTag);
                     }
                 }
