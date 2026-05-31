@@ -119,7 +119,7 @@ public class NurseMenu implements IMenu {
         String remark = mainMenu.getScanner().nextLine();
 
         String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        CareRecord record = new CareRecord(null, elderId, project.getCode(), time, nurseName, remark);
+        CareRecord record = new CareRecord(null, elderId, project.getCode(), time, 1, nurseName, remark);
         recordService.add(record);
         PersistentIdGenerator.getInstance().save();
         System.out.println("护理执行登记成功！记录号：" + record.getId());
@@ -155,7 +155,7 @@ public class NurseMenu implements IMenu {
         System.out.print("事由：");
         String reason = mainMenu.getScanner().nextLine();
 
-        outService.add(new OutRegistration(null, elderId, outTime, expected, null, companion, reason, "外出中"));
+        outService.add(new OutRegistration(null, elderId, outTime, expected, null, companion, reason, "外出中", "已提交", null, null));
         PersistentIdGenerator.getInstance().save();
         System.out.println("外出登记成功！");
     }

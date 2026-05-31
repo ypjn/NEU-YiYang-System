@@ -9,7 +9,8 @@ import java.util.List;
 /**
  * 外出登记数据访问层
  */
-public class OutRegistrationDao extends BaseJsonDao<OutRegistration> {
+public class OutRegistrationDao extends BaseJsonDao<OutRegistration> //代码易于复用，类型安全，易于扩展，统一存储
+{
 
     private static final String FILE_NAME = "out_registrations.json";
     private static final String ID_PREFIX = "OUT";

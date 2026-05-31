@@ -179,10 +179,17 @@ public class NurseFrame {
         TableColumn<Elderly, String> c1 = col("姓名", "name");
         TableColumn<Elderly, String> c2 = col("年龄", "age");
         TableColumn<Elderly, String> c3 = col("性别", "gender");
-        TableColumn<Elderly, String> c4 = col("床位ID", "bedId");
-        TableColumn<Elderly, String> c5 = col("护理等级", "nursingLevelCode");
-        TableColumn<Elderly, String> c6 = col("状态", "status");
-        table.getColumns().addAll(c1, c2, c3, c4, c5, c6);
+        TableColumn<Elderly, String> c4 = col("血型", "bloodType");
+        TableColumn<Elderly, String> c5 = col("身份证", "idCard");
+        TableColumn<Elderly, String> c6 = col("电话", "phone");
+        TableColumn<Elderly, String> c7 = col("家属", "familyMember");
+        TableColumn<Elderly, String> c8 = col("楼栋", "buildingId");
+        TableColumn<Elderly, String> c9 = col("房间号", "roomNo");
+        TableColumn<Elderly, String> c10 = col("床位ID", "bedId");
+        TableColumn<Elderly, String> c11 = col("护理等级", "nursingLevelCode");
+        TableColumn<Elderly, String> c12 = col("合同到期", "contractEndDate");
+        TableColumn<Elderly, String> c13 = col("状态", "status");
+        table.getColumns().addAll(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13);
         refresh(table, ctx.getElderlyDao().findAll());
 
         searchField.textProperty().addListener((o, ov, nv) -> {
@@ -203,8 +210,9 @@ public class NurseFrame {
         TableColumn<CareRecord, String> c1 = col("老人ID", "elderlyId");
         TableColumn<CareRecord, String> c2 = col("项目代码", "projectCode");
         TableColumn<CareRecord, String> c3 = col("执行时间", "executeTime");
-        TableColumn<CareRecord, String> c4 = col("护工", "nurseName");
-        table.getColumns().addAll(c1, c2, c3, c4);
+        TableColumn<CareRecord, String> c4 = col("数量", "quantity");
+        TableColumn<CareRecord, String> c5 = col("护工", "nurseName");
+        table.getColumns().addAll(c1, c2, c3, c4, c5);
 
         String nurseName = user.getRealName() != null ? user.getRealName() : user.getUsername();
         refresh(table, ctx.getCareRecordDao().findByNurseName(nurseName));
@@ -227,13 +235,15 @@ public class NurseFrame {
         ctx.getElderlyDao().findAll().forEach(e -> elderlyBox.getItems().add(e.getId() + " - " + e.getName()));
         ComboBox<String> projectBox = new ComboBox<>();
         ctx.getCareProjectDao().findAll().forEach(p -> projectBox.getItems().add(p.getCode() + " - " + p.getName()));
+        TextField quantity = new TextField("1");
         TextField remark = new TextField();
         DatePicker execDate = new DatePicker(LocalDate.now());
 
         grid.add(new Label("老人："), 0, 0); grid.add(elderlyBox, 1, 0);
         grid.add(new Label("护理项目："), 0, 1); grid.add(projectBox, 1, 1);
-        grid.add(new Label("执行日期："), 0, 2); grid.add(execDate, 1, 2);
-        grid.add(new Label("备注："), 0, 3); grid.add(remark, 1, 3);
+        grid.add(new Label("护理数量："), 0, 2); grid.add(quantity, 1, 2);
+        grid.add(new Label("执行日期："), 0, 3); grid.add(execDate, 1, 3);
+        grid.add(new Label("备注："), 0, 4); grid.add(remark, 1, 4);
 
         dlg.getDialogPane().setContent(grid);
         ButtonType okBtn = new ButtonType("确定", ButtonBar.ButtonData.OK_DONE);
@@ -245,8 +255,10 @@ public class NurseFrame {
             String pcode = projectBox.getValue().split(" - ")[0];
             String execTime = (execDate.getValue() != null ? execDate.getValue().toString() : LocalDate.now().toString())
                 + " " + LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+            int qty = 1;
+            try { qty = Integer.parseInt(quantity.getText().trim()); } catch (Exception ex) { }
             CareRecord cr = new CareRecord(null, eid, pcode,
-                execTime, nurseName, remark.getText().trim());
+                execTime, qty, nurseName, remark.getText().trim());
             ctx.getCareRecordDao().insert(cr);
             PersistentIdGenerator.getInstance().save();
             refresh(table, ctx.getCareRecordDao().findByNurseName(nurseName));
@@ -294,15 +306,40 @@ public class NurseFrame {
         VBox box = new VBox(10);
         box.setPadding(new Insets(15));
 
+        String displayName = user.getRealName() != null ? user.getRealName() : user.getUsername();
+
         TableView<Message> table = new TableView<>();
         TableColumn<Message, String> c1 = col("内容", "content");
         TableColumn<Message, String> c2 = col("时间", "time");
         TableColumn<Message, String> c3 = tcRead("已读", "isRead");
         table.getColumns().addAll(c1, c2, c3);
+        table.setRowFactory(tv -> {
+            TableRow<Message> row = new TableRow<>();
+            row.setOnMouseClicked(e -> {
+                if (e.getClickCount() == 2 && !row.isEmpty()) {
+                    Message msg = row.getItem();
+                    if (!msg.isRead()) {
+                        msg.setRead(true);
+                        ctx.getMessageDao().update(msg);
+                        refresh(table, ctx.getMessageDao().findByReceiver(displayName));
+                    }
+                    // 根据消息内容关键字跳转到对应模块
+                    String content = msg.getContent() != null ? msg.getContent() : "";
+                    if (content.contains("护理") || content.contains("服务") || content.contains("管家")) {
+                        switchContent("records");
+                    } else if (content.contains("外出") || content.contains("退住")) {
+                        switchContent("elderly");
+                    } else if (content.contains("膳食") || content.contains("饮食")) {
+                        switchContent("diet");
+                    } else {
+                        switchContent("elderly");
+                    }
+                }
+            });
+            return row;
+        });
 
-        String displayName = user.getRealName() != null ? user.getRealName() : user.getUsername();
-        List<Message> msgs = ctx.getMessageDao().findByReceiver(displayName);
-        refresh(table, msgs);
+        refresh(table, ctx.getMessageDao().findByReceiver(displayName));
 
         Button markReadBtn = new Button("标记已读");
         markReadBtn.setOnAction(e -> {
@@ -310,10 +347,28 @@ public class NurseFrame {
             if (sel == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择消息"); return; }
             sel.setRead(true);
             ctx.getMessageDao().update(sel);
+            PersistentIdGenerator.getInstance().save();
             refresh(table, ctx.getMessageDao().findByReceiver(displayName));
         });
 
-        box.getChildren().addAll(markReadBtn, table);
+        Button markAllReadBtn = new Button("全部已读");
+        markAllReadBtn.setOnAction(e -> {
+            List<Message> msgs = ctx.getMessageDao().findByReceiver(displayName);
+            for (Message m : msgs) {
+                if (!m.isRead()) {
+                    m.setRead(true);
+                    ctx.getMessageDao().update(m);
+                }
+            }
+            PersistentIdGenerator.getInstance().save();
+            refresh(table, ctx.getMessageDao().findByReceiver(displayName));
+        });
+
+        HBox btns = new HBox(10, markReadBtn, markAllReadBtn);
+        Label hint = new Label("双击未读消息可标记已读并跳转到对应页面");
+        hint.setStyle("-fx-text-fill:#7f8c8d; -fx-font-size:12px");
+
+        box.getChildren().addAll(hint, btns, table);
         return box;
     }
 
