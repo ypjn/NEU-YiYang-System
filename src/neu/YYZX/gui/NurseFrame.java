@@ -66,7 +66,8 @@ public class NurseFrame {
 
         String[][] items = {
             {"🧓 老人信息", "elderly"}, {"📝 护理记录", "records"}, {"📋 服务管理", "services"},
-            {"🍽 膳食偏好", "diet"}, {"💬 我的消息", "messages"}
+            {"🍽 膳食偏好", "diet"}, {"🚶 外出申请", "outreg"}, {"🏠 退住申请", "checkout"},
+            {"💬 我的消息", "messages"}
         };
 
         ToggleGroup group = new ToggleGroup();
@@ -139,7 +140,8 @@ public class NurseFrame {
 
     private Map<String, String> moduleNames = Map.of(
         "elderly", "老人信息", "records", "护理记录", "services", "服务管理",
-        "diet", "膳食偏好", "messages", "我的消息"
+        "diet", "膳食偏好", "outreg", "外出申请", "checkout", "退住申请",
+        "messages", "我的消息"
     );
 
     private void switchContent(String key) {
@@ -152,6 +154,8 @@ public class NurseFrame {
             case "records": content = buildCareRecords(); break;
             case "services": content = buildServices(); break;
             case "diet": content = buildDiet(); break;
+            case "outreg": content = buildOutRegApply(); break;
+            case "checkout": content = buildCheckoutApply(); break;
             case "messages": content = buildMessages(); break;
             default: content = new Label("开发中...");
         }
@@ -298,6 +302,145 @@ public class NurseFrame {
         refresh(table, ctx.getDietPreferenceDao().findAll());
 
         box.getChildren().add(table);
+        return box;
+    }
+
+    // ==================== 外出申请 ====================
+    private VBox buildOutRegApply() {
+        VBox box = new VBox(10);
+        box.setPadding(new Insets(15));
+
+        TableView<OutRegistration> table = new TableView<>();
+        TableColumn<OutRegistration, String> c1 = col("老人ID", "customerId");
+        TableColumn<OutRegistration, String> c2 = col("外出时间", "outTime");
+        TableColumn<OutRegistration, String> c3 = col("预计归时", "expectedReturnTime");
+        TableColumn<OutRegistration, String> c4 = col("实际归时", "actualReturnTime");
+        TableColumn<OutRegistration, String> c5 = col("陪同人", "companion");
+        TableColumn<OutRegistration, String> c6 = col("事由", "reason");
+        TableColumn<OutRegistration, String> c7 = col("审批状态", "approvalStatus");
+        table.getColumns().addAll(c1, c2, c3, c4, c5, c6, c7);
+
+        String nurseName = user.getRealName() != null ? user.getRealName() : user.getUsername();
+        refresh(table, ctx.getOutRegistrationDao().findAll().stream()
+            .filter(o -> nurseName.equals(o.getCompanion())).toList());
+
+        Button applyBtn = new Button("新增外出申请");
+        applyBtn.setOnAction(e -> {
+            List<Elderly> activeElders = ctx.getElderlyDao().findAll().stream()
+                .filter(el -> "在住".equals(el.getStatus())).toList();
+            if (activeElders.isEmpty()) { LoginPane.showAlert(Alert.AlertType.WARNING, "没有在住老人"); return; }
+
+            ChoiceDialog<String> selDlg = new ChoiceDialog<>(
+                activeElders.get(0).getId() + " - " + activeElders.get(0).getName(),
+                activeElders.stream().map(el -> el.getId() + " - " + el.getName()).toList());
+            selDlg.setTitle("选择老人");
+            selDlg.setHeaderText("请选择要申请外出的老人");
+            selDlg.showAndWait().ifPresent(elderSel -> {
+                String elderId = elderSel.split(" - ")[0];
+                Dialog<OutRegistration> dlg = new Dialog<>();
+                dlg.setTitle("外出申请");
+                GridPane grid = new GridPane();
+                grid.setHgap(10); grid.setVgap(10); grid.setPadding(new Insets(20));
+                DatePicker outDate = new DatePicker(LocalDate.now());
+                TextField outTimeField = new TextField(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
+                DatePicker returnDate = new DatePicker(LocalDate.now().plusDays(1));
+                TextField returnTimeField = new TextField("18:00");
+                TextField reason = new TextField();
+                grid.add(new Label("外出日期："), 0, 0); grid.add(outDate, 1, 0);
+                grid.add(new Label("外出时间："), 0, 1); grid.add(outTimeField, 1, 1);
+                grid.add(new Label("预计归日："), 0, 2); grid.add(returnDate, 1, 2);
+                grid.add(new Label("预计归时："), 0, 3); grid.add(returnTimeField, 1, 3);
+                grid.add(new Label("事由："), 0, 4); grid.add(reason, 1, 4);
+                dlg.getDialogPane().setContent(grid);
+                ButtonType okBtn = new ButtonType("提交", ButtonBar.ButtonData.OK_DONE);
+                dlg.getDialogPane().getButtonTypes().addAll(okBtn, ButtonType.CANCEL);
+                dlg.setResultConverter(btn -> {
+                    if (btn != okBtn) return null;
+                    String outTime = outDate.getValue() + " " + outTimeField.getText().trim();
+                    String expectedReturn = returnDate.getValue() + " " + returnTimeField.getText().trim();
+                    OutRegistration r = new OutRegistration();
+                    r.setCustomerId(elderId);
+                    r.setOutTime(outTime);
+                    r.setExpectedReturnTime(expectedReturn);
+                    r.setCompanion(nurseName);
+                    r.setReason(reason.getText().trim());
+                    r.setStatus("申请中");
+                    r.setApprovalStatus("待审批");
+                    ctx.getOutRegistrationDao().insert(r);
+                    PersistentIdGenerator.getInstance().save();
+                    refresh(table, ctx.getOutRegistrationDao().findAll().stream()
+                        .filter(o -> nurseName.equals(o.getCompanion())).toList());
+                    return r;
+                });
+                dlg.showAndWait();
+            });
+        });
+
+        box.getChildren().addAll(applyBtn, table);
+        return box;
+    }
+
+    // ==================== 退住申请 ====================
+    private VBox buildCheckoutApply() {
+        VBox box = new VBox(10);
+        box.setPadding(new Insets(15));
+
+        TableView<CheckOut> table = new TableView<>();
+        TableColumn<CheckOut, String> c1 = col("老人ID", "customerId");
+        TableColumn<CheckOut, String> c2 = col("退住类型", "checkoutType");
+        TableColumn<CheckOut, String> c3 = col("退住日期", "checkoutDate");
+        TableColumn<CheckOut, String> c4 = col("原因", "reason");
+        TableColumn<CheckOut, String> c5 = col("审批状态", "approvalStatus");
+        table.getColumns().addAll(c1, c2, c3, c4, c5);
+
+        refresh(table, ctx.getCheckOutDao().findAll());
+
+        Button applyBtn = new Button("新增退住申请");
+        applyBtn.setOnAction(e -> {
+            List<Elderly> activeElders = ctx.getElderlyDao().findAll().stream()
+                .filter(el -> "在住".equals(el.getStatus())).toList();
+            if (activeElders.isEmpty()) { LoginPane.showAlert(Alert.AlertType.WARNING, "没有在住老人"); return; }
+
+            ChoiceDialog<String> selDlg = new ChoiceDialog<>(
+                activeElders.get(0).getId() + " - " + activeElders.get(0).getName(),
+                activeElders.stream().map(el -> el.getId() + " - " + el.getName()).toList());
+            selDlg.setTitle("选择老人");
+            selDlg.setHeaderText("请选择要申请退住的老人");
+            selDlg.showAndWait().ifPresent(elderSel -> {
+                String elderId = elderSel.split(" - ")[0];
+                Dialog<CheckOut> dlg = new Dialog<>();
+                dlg.setTitle("退住申请");
+                GridPane grid = new GridPane();
+                grid.setHgap(10); grid.setVgap(10); grid.setPadding(new Insets(20));
+                ComboBox<String> typeBox = new ComboBox<>();
+                typeBox.getItems().addAll("正常退住", "死亡退住", "保留床位");
+                typeBox.setValue("正常退住");
+                DatePicker checkoutDate = new DatePicker(LocalDate.now());
+                TextField reason = new TextField();
+                grid.add(new Label("退住类型："), 0, 0); grid.add(typeBox, 1, 0);
+                grid.add(new Label("退住日期："), 0, 1); grid.add(checkoutDate, 1, 1);
+                grid.add(new Label("原因："), 0, 2); grid.add(reason, 1, 2);
+                dlg.getDialogPane().setContent(grid);
+                ButtonType okBtn = new ButtonType("提交", ButtonBar.ButtonData.OK_DONE);
+                dlg.getDialogPane().getButtonTypes().addAll(okBtn, ButtonType.CANCEL);
+                dlg.setResultConverter(btn -> {
+                    if (btn != okBtn) return null;
+                    CheckOut co = new CheckOut();
+                    co.setCustomerId(elderId);
+                    co.setCheckoutType(typeBox.getValue());
+                    co.setCheckoutDate(checkoutDate.getValue().toString());
+                    co.setReason(reason.getText().trim());
+                    co.setApprovalStatus("待审批");
+                    ctx.getCheckOutDao().insert(co);
+                    PersistentIdGenerator.getInstance().save();
+                    refresh(table, ctx.getCheckOutDao().findAll());
+                    return co;
+                });
+                dlg.showAndWait();
+            });
+        });
+
+        box.getChildren().addAll(applyBtn, table);
         return box;
     }
 

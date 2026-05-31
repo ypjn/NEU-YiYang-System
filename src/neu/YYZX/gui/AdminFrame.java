@@ -119,7 +119,7 @@ public class AdminFrame {
         for (Map.Entry<String, ToggleButton> entry : navButtons.entrySet()) {
             ToggleButton btn = entry.getValue();
             if (entry.getKey().equals(selectedKey)) {
-                btn.setStyle("-fx-background-color:#3498db; -fx-text-fill:white; -fx-font-size:13px; "
+                btn.setStyle("-fx-background-color:#3498db; -fx-text-fill:#1a1a2e; -fx-font-size:13px; "
                     + "-fx-background-radius:6; -fx-border-color:#2980b9; -fx-border-radius:6; -fx-border-width:2");
             } else {
                 btn.setStyle("-fx-background-color:transparent; -fx-text-fill:#bdc3c7; -fx-font-size:13px; "
@@ -612,13 +612,13 @@ public class AdminFrame {
                         bedLabel.setStyle("-fx-padding:8 18; -fx-background-radius:8; -fx-font-size:15px; -fx-font-weight:bold; -fx-min-width:70; -fx-alignment:center; -fx-border-radius:8");
                         switch (bed.getStatus()) {
                             case "available": bedLabel.setStyle(bedLabel.getStyle()
-                                + " -fx-background-color:#27ae60; -fx-text-fill:white; -fx-border-color:#1e8449; -fx-border-width:2"); break;
+                                + " -fx-background-color:#27ae60; -fx-text-fill:#1a1a2e; -fx-border-color:#1e8449; -fx-border-width:2"); break;
                             case "occupied": bedLabel.setStyle(bedLabel.getStyle()
-                                + " -fx-background-color:#c0392b; -fx-text-fill:white; -fx-border-color:#922b21; -fx-border-width:2"); break;
+                                + " -fx-background-color:#c0392b; -fx-text-fill:#1a1a2e; -fx-border-color:#922b21; -fx-border-width:2"); break;
                             case "out": bedLabel.setStyle(bedLabel.getStyle()
-                                + " -fx-background-color:#e67e22; -fx-text-fill:white; -fx-border-color:#ca6f1e; -fx-border-width:2"); break;
+                                + " -fx-background-color:#e67e22; -fx-text-fill:#1a1a2e; -fx-border-color:#ca6f1e; -fx-border-width:2"); break;
                             default: bedLabel.setStyle(bedLabel.getStyle()
-                                + " -fx-background-color:#7f8c8d; -fx-text-fill:white; -fx-border-color:#6c7a7a; -fx-border-width:2"); break;
+                                + " -fx-background-color:#7f8c8d; -fx-text-fill:#1a1a2e; -fx-border-color:#6c7a7a; -fx-border-width:2"); break;
                         }
                         // 状态小标签
                         String statusText = bed.getStatus().equals("available") ? "空闲" : bed.getStatus().equals("occupied") ? "占用" : bed.getStatus().equals("out") ? "外出" : bed.getStatus();
