@@ -1303,12 +1303,15 @@ public class AdminFrame {
         HBox topRow = new HBox(10);
         ComboBox<String> butlerBox = new ComboBox<>();
         butlerBox.setPromptText("选择健康管家(护工)");
+        // 默认选项"无"显示全部
+        butlerBox.getItems().add("无 - 全部");
         // 用 Employee 表查找管家/护工，不用 User 表
         ctx.getEmployeeDao().findAll().forEach(emp -> {
             if (emp.getPosition() != null && (emp.getPosition().contains("管家") || emp.getPosition().contains("护工"))) {
                 butlerBox.getItems().add(emp.getEmployeeId() + " - " + emp.getName());
             }
         });
+        butlerBox.setValue("无 - 全部");
 
         topRow.getChildren().addAll(new Label("健康管家："), butlerBox);
 
@@ -1324,9 +1327,15 @@ public class AdminFrame {
         TableColumn<ServiceAssignment, String> c3 = tc("状态", "status");
         table.getColumns().addAll(c0, c1, c2, c3);
 
+        // 默认显示全部
+        refreshTable(table, ctx.getServiceAssignmentDao().findAll());
+
         butlerBox.setOnAction(e -> {
             String sel = butlerBox.getValue();
-            if (sel != null) {
+            if (sel == null) return;
+            if ("无 - 全部".equals(sel)) {
+                refreshTable(table, ctx.getServiceAssignmentDao().findAll());
+            } else {
                 String empId = sel.split(" - ")[0];
                 refreshTable(table, ctx.getServiceAssignmentDao().findByEmployeeId(empId));
             }
@@ -1337,7 +1346,7 @@ public class AdminFrame {
 
         addClientBtn.setOnAction(e -> {
             String sel = butlerBox.getValue();
-            if (sel == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择管家"); return; }
+            if (sel == null || "无 - 全部".equals(sel)) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择具体管家"); return; }
             String empId = sel.split(" - ")[0];
             String empName = sel.split(" - ")[1];
 
@@ -1380,7 +1389,9 @@ public class AdminFrame {
                     ctx.getServiceAssignmentDao().delete(sa.getAssignmentId());
                     PersistentIdGenerator.getInstance().save();
                     String selValue = butlerBox.getValue();
-                    if (selValue != null) refreshTable(table, ctx.getServiceAssignmentDao().findByEmployeeId(selValue.split(" - ")[0]));
+                    if (selValue == null) return;
+                    if ("无 - 全部".equals(selValue)) refreshTable(table, ctx.getServiceAssignmentDao().findAll());
+                    else refreshTable(table, ctx.getServiceAssignmentDao().findByEmployeeId(selValue.split(" - ")[0]));
                 }
             });
         });
