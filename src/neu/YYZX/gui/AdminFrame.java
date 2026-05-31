@@ -2210,6 +2210,7 @@ public class AdminFrame {
 
     private <T> void refreshTable(TableView<T> table, List<T> data) {
         table.setItems(FXCollections.observableArrayList(data));
+        table.refresh();
     }
 
     private void refreshElderly(TableView<Elderly> table, List<Elderly> data) {

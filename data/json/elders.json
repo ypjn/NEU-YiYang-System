@@ -198,4 +198,24 @@
   "roomNo" : "402",
   "buildingId" : "B0004",
   "status" : "在住"
+}, {
+  "id" : "E0027",
+  "name" : "关",
+  "age" : 84,
+  "gender" : "男",
+  "idCard" : "11010119420315273X",
+  "bloodType" : "A",
+  "birthDate" : "1942-03-15",
+  "phone" : "13797282733",
+  "address" : "",
+  "emergencyContact" : "",
+  "emergencyPhone" : "",
+  "familyMember" : "",
+  "checkInDate" : "2026-05-31 00:00:00",
+  "contractEndDate" : "2027-05-31",
+  "bedId" : "BD0070",
+  "nursingLevelCode" : null,
+  "roomNo" : "101",
+  "buildingId" : "B0004",
+  "status" : "在住"
 } ]

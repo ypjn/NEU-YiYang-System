@@ -94,4 +94,20 @@
   "target" : "健康记录",
   "detail" : "E0017 - test03",
   "time" : "2026-05-31 14:24:16"
+}, {
+  "logId" : "LOG0013",
+  "operatorName" : "未知",
+  "operatorRole" : "未知",
+  "action" : "床位调换",
+  "target" : "床位管理",
+  "detail" : "E0027 → 床位 101-2",
+  "time" : "2026-05-31 15:39:07"
+}, {
+  "logId" : "LOG0014",
+  "operatorName" : "未知",
+  "operatorRole" : "未知",
+  "action" : "设置服务对象",
+  "target" : "管家分配",
+  "detail" : "李管家 ← E0027 - 关",
+  "time" : "2026-05-31 15:39:41"
 } ]

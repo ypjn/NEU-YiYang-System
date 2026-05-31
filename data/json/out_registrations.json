@@ -3,11 +3,23 @@
   "customerId" : "E0016",
   "outTime" : "2026-05-31 11:03",
   "expectedReturnTime" : "2026-06-01 18:00",
-  "actualReturnTime" : null,
+  "actualReturnTime" : "2026-05-31 15:41:31",
   "companion" : "护工张三",
   "reason" : "探亲",
-  "status" : "申请中",
+  "status" : "已归来",
   "approvalStatus" : "通过",
   "approvalTime" : "2026-05-31 11:04:09",
+  "approver" : "系统管理员"
+}, {
+  "outId" : "OUT0004",
+  "customerId" : "E0027",
+  "outTime" : "2026-05-31 15:41",
+  "expectedReturnTime" : "2026-06-01 18:00",
+  "actualReturnTime" : "2026-05-31 15:45:55",
+  "companion" : "护工张三",
+  "reason" : "",
+  "status" : "已归来",
+  "approvalStatus" : "通过",
+  "approvalTime" : "2026-05-31 15:42:13",
   "approver" : "系统管理员"
 } ]

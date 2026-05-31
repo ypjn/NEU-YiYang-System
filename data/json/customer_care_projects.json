@@ -271,4 +271,11 @@
   "quantity" : 1,
   "purchaseDate" : "2024-08-20 10:00:00",
   "expireDate" : "2026-08-19"
+}, {
+  "id" : "CCP0042",
+  "customerId" : "E0027",
+  "projectCode" : "LZ-003",
+  "quantity" : 1,
+  "purchaseDate" : "2026-05-31 15:39:29",
+  "expireDate" : "2026-08-31"
 } ]

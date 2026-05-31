@@ -117,5 +117,5 @@
   "bedId" : "BD0070",
   "bedNo" : "101-2",
   "roomId" : "RM0023",
-  "status" : "available"
+  "status" : "occupied"
 } ]
