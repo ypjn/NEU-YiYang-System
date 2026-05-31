@@ -67,11 +67,11 @@ public class AdminFrame {
         nav.setStyle("-fx-background-color:#2c3e50");
 
         String[][] items = {
-            {"📊 仪表盘", "dashboard"}, {"👤 用户管理", "users"}, {"🧓 老人管理", "elderly"},
-            {"🛏 床位管理", "beds"}, {"⭐ 护理等级", "nlevels"}, {"📋 护理项目", "nprojects"},
-            {"📝 护理记录", "nrecords"}, {"💗 服务关注", "serviceFocus"}, {"👨‍⚕ 管家分配", "butlerAssign"}, {"🍽 膳食管理", "foods"}, {"👷 员工管理", "employees"},
-            {"🚶 外出手续", "outreg"}, {"🏠 退住管理", "checkout"}, {"💊 健康记录", "health"},
-            {"📜 操作日志", "logs"}
+            {"仪表盘", "dashboard"}, {"用户管理", "users"}, {"老人管理", "elderly"},
+            {"床位管理", "beds"}, {"护理等级", "nlevels"}, {"护理项目", "nprojects"},
+            {"护理记录", "nrecords"}, {"服务关注", "serviceFocus"}, {"管家分配", "butlerAssign"}, {"膳食管理", "foods"}, {"员工管理", "employees"},
+            {"外出手续", "outreg"}, {"退住管理", "checkout"}, {"健康记录", "health"},
+            {"操作日志", "logs"}
         };
 
         ToggleGroup group = new ToggleGroup();
@@ -1620,14 +1620,6 @@ public class AdminFrame {
             }
         }
         butlerBox.setValue("无 - 全部");
-        butlerBox.setCellFactory(param -> new javafx.scene.control.ListCell<String>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) { setText(null); }
-                else { setText(item); }
-            }
-        });
 
         topRow.getChildren().addAll(new Label("健康管家："), butlerBox);
 

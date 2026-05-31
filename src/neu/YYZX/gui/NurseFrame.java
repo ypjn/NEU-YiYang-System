@@ -65,9 +65,9 @@ public class NurseFrame {
         nav.setStyle("-fx-background-color:#2c3e50");
 
         String[][] items = {
-            {"🧓 老人信息", "elderly"}, {"📝 护理记录", "records"}, {"📋 服务管理", "services"},
-            {"🍽 膳食偏好", "diet"}, {"💊 健康记录", "health"}, {"🚶 外出申请", "outreg"},
-            {"🏠 退住申请", "checkout"}, {"💬 我的消息", "messages"}
+            {"老人信息", "elderly"}, {"护理记录", "records"}, {"服务管理", "services"},
+            {"膳食偏好", "diet"}, {"健康记录", "health"}, {"外出申请", "outreg"},
+            {"退住申请", "checkout"}, {"我的消息", "messages"}
         };
 
         ToggleGroup group = new ToggleGroup();
