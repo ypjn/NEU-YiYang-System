@@ -3,7 +3,7 @@
   "nursing_content" : 30,
   "role" : 4,
   "out_registration" : 4,
-  "log" : 14,
+  "log" : 15,
   "elderly" : 27,
   "customer_care_project" : 42,
   "employee" : 20,
@@ -15,5 +15,6 @@
   "health_record" : 12,
   "care_record" : 9,
   "user" : 7,
+  "diet_preference" : 11,
   "service_assignment" : 17
 }

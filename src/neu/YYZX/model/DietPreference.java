@@ -6,8 +6,8 @@ package neu.YYZX.model;
 public class DietPreference {
     private String preferenceId;
     private String customerId;
-    private String preferenceType;
-    private String description;
+    private String taste;
+    private String dietaryAdvice;
     private String allergies;
     private String taboos;
     private String remark;
@@ -15,70 +15,29 @@ public class DietPreference {
     public DietPreference() {
     }
 
-    public DietPreference(String preferenceId, String customerId, String preferenceType,
-                          String description, String allergies, String taboos, String remark) {
+    public DietPreference(String preferenceId, String customerId, String taste,
+                          String dietaryAdvice, String allergies, String taboos, String remark) {
         this.preferenceId = preferenceId;
         this.customerId = customerId;
-        this.preferenceType = preferenceType;
-        this.description = description;
+        this.taste = taste;
+        this.dietaryAdvice = dietaryAdvice;
         this.allergies = allergies;
         this.taboos = taboos;
         this.remark = remark;
     }
 
-    public String getPreferenceId() {
-        return preferenceId;
-    }
-
-    public void setPreferenceId(String preferenceId) {
-        this.preferenceId = preferenceId;
-    }
-
-    public String getCustomerId() {
-        return customerId;
-    }
-
-    public void setCustomerId(String customerId) {
-        this.customerId = customerId;
-    }
-
-    public String getPreferenceType() {
-        return preferenceType;
-    }
-
-    public void setPreferenceType(String preferenceType) {
-        this.preferenceType = preferenceType;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getAllergies() {
-        return allergies;
-    }
-
-    public void setAllergies(String allergies) {
-        this.allergies = allergies;
-    }
-
-    public String getTaboos() {
-        return taboos;
-    }
-
-    public void setTaboos(String taboos) {
-        this.taboos = taboos;
-    }
-
-    public String getRemark() {
-        return remark;
-    }
-
-    public void setRemark(String remark) {
-        this.remark = remark;
-    }
+    public String getPreferenceId() { return preferenceId; }
+    public void setPreferenceId(String preferenceId) { this.preferenceId = preferenceId; }
+    public String getCustomerId() { return customerId; }
+    public void setCustomerId(String customerId) { this.customerId = customerId; }
+    public String getTaste() { return taste; }
+    public void setTaste(String taste) { this.taste = taste; }
+    public String getDietaryAdvice() { return dietaryAdvice; }
+    public void setDietaryAdvice(String dietaryAdvice) { this.dietaryAdvice = dietaryAdvice; }
+    public String getAllergies() { return allergies; }
+    public void setAllergies(String allergies) { this.allergies = allergies; }
+    public String getTaboos() { return taboos; }
+    public void setTaboos(String taboos) { this.taboos = taboos; }
+    public String getRemark() { return remark; }
+    public void setRemark(String remark) { this.remark = remark; }
 }

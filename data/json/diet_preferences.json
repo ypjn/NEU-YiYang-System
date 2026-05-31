@@ -1,1 +1,89 @@
-[ ]
+[ {
+  "preferenceId" : "DP0001",
+  "customerId" : "E0017",
+  "taste" : "偏甜食、喜软烂",
+  "dietaryAdvice" : "控制糖分摄入，多补充钙质和维生素D",
+  "allergies" : "花生",
+  "taboos" : "少糖、忌过硬食物",
+  "remark" : null
+}, {
+  "preferenceId" : "DP0002",
+  "customerId" : "E0018",
+  "taste" : "偏咸香、喜面食",
+  "dietaryAdvice" : "低盐低脂，多吃蔬菜水果，控制红肉摄入",
+  "allergies" : "无",
+  "taboos" : "忌高盐、忌动物内脏",
+  "remark" : null
+}, {
+  "preferenceId" : "DP0003",
+  "customerId" : "E0019",
+  "taste" : "清淡、喜粥类",
+  "dietaryAdvice" : "糖尿病饮食，控制碳水化合物，定时定量",
+  "allergies" : "海鲜",
+  "taboos" : "忌高糖、忌油炸、忌糯米饭",
+  "remark" : null
+}, {
+  "preferenceId" : "DP0004",
+  "customerId" : "E0020",
+  "taste" : "偏重口味、喜炖菜",
+  "dietaryAdvice" : "低盐饮食，每日盐摄入不超过5g，多吃芹菜木耳",
+  "allergies" : "无",
+  "taboos" : "忌高盐、忌腌制品、忌肥肉",
+  "remark" : null
+}, {
+  "preferenceId" : "DP0005",
+  "customerId" : "E0021",
+  "taste" : "偏淡、喜喝汤",
+  "dietaryAdvice" : "高蛋白高钙饮食，预防骨质疏松，多吃鱼虾豆制品",
+  "allergies" : "牛奶",
+  "taboos" : "忌生冷、忌浓茶",
+  "remark" : null
+}, {
+  "preferenceId" : "DP0006",
+  "customerId" : "E0022",
+  "taste" : "喜软食、喜蒸菜",
+  "dietaryAdvice" : "软食为主，食物切碎煮烂，便于咀嚼吞咽",
+  "allergies" : "无",
+  "taboos" : "忌硬食、忌黏食、忌大块肉类",
+  "remark" : "牙齿脱落较多，需特别软烂"
+}, {
+  "preferenceId" : "DP0007",
+  "customerId" : "E0023",
+  "taste" : "清淡、喜素菜",
+  "dietaryAdvice" : "低蛋白优质蛋白饮食，控制磷钾摄入，适量饮水",
+  "allergies" : "无",
+  "taboos" : "忌高盐、忌豆制品过量、忌香蕉橘子",
+  "remark" : "肾功能减退，需严格控制蛋白质"
+}, {
+  "preferenceId" : "DP0008",
+  "customerId" : "E0024",
+  "taste" : "偏清淡、喜粥面",
+  "dietaryAdvice" : "易消化饮食，少食多餐，每日5-6餐",
+  "allergies" : "鸡蛋",
+  "taboos" : "忌油腻、忌辛辣、忌生冷",
+  "remark" : null
+}, {
+  "preferenceId" : "DP0009",
+  "customerId" : "E0025",
+  "taste" : "适中、喜家常菜",
+  "dietaryAdvice" : "低胆固醇饮食，多吃燕麦鱼类，适量坚果",
+  "allergies" : "无",
+  "taboos" : "忌动物内脏、忌蛋黄过量、忌黄油",
+  "remark" : null
+}, {
+  "preferenceId" : "DP0010",
+  "customerId" : "E0026",
+  "taste" : "喜酸辣、重口味",
+  "dietaryAdvice" : "低嘌呤饮食，多饮水促尿酸排出，多吃碱性食物",
+  "allergies" : "无",
+  "taboos" : "忌海鲜、忌啤酒、忌动物内脏、忌豆制品",
+  "remark" : "有痛风史，需严格控制嘌呤摄入"
+}, {
+  "preferenceId" : "DP0011",
+  "customerId" : "E0027",
+  "taste" : "偏咸、喜米饭",
+  "dietaryAdvice" : "均衡营养，适量补充优质蛋白，多吃蔬果",
+  "allergies" : "无",
+  "taboos" : "忌过咸、忌过油",
+  "remark" : null
+} ]

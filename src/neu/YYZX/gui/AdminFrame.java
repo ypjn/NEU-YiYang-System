@@ -1491,15 +1491,43 @@ public class AdminFrame {
         // 默认显示全部
         refreshTable(table, ctx.getCustomerCareProjectDao().findAll());
 
-        // 选中客户时加载其服务项目
+        // 饮食偏好提示条
+        HBox dietBar = new HBox(10);
+        dietBar.setPadding(new Insets(8, 12, 8, 12));
+        dietBar.setStyle("-fx-background-color:#fff3cd; -fx-background-radius:6; -fx-border-color:#ffc107; -fx-border-radius:6; -fx-border-width:1");
+        dietBar.setVisible(false);
+        dietBar.setManaged(false);
+
+        // 选中客户时加载其服务项目 + 显示饮食偏好
         customerBox.setOnAction(e -> {
             String sel = customerBox.getValue();
+            dietBar.getChildren().clear();
+            dietBar.setVisible(false);
+            dietBar.setManaged(false);
             if (sel == null) return;
             if ("无 - 全部".equals(sel)) {
                 refreshTable(table, ctx.getCustomerCareProjectDao().findAll());
             } else {
                 String customerId = sel.split(" - ")[0];
                 refreshTable(table, ctx.getCustomerCareProjectDao().findByCustomerId(customerId));
+                // 显示该客户的饮食偏好
+                List<DietPreference> prefs = ctx.getDietPreferenceDao().findAll().stream()
+                    .filter(p -> customerId.equals(p.getCustomerId())).toList();
+                if (!prefs.isEmpty()) {
+                    DietPreference dp = prefs.get(0);
+                    java.util.List<String> tags = new java.util.ArrayList<>();
+                    if (dp.getTaste() != null && !dp.getTaste().isEmpty()) tags.add("口味：" + dp.getTaste());
+                    if (dp.getAllergies() != null && !dp.getAllergies().isEmpty()) tags.add("过敏原：" + dp.getAllergies());
+                    if (dp.getTaboos() != null && !dp.getTaboos().isEmpty()) tags.add("忌口：" + dp.getTaboos());
+                    if (dp.getDietaryAdvice() != null && !dp.getDietaryAdvice().isEmpty()) tags.add("建议：" + dp.getDietaryAdvice());
+                    if (!tags.isEmpty()) {
+                        Label dietLabel = new Label(" " + String.join("  |  ", tags));
+                        dietLabel.setStyle("-fx-font-size:13px; -fx-text-fill:#856404");
+                        dietBar.getChildren().add(dietLabel);
+                        dietBar.setVisible(true);
+                        dietBar.setManaged(true);
+                    }
+                }
             }
         });
 
@@ -1548,7 +1576,7 @@ public class AdminFrame {
         });
 
         HBox btnRow = new HBox(10, buyBtn, renewBtn, removeBtn);
-        box.getChildren().addAll(searchRow, table, btnRow);
+        box.getChildren().addAll(searchRow, dietBar, table, btnRow);
         return box;
     }
 

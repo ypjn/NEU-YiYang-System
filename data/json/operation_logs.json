@@ -110,4 +110,12 @@
   "target" : "管家分配",
   "detail" : "李管家 ← E0027 - 关",
   "time" : "2026-05-31 15:39:41"
+}, {
+  "logId" : "LOG0015",
+  "operatorName" : "未知",
+  "operatorRole" : "未知",
+  "action" : "添加膳食偏好",
+  "target" : "膳食管理",
+  "detail" : "郑秀英 - 喜爱",
+  "time" : "2026-05-31 15:55:40"
 } ]
