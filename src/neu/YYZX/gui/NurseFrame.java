@@ -238,6 +238,7 @@ public class NurseFrame {
         ComboBox<String> bedBox = new ComboBox<>();
         ctx.getBedDao().findAll().stream().filter(b -> "available".equals(b.getStatus()))
             .forEach(b -> bedBox.getItems().add(b.getBedId() + " - " + b.getBedNo()));
+        if (!bedBox.getItems().isEmpty()) bedBox.setValue(bedBox.getItems().get(0));
         DatePicker checkinDate = new DatePicker(LocalDate.now());
         DatePicker contractEndDate = new DatePicker(LocalDate.now().plusYears(1));
 
@@ -422,15 +423,42 @@ public class NurseFrame {
         box.setPadding(new Insets(15));
 
         TableView<ServiceAssignment> table = new TableView<>();
+        TableColumn<ServiceAssignment, String> c0 = new TableColumn<>("老人姓名");
+        c0.setCellValueFactory(data -> {
+            Elderly e = ctx.getElderlyDao().findById(data.getValue().getElderlyId());
+            return new SimpleStringProperty(e != null ? e.getName() : data.getValue().getElderlyId());
+        });
         TableColumn<ServiceAssignment, String> c1 = col("服务类型", "serviceType");
-        TableColumn<ServiceAssignment, String> c2 = col("老人ID", "elderlyId");
-        TableColumn<ServiceAssignment, String> c3 = col("开始日期", "startDate");
-        TableColumn<ServiceAssignment, String> c4 = col("结束日期", "endDate");
-        TableColumn<ServiceAssignment, String> c5 = col("状态", "status");
-        table.getColumns().addAll(c1, c2, c3, c4, c5);
+        TableColumn<ServiceAssignment, String> c2 = col("开始日期", "startDate");
+        TableColumn<ServiceAssignment, String> c3 = col("结束日期", "endDate");
+        TableColumn<ServiceAssignment, String> c4 = col("状态", "status");
+        table.getColumns().addAll(c0, c1, c2, c3, c4);
         refresh(table, ctx.getServiceAssignmentDao().findAll());
 
-        box.getChildren().add(table);
+        Button endServiceBtn = new Button("结束服务");
+        endServiceBtn.setOnAction(e -> {
+            ServiceAssignment sa = table.getSelectionModel().getSelectedItem();
+            if (sa == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择服务记录"); return; }
+            if (!"服务中".equals(sa.getStatus())) {
+                LoginPane.showAlert(Alert.AlertType.WARNING, "该服务已结束或已撤销");
+                return;
+            }
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                "确定要结束此服务吗？\n老人：" + c0.getCellData(sa) + "\n服务类型：" + sa.getServiceType(),
+                ButtonType.YES, ButtonType.NO);
+            confirm.showAndWait().ifPresent(r -> {
+                if (r == ButtonType.YES) {
+                    sa.setStatus("已结束");
+                    sa.setEndDate(LocalDate.now().toString());
+                    ctx.getServiceAssignmentDao().update(sa);
+                    PersistentIdGenerator.getInstance().save();
+                    refresh(table, ctx.getServiceAssignmentDao().findAll());
+                }
+            });
+        });
+
+        HBox btnRow = new HBox(10, endServiceBtn);
+        box.getChildren().addAll(btnRow, table);
         return box;
     }
 
@@ -521,7 +549,27 @@ public class NurseFrame {
             });
         });
 
-        box.getChildren().addAll(applyBtn, table);
+        Button returnBtn = new Button("登记归来");
+        returnBtn.setOnAction(e -> {
+            OutRegistration r = table.getSelectionModel().getSelectedItem();
+            if (r == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择记录"); return; }
+            if (!"通过".equals(r.getApprovalStatus())) { LoginPane.showAlert(Alert.AlertType.WARNING, "该申请尚未审批通过"); return; }
+            if ("已归来".equals(r.getStatus())) { LoginPane.showAlert(Alert.AlertType.WARNING, "该老人已归来"); return; }
+            r.setActualReturnTime(LocalDateTime.now().format(fmt));
+            r.setStatus("已归来");
+            ctx.getOutRegistrationDao().update(r);
+            Elderly elder = ctx.getElderlyDao().findById(r.getCustomerId());
+            if (elder != null && elder.getBedId() != null) {
+                Bed bed = ctx.getBedDao().findById(elder.getBedId());
+                if (bed != null) { bed.setStatus("occupied"); ctx.getBedDao().update(bed); }
+            }
+            PersistentIdGenerator.getInstance().save();
+            refresh(table, ctx.getOutRegistrationDao().findAll().stream()
+                .filter(o -> nurseName.equals(o.getCompanion())).toList());
+        });
+
+        HBox btns = new HBox(10, applyBtn, returnBtn);
+        box.getChildren().addAll(btns, table);
         return box;
     }
 

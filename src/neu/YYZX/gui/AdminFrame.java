@@ -205,20 +205,20 @@ public class AdminFrame {
         int empCount = ctx.getEmployeeDao().size();
         int recordCount = ctx.getCareRecordDao().size();
 
-        stats.add(statCard("在住老人", String.valueOf(elderlyCount)), 0, 0);
-        stats.add(statCard("床位使用", bedUsed + "/" + bedTotal), 1, 0);
-        stats.add(statCard("外出登记", String.valueOf(outCount)), 2, 0);
-        stats.add(statCard("员工人数", String.valueOf(empCount)), 0, 1);
-        stats.add(statCard("护理记录", String.valueOf(recordCount)), 1, 1);
+        stats.add(statCard("在住老人", String.valueOf(elderlyCount), "elderly"), 0, 0);
+        stats.add(statCard("床位使用", bedUsed + "/" + bedTotal, "beds"), 1, 0);
+        stats.add(statCard("外出登记", String.valueOf(outCount), "outreg"), 2, 0);
+        stats.add(statCard("员工人数", String.valueOf(empCount), "employees"), 0, 1);
+        stats.add(statCard("护理记录", String.valueOf(recordCount), "nrecords"), 1, 1);
 
         box.getChildren().addAll(title, stats);
         return box;
     }
 
-    private VBox statCard(String label, String value) {
+    private VBox statCard(String label, String value, String targetModule) {
         VBox card = new VBox(8);
         card.setPadding(new Insets(20));
-        card.setStyle("-fx-background-color:#ecf0f1;-fx-border-radius:8;-fx-background-radius:8");
+        card.setStyle("-fx-background-color:#ecf0f1;-fx-border-radius:8;-fx-background-radius:8;-fx-cursor:hand");
         card.setPrefSize(200, 100);
         card.setAlignment(Pos.CENTER);
         Label valLabel = new Label(value);
@@ -226,6 +226,9 @@ public class AdminFrame {
         Label nameLabel = new Label(label);
         nameLabel.setStyle("-fx-font-size:14px;-fx-text-fill:#7f8c8d");
         card.getChildren().addAll(valLabel, nameLabel);
+        card.setOnMouseEntered(e -> card.setStyle("-fx-background-color:#d5e8f0;-fx-border-radius:8;-fx-background-radius:8;-fx-cursor:hand"));
+        card.setOnMouseExited(e -> card.setStyle("-fx-background-color:#ecf0f1;-fx-border-radius:8;-fx-background-radius:8;-fx-cursor:hand"));
+        card.setOnMouseClicked(e -> switchContent(targetModule));
         return card;
     }
 
@@ -400,6 +403,7 @@ public class AdminFrame {
         ComboBox<String> bedBox = new ComboBox<>();
         ctx.getBedDao().findAll().stream().filter(b -> "available".equals(b.getStatus()))
             .forEach(b -> bedBox.getItems().add(b.getBedId() + " - " + b.getBedNo()));
+        if (!bedBox.getItems().isEmpty()) bedBox.setValue(bedBox.getItems().get(0));
         DatePicker checkinDate = new DatePicker(LocalDate.now());
         DatePicker contractEndDate = new DatePicker(LocalDate.now().plusYears(1));
 
@@ -691,7 +695,11 @@ public class AdminFrame {
         swapBedBtn.setOnAction(e -> showSwapBedDialog(refreshBedArea));
         roomBtn.setOnAction(e -> { showRoomManageDialog(); refreshBedArea.run(); });
 
-        box.getChildren().addAll(statRow, filterRow, bedArea);
+        ScrollPane scrollPane = new ScrollPane(bedArea);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background-color:transparent; -fx-background:transparent");
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+        box.getChildren().addAll(statRow, filterRow, scrollPane);
         return box;
     }
 
@@ -864,7 +872,6 @@ public class AdminFrame {
         roomBox.setPromptText("先选楼层");
 
         buildingBox.setOnAction(e -> {
-            floorBox.getItems().clear();
             roomBox.getItems().clear();
             newBedBox.getItems().clear();
         });
@@ -889,6 +896,10 @@ public class AdminFrame {
                     .forEach(b -> newBedBox.getItems().add(b.getBedId() + " - " + b.getBedNo()));
             }
         });
+
+        // 默认选中第一个楼栋和1楼，触发房间列表加载
+        if (!buildingBox.getItems().isEmpty()) buildingBox.setValue(buildingBox.getItems().get(0));
+        floorBox.setValue(1);
 
         grid.add(new Label("客户："), 0, 0); grid.add(customerBox, 1, 0);
         grid.add(new Label("楼栋："), 0, 1); grid.add(buildingBox, 1, 1);
@@ -1661,7 +1672,26 @@ public class AdminFrame {
             refresh.run();
         });
 
-        HBox btns = new HBox(10, approveBtn, rejectBtn);
+        Button returnBtn = new Button("登记归来");
+        returnBtn.setOnAction(e -> {
+            OutRegistration r = table.getSelectionModel().getSelectedItem();
+            if (r == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择记录"); return; }
+            if (!"通过".equals(r.getApprovalStatus())) { LoginPane.showAlert(Alert.AlertType.WARNING, "该申请尚未审批通过"); return; }
+            if ("已归来".equals(r.getStatus())) { LoginPane.showAlert(Alert.AlertType.WARNING, "该老人已归来"); return; }
+            r.setActualReturnTime(LocalDateTime.now().format(fmt));
+            r.setStatus("已归来");
+            ctx.getOutRegistrationDao().update(r);
+            // 恢复床位状态
+            Elderly elder = ctx.getElderlyDao().findById(r.getCustomerId());
+            if (elder != null && elder.getBedId() != null) {
+                Bed bed = ctx.getBedDao().findById(elder.getBedId());
+                if (bed != null) { bed.setStatus("occupied"); ctx.getBedDao().update(bed); }
+            }
+            PersistentIdGenerator.getInstance().save();
+            refresh.run();
+        });
+
+        HBox btns = new HBox(10, approveBtn, rejectBtn, returnBtn);
         box.getChildren().addAll(title, btns, table);
         return box;
     }
