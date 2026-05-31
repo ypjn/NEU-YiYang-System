@@ -202,7 +202,14 @@ public class NurseFrame {
         });
 
         Button checkinBtn = new Button("老人入住");
-        checkinBtn.setOnAction(e -> showCheckinDialog(table));
+        checkinBtn.setOnAction(e -> {
+            long availBeds = ctx.getBedDao().findAll().stream().filter(b -> "available".equals(b.getStatus())).count();
+            if (availBeds == 0) {
+                LoginPane.showAlert(Alert.AlertType.WARNING, "没有空闲床位，请先由管理员创建房间和床位");
+                return;
+            }
+            showCheckinDialog(table);
+        });
 
         HBox topRow = new HBox(10, searchField, checkinBtn);
         box.getChildren().addAll(topRow, table);

@@ -1,0 +1,111 @@
+@startuml 护理模块-GUI层
+
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontName "Helvetica"
+skinparam dpi 96
+
+skinparam class {
+    BorderColor #4A3B7C
+    BorderThickness 1.5
+    BackgroundColor #F2EEFA
+    FontColor #4A3B7C
+    FontSize 11
+    HeaderBackgroundColor #4A3B7C
+    HeaderFontColor #FFFFFF
+}
+
+skinparam package {
+    BorderColor #8B7FBF
+    BorderThickness 1.5
+    BackgroundColor #F8F6FD
+    FontColor #5A4B8C
+    FontStyle bold
+    FontSize 12
+}
+
+skinparam arrow {
+    Color #7B6FAF
+    Thickness 1.2
+}
+
+skinparam nodesep 40
+skinparam ranksep 30
+
+package "neu.YYZX.gui" #F2EEFA {
+    class AdminFrame <<管理员界面>> {
+        左侧导航Tab:
+        - 老人管理
+        - 护理等级
+        - 护理项目
+        - 护理记录
+        - 床位管理
+        --
+        buildElderlyManage()
+        buildNursingLevels()
+        buildNursingProjects()
+        buildNursingRecords()
+        buildBedManage()
+    }
+
+    class NurseFrame <<护工界面>> {
+        左侧导航Tab:
+        - 老人信息
+        - 护理记录
+        - 服务管理
+        - 膳食偏好
+        - 我的消息
+        --
+        buildElderlyInfo()
+        buildCareRecords()
+        buildServices()
+    }
+}
+
+package "neu.YYZX.dao" #F0F4E8 {
+    together {
+        class ElderlyDao {
+            findByName(String)
+            findByNursingLevel(String)
+            findByBedId(String)
+            findActive()
+        }
+        class CareRecordDao {
+            findByElderlyId(String)
+            findByNurseName(String)
+            findByProjectCode(String)
+        }
+        class CareProjectDao {
+            findByCode(String)
+            findApplicable(String)
+        }
+    }
+    together {
+        class NursingLevelDao {
+            findByCode(String)
+        }
+        class ServiceAssignmentDao {
+            findByEmployeeId(String)
+            findByElderlyId(String)
+            findByStatus(String)
+        }
+        class BedDao {
+            findByRoomId(String)
+            findAvailable()
+        }
+    }
+}
+
+' === GUI 调用 DAO ===
+AdminFrame --> ElderlyDao : 老人管理
+AdminFrame --> NursingLevelDao : 护理等级
+AdminFrame --> CareProjectDao : 护理项目
+AdminFrame --> CareRecordDao : 护理记录
+AdminFrame --> BedDao : 床位管理
+
+NurseFrame --> ElderlyDao : 老人信息
+NurseFrame --> CareRecordDao : 护理记录
+NurseFrame --> CareProjectDao : 护理项目(新增记录)
+NurseFrame --> ServiceAssignmentDao : 服务管理
+
+@enduml

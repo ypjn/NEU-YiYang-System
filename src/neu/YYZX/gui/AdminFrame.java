@@ -357,7 +357,14 @@ public class AdminFrame {
         Button checkinBtn = new Button("老人入住");
         Button setLevelBtn = new Button("设置护理等级");
 
-        checkinBtn.setOnAction(e -> showCheckinDialog(table));
+        checkinBtn.setOnAction(e -> {
+            long availBeds = ctx.getBedDao().findAll().stream().filter(b -> "available".equals(b.getStatus())).count();
+            if (availBeds == 0) {
+                LoginPane.showAlert(Alert.AlertType.WARNING, "没有空闲床位，请先在床位管理中创建房间和床位");
+                return;
+            }
+            showCheckinDialog(table);
+        });
         setLevelBtn.setOnAction(e -> {
             Elderly sel = table.getSelectionModel().getSelectedItem();
             if (sel == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择老人"); return; }

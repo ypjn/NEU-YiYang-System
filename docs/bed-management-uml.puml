@@ -1,0 +1,176 @@
+@startuml 床位管理类图
+
+' ===== 样式 =====
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontName "Helvetica"
+
+skinparam class {
+    BorderColor #1E3A5F
+    BorderThickness 2
+    BackgroundColor #F0F4FA
+    FontColor #1E3A5F
+    HeaderBackgroundColor #1E3A5F
+    HeaderFontColor #FFFFFF
+    FontSize 13
+}
+
+skinparam package {
+    BorderColor #5A7DA8
+    BorderThickness 1.5
+    BackgroundColor #F8FAFD
+    FontColor #3A5A80
+    FontStyle bold
+}
+
+skinparam arrow {
+    Color #5A7DA8
+    Thickness 1.5
+}
+
+skinparam note {
+    BorderColor #E8A838
+    BackgroundColor #FFFDF5
+    FontColor #6B5A20
+}
+
+' ===== 包 =====
+package "neu.YYZX.model" #E8F0FE {
+    class Bed {
+        - bedId : String
+        - bedNo : String
+        - roomId : String
+        - status : String
+        --
+        + Bed()
+        + Bed(bedId, bedNo, roomId, status)
+        + getBedId() : String
+        + setBedId(bedId : String)
+        + getBedNo() : String
+        + setBedNo(bedNo : String)
+        + getRoomId() : String
+        + setRoomId(roomId : String)
+        + getStatus() : String
+        + setStatus(status : String)
+    }
+
+    class BedDetail {
+        - detailId : String
+        - bedId : String
+        - customerId : String
+        - assignDate : String
+        - releaseDate : String
+        - remark : String
+        --
+        + BedDetail()
+        + BedDetail(detailId, bedId, customerId, assignDate, releaseDate, remark)
+        + getDetailId() : String
+        + setDetailId(detailId : String)
+        + getBedId() : String
+        + setBedId(bedId : String)
+        + getCustomerId() : String
+        + setCustomerId(customerId : String)
+        + getAssignDate() : String
+        + setAssignDate(assignDate : String)
+        + getReleaseDate() : String
+        + setReleaseDate(releaseDate : String)
+        + getRemark() : String
+        + setRemark(remark : String)
+    }
+}
+
+package "neu.YYZX.dao" #E8F8E8 {
+    abstract class BaseJsonDao<T> {
+        # list : List\<T\>
+        # fileName : String
+        # idPrefix : String
+        # entityType : String
+        # idGenerator : PersistentIdGenerator
+        --
+        + BaseJsonDao(fileName, idPrefix, entityType)
+        {abstract} + getEntityId(entity : T) : String
+        {abstract} + setEntityId(entity : T, id : String)
+        {abstract} + getTypeReference() : TypeReference
+        + findAll() : List\<T\>
+        + findById(id : String) : T
+        + insert(entity : T) : boolean
+        + update(entity : T) : boolean
+        + delete(id : String) : boolean
+        + exists(id : String) : boolean
+        + load()
+        + save()
+        + size() : int
+        + setList(list : List\<T\>)
+        + insertAll(entities : List\<T\>)
+    }
+
+    class BedDao {
+        - FILE_NAME : String = "beds.json"
+        - ID_PREFIX : String = "BD"
+        - ENTITY_TYPE : String = "bed"
+        --
+        + BedDao()
+        + getEntityId(entity : Bed) : String
+        + setEntityId(entity : Bed, id : String)
+        + getTypeReference() : TypeReference
+        + findByRoomId(roomId : String) : List\<Bed\>
+        + findAvailable() : List\<Bed\>
+    }
+
+    class BedDetailDao {
+        - FILE_NAME : String = "bed_details.json"
+        - ID_PREFIX : String = "BDD"
+        - ENTITY_TYPE : String = "bed_detail"
+        --
+        + BedDetailDao()
+        + getEntityId(entity : BedDetail) : String
+        + setEntityId(entity : BedDetail, id : String)
+        + getTypeReference() : TypeReference
+        + findByBedId(bedId : String) : List\<BedDetail\>
+        + findByCustomerId(customerId : String) : List\<BedDetail\>
+    }
+}
+
+package "neu.YYZX.service" #FEF0E8 {
+    class BedService {
+        - dao : BedDao
+        --
+        + BedService(dao : BedDao)
+        + findAll() : List\<Bed\>
+        + findById(id : String) : Bed
+        + findByRoomId(roomId : String) : List\<Bed\>
+        + findAvailable() : List\<Bed\>
+        + add(bed : Bed) : boolean
+        + update(bed : Bed) : boolean
+        + delete(id : String) : boolean
+        + exists(id : String) : boolean
+    }
+
+    class BedDetailService {
+        - dao : BedDetailDao
+        --
+        + BedDetailService(dao : BedDetailDao)
+        + findAll() : List\<BedDetail\>
+        + findById(id : String) : BedDetail
+        + findByBedId(bedId : String) : List\<BedDetail\>
+        + findByCustomerId(customerId : String) : List\<BedDetail\>
+        + add(bedDetail : BedDetail) : boolean
+        + update(bedDetail : BedDetail) : boolean
+        + delete(id : String) : boolean
+    }
+}
+
+' ===== 关系 =====
+BaseJsonDao <|-- BedDao
+BaseJsonDao <|-- BedDetailDao
+BedDao ..> Bed : <<bind>>
+BedDetailDao ..> BedDetail : <<bind>>
+BedService --> BedDao : 依赖
+BedDetailService --> BedDetailDao : 依赖
+BedService ..> Bed : 使用
+BedDetailService ..> BedDetail : 使用
+
+note top of Bed : "空闲" / "已占用"
+note bottom of BedDetail : 床位分配记录\ntracking bed assignments
+
+@enduml
