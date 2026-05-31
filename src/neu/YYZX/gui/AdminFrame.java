@@ -677,19 +677,37 @@ public class AdminFrame {
 
         ChoiceDialog<String> dlg = new ChoiceDialog<>(
             rooms.get(0).getRoomId() + " - " + rooms.get(0).getRoomNo(),
-            rooms.stream().map(r -> r.getRoomId() + " - " + r.getRoomNo() + " (" + r.getRoomType() + ")").toList());
+            rooms.stream().map(r -> r.getRoomId() + " - " + r.getRoomNo() + " (" + r.getRoomType()
+                + " " + ctx.getBedDao().findByRoomId(r.getRoomId()).size() + "/" + r.getCapacity() + ")").toList());
         dlg.setTitle("选择房间");
         dlg.setHeaderText("请选择要添加床位的房间");
 
         dlg.showAndWait().ifPresent(sel -> {
             String roomId = sel.split(" - ")[0];
+            Room room = ctx.getRoomDao().findById(roomId);
+            int currentBeds = ctx.getBedDao().findByRoomId(roomId).size();
+            if (room != null && currentBeds >= room.getCapacity()) {
+                LoginPane.showAlert(Alert.AlertType.WARNING,
+                    "该房间容量已满（" + currentBeds + "/" + room.getCapacity() + "），无法再添加床位");
+                return;
+            }
+            // 获取已有床位号集合
+            java.util.Set<String> existingNos = new java.util.HashSet<>();
+            ctx.getBedDao().findAll().forEach(b -> existingNos.add(b.getBedNo()));
+
             TextInputDialog bedDlg = new TextInputDialog();
             bedDlg.setTitle("添加床位");
-            bedDlg.setHeaderText("请输入床位号");
+            bedDlg.setHeaderText("请输入床位号（当前 " + currentBeds + "/" + room.getCapacity() + "）");
             bedDlg.showAndWait().ifPresent(bedNo -> {
+                String trimmed = bedNo.trim();
+                if (trimmed.isEmpty()) return;
+                if (existingNos.contains(trimmed)) {
+                    LoginPane.showAlert(Alert.AlertType.WARNING, "床位号「" + trimmed + "」已存在，请使用其他编号");
+                    return;
+                }
                 Bed bed = new Bed();
                 bed.setRoomId(roomId);
-                bed.setBedNo(bedNo.trim());
+                bed.setBedNo(trimmed);
                 bed.setStatus("available");
                 ctx.getBedDao().insert(bed);
                 PersistentIdGenerator.getInstance().save();
