@@ -382,8 +382,12 @@ public class NurseFrame {
 
         ComboBox<String> elderlyBox = new ComboBox<>();
         ctx.getElderlyDao().findAll().forEach(e -> elderlyBox.getItems().add(e.getId() + " - " + e.getName()));
+        // 只显示启用状态的护理项目
         ComboBox<String> projectBox = new ComboBox<>();
-        ctx.getCareProjectDao().findAll().forEach(p -> projectBox.getItems().add(p.getCode() + " - " + p.getName()));
+        ctx.getCareProjectDao().findAll().stream()
+        .filter(p -> "启用".equals(p.getStatus()))
+        .forEach(p -> projectBox.getItems().add(p.getCode() + " - " + p.getName()));
+
         TextField quantity = new TextField("1");
         TextField remark = new TextField();
         DatePicker execDate = new DatePicker(LocalDate.now());

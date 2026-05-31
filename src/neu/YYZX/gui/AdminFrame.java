@@ -1109,7 +1109,7 @@ public class AdminFrame {
     }
 
     // ==================== 护理项目 ====================
-    private VBox buildNursingProjects() {
+         private VBox buildNursingProjects() {
         VBox box = new VBox(10);
         box.setPadding(new Insets(15));
 
@@ -1117,49 +1117,262 @@ public class AdminFrame {
         TableColumn<CareProject, String> c1 = tc("代码", "code");
         TableColumn<CareProject, String> c2 = tc("名称", "name");
         TableColumn<CareProject, String> c3 = tc("类别", "category");
-        TableColumn<CareProject, String> c4 = tc("价格", "price");
-        table.getColumns().addAll(c1, c2, c3, c4);
-        refreshTable(table, ctx.getCareProjectDao().findAll());
+        TableColumn<CareProject, String> c4 = tc("单位", "unit");
+        TableColumn<CareProject, String> c5 = tc("价格", "price");
+        TableColumn<CareProject, String> c6 = tc("周期", "cycle");
+        TableColumn<CareProject, String> c7 = tc("状态", "status");
+        table.getColumns().addAll(c1, c2, c3, c4, c5, c6, c7);
+
+        // 定义排序规则：LZ < YL < KF，同前缀按数字升序
+        java.util.Comparator<CareProject> projectComparator = (p1, p2) -> {
+            String code1 = p1.getCode();
+            String code2 = p2.getCode();
+
+            if (code1 == null || code2 == null) return 0;
+
+            // 提取前缀
+            String prefix1 = code1.contains("-") ? code1.split("-")[0] : code1;
+            String prefix2 = code2.contains("-") ? code2.split("-")[0] : code2;
+
+            // 定义前缀优先级：LZ=1, YL=2, KF=3, 其他=4
+            int priority1 = switch (prefix1) {
+                case "LZ" -> 1;
+                case "YL" -> 2;
+                case "KF" -> 3;
+                default -> 4;
+            };
+            int priority2 = switch (prefix2) {
+                case "LZ" -> 1;
+                case "YL" -> 2;
+                case "KF" -> 3;
+                default -> 4;
+            };
+
+            // 先按前缀优先级排序
+            if (priority1 != priority2) {
+                return Integer.compare(priority1, priority2);
+            }
+
+            // 前缀相同，按数字部分升序
+            try {
+                int num1 = code1.contains("-") ? Integer.parseInt(code1.split("-")[1]) : 0;
+                int num2 = code2.contains("-") ? Integer.parseInt(code2.split("-")[1]) : 0;
+                return Integer.compare(num1, num2);
+            } catch (NumberFormatException e) {
+                return code1.compareTo(code2);
+            }
+        };
+
+        // 使用排序后的列表刷新表格
+        Runnable refreshSortedTable = () -> {
+            List<CareProject> sortedList = ctx.getCareProjectDao().findAll().stream()
+                .sorted(projectComparator)
+                .toList();
+            refreshTable(table, sortedList);
+        };
+
+        refreshSortedTable.run();
 
         Button addBtn = new Button("新增护理项目");
+        Button editBtn = new Button("编辑护理项目");
+        Button delBtn = new Button("删除护理项目");
+        Button toggleBtn = new Button("启用/停用");
+
         addBtn.setOnAction(e -> {
             Dialog<CareProject> dlg = careProjectDialog(null);
             dlg.showAndWait().ifPresent(p -> {
                 ctx.getCareProjectDao().insert(p);
                 PersistentIdGenerator.getInstance().save();
-                refreshTable(table, ctx.getCareProjectDao().findAll());
+                refreshSortedTable.run();
+                LoginPane.showAlert(Alert.AlertType.INFORMATION, "护理项目添加成功");
             });
         });
 
-        box.getChildren().addAll(addBtn, table);
+        editBtn.setOnAction(e -> {
+            CareProject sel = table.getSelectionModel().getSelectedItem();
+            if (sel == null) {
+                LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择要编辑的护理项目");
+                return;
+            }
+            Dialog<CareProject> dlg = careProjectDialog(sel);
+            dlg.showAndWait().ifPresent(p -> {
+                ctx.getCareProjectDao().update(p);
+                PersistentIdGenerator.getInstance().save();
+                refreshSortedTable.run();
+                LoginPane.showAlert(Alert.AlertType.INFORMATION, "护理项目修改成功");
+            });
+        });
+
+        delBtn.setOnAction(e -> {
+            CareProject sel = table.getSelectionModel().getSelectedItem();
+            if (sel == null) {
+                LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择要删除的护理项目");
+                return;
+            }
+
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+            confirm.setTitle("删除确认");
+            confirm.setHeaderText("确定要删除护理项目「" + sel.getName() + "」吗？");
+            confirm.setContentText("项目代码：" + sel.getCode() + "\n此操作不可撤销！");
+            confirm.showAndWait().ifPresent(r -> {
+                if (r == ButtonType.OK) {
+                    ctx.getCareProjectDao().delete(sel.getCode());
+                    PersistentIdGenerator.getInstance().save();
+                    refreshSortedTable.run();
+                    LoginPane.showAlert(Alert.AlertType.INFORMATION, "护理项目删除成功");
+                }
+            });
+        });
+
+        toggleBtn.setOnAction(e -> {
+            CareProject sel = table.getSelectionModel().getSelectedItem();
+            if (sel == null) {
+                LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择护理项目");
+                return;
+            }
+            String newStatus = "启用".equals(sel.getStatus()) ? "停用" : "启用";
+            sel.setStatus(newStatus);
+            ctx.getCareProjectDao().update(sel);
+            PersistentIdGenerator.getInstance().save();
+            refreshSortedTable.run();
+            LoginPane.showAlert(Alert.AlertType.INFORMATION, "已将项目设置为：" + newStatus);
+        });
+
+        HBox btns = new HBox(10, addBtn, editBtn, delBtn, toggleBtn);
+        box.getChildren().addAll(btns, table);
         return box;
     }
 
-    private Dialog<CareProject> careProjectDialog(CareProject existing) {
+        private Dialog<CareProject> careProjectDialog(CareProject existing) {
         Dialog<CareProject> dlg = new Dialog<>();
         dlg.setTitle(existing == null ? "新增护理项目" : "编辑护理项目");
         GridPane grid = new GridPane();
         grid.setHgap(10); grid.setVgap(10); grid.setPadding(new Insets(20));
-        TextField code = new TextField(), name = new TextField(), cat = new TextField(),
-                   unit = new TextField(), price = new TextField(), cycle = new TextField(), remark = new TextField();
-        grid.add(new Label("代码："), 0, 0); grid.add(code, 1, 0);
-        grid.add(new Label("名称："), 0, 1); grid.add(name, 1, 1);
-        grid.add(new Label("类别："), 0, 2); grid.add(cat, 1, 2);
+
+        TextField name = new TextField();
+        ComboBox<String> categoryBox = new ComboBox<>();
+        categoryBox.getItems().addAll("生活照料", "医疗护理", "康复心理");
+        categoryBox.setValue("生活照料");
+
+        TextField code = new TextField();
+        code.setEditable(false);
+        code.setPromptText("自动生成");
+
+        TextField unit = new TextField();
+        unit.setPromptText("如：次、小时、天");
+        TextField price = new TextField();
+        price.setPromptText("0");
+        TextField cycle = new TextField();
+        cycle.setPromptText("如：每天、每周、按需");
+        TextField remark = new TextField();
+        remark.setPromptText("备注说明");
+
+        // 根据名称和类别自动生成代码
+        Runnable generateCode = () -> {
+            if (existing != null) return; // 编辑时不自动生成
+
+            String categoryName = categoryBox.getValue();
+            if (categoryName == null) return;
+
+            // 根据类别确定前缀
+            String prefix = switch (categoryName) {
+                case "生活照料" -> "LZ";
+                case "医疗护理" -> "YL";
+                case "康复心理" -> "KF";
+                default -> "QT";
+            };
+
+            // 查找该类别下最大的序号
+            int maxSeq = 0;
+            for (CareProject p : ctx.getCareProjectDao().findAll()) {
+                String pCode = p.getCode();
+                if (pCode != null && pCode.startsWith(prefix + "-")) {
+                    try {
+                        int seq = Integer.parseInt(pCode.substring(3));
+                        if (seq > maxSeq) {
+                            maxSeq = seq;
+                        }
+                    } catch (NumberFormatException ignored) {
+                    }
+                }
+            }
+
+            // 生成新代码：前缀-(最大序号+1)
+            String newCode = String.format("%s-%03d", prefix, maxSeq + 1);
+            code.setText(newCode);
+        };
+
+        // 类别改变时重新生成代码
+        categoryBox.setOnAction(e -> generateCode.run());
+
+        // 初始化时生成代码
+        if (existing == null) {
+            generateCode.run();
+        } else {
+            // 编辑模式：填充现有数据
+            name.setText(existing.getName());
+            categoryBox.setValue(existing.getCategory());
+            code.setText(existing.getCode());
+            code.setEditable(true); // 编辑时允许修改代码
+            unit.setText(existing.getUnit());
+            price.setText(String.valueOf(existing.getPrice()));
+            cycle.setText(existing.getCycle());
+            remark.setText(existing.getRemark());
+        }
+
+        grid.add(new Label("项目名称："), 0, 0); grid.add(name, 1, 0);
+        grid.add(new Label("项目类别："), 0, 1); grid.add(categoryBox, 1, 1);
+        grid.add(new Label("项目代码："), 0, 2); grid.add(code, 1, 2);
         grid.add(new Label("单位："), 0, 3); grid.add(unit, 1, 3);
         grid.add(new Label("价格："), 0, 4); grid.add(price, 1, 4);
         grid.add(new Label("周期："), 0, 5); grid.add(cycle, 1, 5);
         grid.add(new Label("备注："), 0, 6); grid.add(remark, 1, 6);
+
         dlg.getDialogPane().setContent(grid);
         ButtonType okBtn = new ButtonType("确定", ButtonBar.ButtonData.OK_DONE);
         dlg.getDialogPane().getButtonTypes().addAll(okBtn, ButtonType.CANCEL);
+
         dlg.setResultConverter(btn -> {
-            if (btn != okBtn || code.getText().trim().isEmpty()) return null;
-            return new CareProject(code.getText().trim(), name.getText().trim(), cat.getText().trim(),
-                unit.getText().trim(), Double.parseDouble(price.getText().isEmpty() ? "0" : price.getText()),
-                cycle.getText().trim(), 1, "启用", remark.getText().trim());
+            if (btn != okBtn || name.getText().trim().isEmpty()) {
+                LoginPane.showAlert(Alert.AlertType.WARNING, "请填写项目名称");
+                return null;
+            }
+
+            String codeText = code.getText().trim();
+
+            // 检查代码是否为空
+            if (codeText.isEmpty()) {
+                LoginPane.showAlert(Alert.AlertType.ERROR, "项目代码不能为空！");
+                return null;
+            }
+
+            // 检查代码格式（建议格式：前缀-序号，如 LZ-001）
+            if (!codeText.matches("^[A-Z]{2}-\\d{3}$")) {
+                LoginPane.showAlert(Alert.AlertType.ERROR,
+                    "项目代码格式不正确！\n建议使用格式：前缀-序号（如 LZ-001、YL-002）\n前缀为2个大写字母，序号为3位数字");
+                return null;
+            }
+
+            // 检查代码是否已存在（编辑时排除自己）
+            CareProject existingProject = ctx.getCareProjectDao().findByCode(codeText);
+            if (existingProject != null && (existing == null || !existingProject.getCode().equals(existing.getCode()))) {
+                LoginPane.showAlert(Alert.AlertType.ERROR,
+                    "项目代码「" + codeText + "」已存在，请使用其他代码！");
+                return null;
+            }
+
+            try {
+                double p = Double.parseDouble(price.getText().isEmpty() ? "0" : price.getText());
+                return new CareProject(codeText, name.getText().trim(), categoryBox.getValue(),
+                    unit.getText().trim(), p, cycle.getText().trim(), 1, "启用", remark.getText().trim());
+            } catch (NumberFormatException ex) {
+                LoginPane.showAlert(Alert.AlertType.ERROR, "价格格式不正确，请输入数字！");
+                return null;
+            }
         });
         return dlg;
     }
+
 
     // ==================== 护理记录 ====================
     private VBox buildNursingRecords() {
