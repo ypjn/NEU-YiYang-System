@@ -396,11 +396,6 @@ public class AdminFrame {
         DatePicker checkinDate = new DatePicker(LocalDate.now());
         DatePicker contractEndDate = new DatePicker(LocalDate.now().plusYears(1));
 
-        grid.add(new Label("姓名："), 0, 0); grid.add(name, 1, 0);
-        grid.add(new Label("年龄："), 0, 1); grid.add(age, 1, 1);
-        grid.add(new Label("出生日期："), 2, 1); grid.add(birthDate, 3, 1);
-        grid.add(new Label("性别："), 0, 2); grid.add(gender, 1, 2);
-        grid.add(new Label("血型："), 2, 2); grid.add(bloodType, 3, 2);
         // 身份证校验 + 自动提取生日/性别
         Label idCardMsg = new Label();
         idCardMsg.setStyle("-fx-font-size:11px");
@@ -408,11 +403,21 @@ public class AdminFrame {
             String result = validateIdCard(nv);
             if (result == null) {
                 idCard.setStyle("-fx-border-color:red; -fx-border-width:1px");
-                idCardMsg.setText("身份证格式错误");
+                idCardMsg.setText(nv.length() == 18 ? "身份证格式错误" : "");
                 idCardMsg.setStyle("-fx-text-fill:red; -fx-font-size:11px");
             } else {
                 idCard.setStyle("");
-                idCardMsg.setText("✓ 出生: " + result);
+                // 自动提取并填充出生日期
+                String birth = nv.substring(6, 14);
+                LocalDate bd = LocalDate.parse(birth.substring(0, 4) + "-" + birth.substring(4, 6) + "-" + birth.substring(6, 8));
+                birthDate.setValue(bd);
+                // 自动计算年龄
+                int calculatedAge = LocalDate.now().getYear() - bd.getYear();
+                age.setText(String.valueOf(calculatedAge));
+                // 自动识别性别 (第17位，奇数为男)
+                int seqDigit = Integer.parseInt(nv.substring(14, 17));
+                gender.setValue(seqDigit % 2 == 1 ? "男" : "女");
+                idCardMsg.setText("✓ 出生: " + result + "  性别: " + gender.getValue() + "  年龄: " + calculatedAge);
                 idCardMsg.setStyle("-fx-text-fill:green; -fx-font-size:11px");
             }
         });
