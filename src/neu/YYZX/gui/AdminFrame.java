@@ -581,10 +581,10 @@ public class AdminFrame {
 
         // 楼层选择
         HBox filterRow = new HBox(10);
-        ComboBox<Integer> floorBox = new ComboBox<>();
-        for (int i = 1; i <= 6; i++) floorBox.getItems().add(i);
-        floorBox.setValue(1);
-        floorBox.setPromptText("选择楼层");
+        ComboBox<String> floorBox = new ComboBox<>();
+        floorBox.getItems().add("全部");
+        for (int i = 1; i <= 6; i++) floorBox.getItems().add(i + "楼");
+        floorBox.setValue("全部");
 
         Button addBedBtn = new Button("添加床位");
         Button delBedBtn = new Button("删除床位");
@@ -599,12 +599,15 @@ public class AdminFrame {
 
         Runnable refreshBedArea = () -> {
             bedArea.getChildren().clear();
-            int floor = floorBox.getValue() != null ? floorBox.getValue() : 1;
+            String floorSel = floorBox.getValue() != null ? floorBox.getValue() : "全部";
             Building building = ctx.getBuildingDao().findAll().stream().findFirst().orElse(null);
             if (building == null) { bedArea.getChildren().add(new Label("无楼栋数据")); return; }
-            List<Room> rooms = ctx.getRoomDao().findByBuildingId(building.getBuildingId()).stream()
-                .filter(r -> r.getFloor() == floor).toList();
-            if (rooms.isEmpty()) { bedArea.getChildren().add(new Label("该楼层无房间")); return; }
+            List<Room> rooms = ctx.getRoomDao().findByBuildingId(building.getBuildingId());
+            if (!"全部".equals(floorSel)) {
+                int floor = Integer.parseInt(floorSel.replace("楼", ""));
+                rooms = rooms.stream().filter(r -> r.getFloor() == floor).toList();
+            }
+            if (rooms.isEmpty()) { bedArea.getChildren().add(new Label("无房间")); return; }
             for (Room room : rooms) {
                 List<Bed> beds = ctx.getBedDao().findByRoomId(room.getRoomId());
                 HBox roomRow = new HBox(8);
