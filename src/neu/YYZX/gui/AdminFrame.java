@@ -1566,7 +1566,7 @@ public class AdminFrame {
             Elderly elder = ctx.getElderlyDao().findById(r.getCustomerId());
             if (elder != null && elder.getBedId() != null) {
                 Bed bed = ctx.getBedDao().findById(elder.getBedId());
-                if (bed != null) bed.setStatus("out");
+                if (bed != null) { bed.setStatus("out"); ctx.getBedDao().update(bed); }
             }
             PersistentIdGenerator.getInstance().save();
             refresh.run();
@@ -1624,7 +1624,7 @@ public class AdminFrame {
                     ctx.getElderlyDao().update(elder);
                     if (elder.getBedId() != null) {
                         Bed bed = ctx.getBedDao().findById(elder.getBedId());
-                        if (bed != null) bed.setStatus("available");
+                        if (bed != null) { bed.setStatus("available"); ctx.getBedDao().update(bed); }
                     }
                 }
             }

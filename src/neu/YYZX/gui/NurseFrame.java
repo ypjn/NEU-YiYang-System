@@ -201,8 +201,146 @@ public class NurseFrame {
             else refresh(table, ctx.getElderlyDao().findByName(nv.trim()));
         });
 
-        box.getChildren().addAll(searchField, table);
+        Button checkinBtn = new Button("老人入住");
+        checkinBtn.setOnAction(e -> showCheckinDialog(table));
+
+        HBox topRow = new HBox(10, searchField, checkinBtn);
+        box.getChildren().addAll(topRow, table);
         return box;
+    }
+
+    private void showCheckinDialog(TableView<Elderly> table) {
+        Dialog<Elderly> dlg = new Dialog<>();
+        dlg.setTitle("老人入住");
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10); grid.setVgap(10); grid.setPadding(new Insets(20));
+
+        TextField name = new TextField();
+        TextField age = new TextField();
+        ComboBox<String> gender = new ComboBox<>();
+        gender.getItems().addAll("男", "女"); gender.setValue("男");
+        TextField idCard = new TextField();
+        ComboBox<String> bloodType = new ComboBox<>();
+        bloodType.getItems().addAll("A", "B", "AB", "O"); bloodType.setValue("A");
+        DatePicker birthDate = new DatePicker();
+        TextField phone = new TextField();
+        TextField familyMember = new TextField();
+        TextField emContact = new TextField();
+        TextField emPhone = new TextField();
+        ComboBox<String> bedBox = new ComboBox<>();
+        ctx.getBedDao().findAll().stream().filter(b -> "available".equals(b.getStatus()))
+            .forEach(b -> bedBox.getItems().add(b.getBedId() + " - " + b.getBedNo()));
+        DatePicker checkinDate = new DatePicker(LocalDate.now());
+        DatePicker contractEndDate = new DatePicker(LocalDate.now().plusYears(1));
+
+        // 身份证校验 + 自动提取
+        Label idCardMsg = new Label();
+        idCardMsg.setStyle("-fx-font-size:11px");
+        idCard.textProperty().addListener((o, ov, nv) -> {
+            String result = validateIdCard(nv);
+            if (result == null) {
+                idCard.setStyle("-fx-border-color:red; -fx-border-width:1px");
+                idCardMsg.setText(nv.length() == 18 ? "身份证格式错误" : "");
+                idCardMsg.setStyle("-fx-text-fill:red; -fx-font-size:11px");
+            } else {
+                idCard.setStyle("");
+                String birth = nv.substring(6, 14);
+                LocalDate bd = LocalDate.parse(birth.substring(0, 4) + "-" + birth.substring(4, 6) + "-" + birth.substring(6, 8));
+                birthDate.setValue(bd);
+                int calculatedAge = LocalDate.now().getYear() - bd.getYear();
+                age.setText(String.valueOf(calculatedAge));
+                int seqDigit = Integer.parseInt(nv.substring(14, 17));
+                gender.setValue(seqDigit % 2 == 1 ? "男" : "女");
+                idCardMsg.setText("✓ 出生: " + result + "  性别: " + gender.getValue() + "  年龄: " + calculatedAge);
+                idCardMsg.setStyle("-fx-text-fill:green; -fx-font-size:11px");
+            }
+        });
+
+        grid.add(new Label("姓名："), 0, 0); grid.add(name, 1, 0);
+        grid.add(new Label("年龄："), 0, 1); grid.add(age, 1, 1);
+        grid.add(new Label("出生日期："), 2, 1); grid.add(birthDate, 3, 1);
+        grid.add(new Label("性别："), 0, 2); grid.add(gender, 1, 2);
+        grid.add(new Label("血型："), 2, 2); grid.add(bloodType, 3, 2);
+        grid.add(new Label("身份证："), 0, 3); grid.add(idCard, 1, 3);
+        grid.add(idCardMsg, 2, 3, 2, 1);
+        grid.add(new Label("电话："), 0, 4); grid.add(phone, 1, 4);
+        grid.add(new Label("家属："), 0, 5); grid.add(familyMember, 1, 5);
+        grid.add(new Label("紧急联系人："), 2, 5); grid.add(emContact, 3, 5);
+        grid.add(new Label("紧急电话："), 0, 6); grid.add(emPhone, 1, 6);
+        grid.add(new Label("床位："), 2, 6); grid.add(bedBox, 3, 6);
+        grid.add(new Label("入住日期："), 0, 7); grid.add(checkinDate, 1, 7);
+        grid.add(new Label("合同到期："), 2, 7); grid.add(contractEndDate, 3, 7);
+
+        dlg.getDialogPane().setContent(grid);
+        ButtonType okBtn = new ButtonType("入住", ButtonBar.ButtonData.OK_DONE);
+        dlg.getDialogPane().getButtonTypes().addAll(okBtn, ButtonType.CANCEL);
+
+        dlg.setResultConverter(btn -> {
+            if (btn != okBtn || name.getText().trim().isEmpty() || bedBox.getValue() == null) return null;
+            String idCardText = idCard.getText().trim();
+            if (!idCardText.isEmpty() && validateIdCard(idCardText) == null) return null;
+
+            String bedId = bedBox.getValue().split(" - ")[0];
+            Bed bed = ctx.getBedDao().findById(bedId);
+            if (bed != null) {
+                bed.setStatus("occupied");
+                ctx.getBedDao().update(bed);
+            }
+
+            Elderly e = new Elderly();
+            e.setName(name.getText().trim());
+            e.setGender(gender.getValue());
+            e.setIdCard(idCardText);
+            e.setBloodType(bloodType.getValue());
+            if (birthDate.getValue() != null) {
+                e.setBirthDate(birthDate.getValue().toString());
+                e.setAge(LocalDate.now().getYear() - birthDate.getValue().getYear());
+            } else {
+                try { e.setAge(Integer.parseInt(age.getText())); } catch (Exception ex) { e.setAge(0); }
+            }
+            e.setPhone(phone.getText().trim());
+            e.setFamilyMember(familyMember.getText().trim());
+            e.setEmergencyContact(emContact.getText().trim());
+            e.setEmergencyPhone(emPhone.getText().trim());
+            e.setBedId(bedId);
+            if (bed != null) {
+                Room room = ctx.getRoomDao().findById(bed.getRoomId());
+                if (room != null) {
+                    e.setRoomNo(room.getRoomNo());
+                    e.setBuildingId(room.getBuildingId());
+                }
+            }
+            e.setCheckInDate(checkinDate.getValue() != null ? checkinDate.getValue().toString() + " 00:00:00" : LocalDateTime.now().format(fmt));
+            e.setContractEndDate(contractEndDate.getValue() != null ? contractEndDate.getValue().toString() : "");
+            e.setStatus("在住");
+            ctx.getElderlyDao().insert(e);
+            PersistentIdGenerator.getInstance().save();
+            refresh(table, ctx.getElderlyDao().findAll());
+            return e;
+        });
+        dlg.showAndWait();
+    }
+
+    private String validateIdCard(String id) {
+        if (id == null || id.length() != 18) return null;
+        for (int i = 0; i < 17; i++) {
+            if (!Character.isDigit(id.charAt(i))) return null;
+        }
+        char last = id.charAt(17);
+        if (!Character.isDigit(last) && last != 'X' && last != 'x') return null;
+        String birth = id.substring(6, 14);
+        try {
+            LocalDate.parse(birth.substring(0, 4) + "-" + birth.substring(4, 6) + "-" + birth.substring(6, 8));
+        } catch (Exception e) { return null; }
+        int[] weights = {7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2};
+        char[] checkCodes = {'1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'};
+        int sum = 0;
+        for (int i = 0; i < 17; i++) sum += (id.charAt(i) - '0') * weights[i];
+        char expected = checkCodes[sum % 11];
+        if (expected == 'X' && (last == 'X' || last == 'x')) return birth.substring(0, 4) + "-" + birth.substring(4, 6) + "-" + birth.substring(6, 8);
+        if (Character.toUpperCase(last) != expected) return null;
+        return birth.substring(0, 4) + "-" + birth.substring(4, 6) + "-" + birth.substring(6, 8);
     }
 
     // ==================== 护理记录 ====================
