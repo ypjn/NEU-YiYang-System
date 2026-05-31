@@ -587,8 +587,9 @@ public class AdminFrame {
 
         Button addBedBtn = new Button("添加床位");
         Button swapBedBtn = new Button("床位调换");
+        Button roomBtn = new Button("管理房间");
 
-        filterRow.getChildren().addAll(new Label("楼层："), floorBox, addBedBtn, swapBedBtn);
+        filterRow.getChildren().addAll(new Label("楼层："), floorBox, addBedBtn, swapBedBtn, roomBtn);
 
         // 床位展示区
         VBox bedArea = new VBox(8);
@@ -637,6 +638,7 @@ public class AdminFrame {
         });
 
         swapBedBtn.setOnAction(e -> showSwapBedDialog(refreshBedArea));
+        roomBtn.setOnAction(e -> { showRoomManageDialog(); refreshBedArea.run(); });
 
         box.getChildren().addAll(statRow, filterRow, bedArea);
         return box;
@@ -667,6 +669,106 @@ public class AdminFrame {
                 onDone.run();
             });
         });
+    }
+
+    private void showRoomManageDialog() {
+        Building building = ctx.getBuildingDao().findAll().stream().findFirst().orElse(null);
+        if (building == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先创建楼栋"); return; }
+
+        Dialog<Void> dlg = new Dialog<>();
+        dlg.setTitle("房间管理 — " + building.getBuildingName());
+        dlg.setResizable(true);
+
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(15));
+
+        TableView<Room> table = new TableView<>();
+        TableColumn<Room, String> r1 = tc("楼层", "floor");
+        TableColumn<Room, String> r2 = tc("房间号", "roomNo");
+        TableColumn<Room, String> r3 = tc("类型", "roomType");
+        TableColumn<Room, String> r4 = tc("容量", "capacity");
+        TableColumn<Room, String> r5 = tc("月费", "price");
+        table.getColumns().addAll(r1, r2, r3, r4, r5);
+
+        Runnable refreshRooms = () -> {
+            List<Room> rooms = ctx.getRoomDao().findByBuildingId(building.getBuildingId());
+            rooms.sort((a, b) -> {
+                int fa = a.getFloor() != 0 ? a.getFloor() : Integer.MAX_VALUE;
+                int fb = b.getFloor() != 0 ? b.getFloor() : Integer.MAX_VALUE;
+                if (fa != fb) return fa - fb;
+                String na = a.getRoomNo() != null ? a.getRoomNo() : "";
+                String nb = b.getRoomNo() != null ? b.getRoomNo() : "";
+                return na.compareTo(nb);
+            });
+            refreshTable(table, rooms);
+        };
+        refreshRooms.run();
+
+        Button addBtn = new Button("添加房间");
+        Button delBtn = new Button("删除房间");
+
+        addBtn.setOnAction(e -> {
+            Dialog<Void> addDlg = new Dialog<>();
+            addDlg.setTitle("添加房间");
+            GridPane g = new GridPane();
+            g.setHgap(10); g.setVgap(10); g.setPadding(new Insets(15));
+            ComboBox<Integer> floorSel = new ComboBox<>();
+            for (int i = 1; i <= building.getFloorCount(); i++) floorSel.getItems().add(i);
+            floorSel.setValue(1);
+            TextField roomNo = new TextField();
+            ComboBox<String> typeSel = new ComboBox<>();
+            typeSel.getItems().addAll("单人间", "双人间", "三人间");
+            typeSel.setValue("双人间");
+            TextField capacity = new TextField("2");
+            TextField price = new TextField("3000");
+
+            g.add(new Label("楼层："), 0, 0); g.add(floorSel, 1, 0);
+            g.add(new Label("房间号："), 0, 1); g.add(roomNo, 1, 1);
+            g.add(new Label("类型："), 0, 2); g.add(typeSel, 1, 2);
+            g.add(new Label("容量："), 0, 3); g.add(capacity, 1, 3);
+            g.add(new Label("月费："), 0, 4); g.add(price, 1, 4);
+
+            addDlg.getDialogPane().setContent(g);
+            ButtonType ok = new ButtonType("确定", ButtonBar.ButtonData.OK_DONE);
+            addDlg.getDialogPane().getButtonTypes().addAll(ok, ButtonType.CANCEL);
+            addDlg.setResultConverter(b -> {
+                if (b == ok && !roomNo.getText().trim().isEmpty()) {
+                    Room room = new Room();
+                    room.setBuildingId(building.getBuildingId());
+                    room.setFloor(floorSel.getValue());
+                    room.setRoomNo(roomNo.getText().trim());
+                    room.setRoomType(typeSel.getValue());
+                    try { room.setCapacity(Integer.parseInt(capacity.getText())); } catch (Exception ex) { room.setCapacity(2); }
+                    try { room.setPrice(Double.parseDouble(price.getText())); } catch (Exception ex) { room.setPrice(3000); }
+                    room.setStatus("active");
+                    ctx.getRoomDao().insert(room);
+                    PersistentIdGenerator.getInstance().save();
+                    refreshRooms.run();
+                }
+                return null;
+            });
+            addDlg.showAndWait();
+        });
+
+        delBtn.setOnAction(e -> {
+            Room sel = table.getSelectionModel().getSelectedItem();
+            if (sel == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择房间"); return; }
+            // 检查是否有床位
+            List<Bed> beds = ctx.getBedDao().findByRoomId(sel.getRoomId());
+            if (!beds.isEmpty()) {
+                LoginPane.showAlert(Alert.AlertType.WARNING, "该房间还有 " + beds.size() + " 个床位，请先删除床位");
+                return;
+            }
+            ctx.getRoomDao().delete(sel.getRoomId());
+            PersistentIdGenerator.getInstance().save();
+            refreshRooms.run();
+        });
+
+        HBox btnRow = new HBox(10, addBtn, delBtn);
+        content.getChildren().addAll(btnRow, table);
+        dlg.getDialogPane().setContent(content);
+        dlg.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        dlg.showAndWait();
     }
 
     private void showSwapBedDialog(Runnable onDone) {
