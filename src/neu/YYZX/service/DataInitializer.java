@@ -121,6 +121,7 @@ public class DataInitializer {
         ensureDefaultBuildings();
         ensureDefaultRoomsAndBeds();
         ensureDefaultFoods();
+        ensureDefaultEmployees();
     }
 
     private void ensureDefaultUsers() {
@@ -228,6 +229,16 @@ public class DataInitializer {
             foodDao.insert(new Food(null, "苹果", "水果", "个", 5, "富含维C", ""));
             foodDao.insert(new Food(null, "酸奶", "零食", "杯", 6, "助消化", ""));
             foodDao.insert(new Food(null, "药膳鸡汤", "汤品", "碗", 20, "滋补", "需预约"));
+        }
+    }
+
+    private void ensureDefaultEmployees() {
+        if (employeeDao.size() == 0) {
+            employeeDao.insert(new Employee(null, "李管家", "女", "健康管家", "13900000001", null, "2024-01-01", 6000, "在岗", ""));
+            employeeDao.insert(new Employee(null, "王管家", "男", "健康管家", "13900000002", null, "2024-03-01", 6000, "在岗", ""));
+            employeeDao.insert(new Employee(null, "张三", "男", "护工", "13900000003", null, "2024-02-01", 5000, "在岗", ""));
+            employeeDao.insert(new Employee(null, "赵护工", "女", "护工", "13900000004", null, "2024-06-01", 5000, "在岗", ""));
+            employeeDao.insert(new Employee(null, "钱护工", "男", "护工", "13900000005", null, "2025-01-01", 5000, "在岗", ""));
         }
     }
 

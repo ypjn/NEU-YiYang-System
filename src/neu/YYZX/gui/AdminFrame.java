@@ -445,20 +445,9 @@ public class AdminFrame {
         dlg.setResultConverter(btn -> {
             if (btn != okBtn || name.getText().trim().isEmpty() || bedBox.getValue() == null) return null;
             String idCardText = idCard.getText().trim();
-            if (!idCardText.isEmpty()) {
-                String validated = validateIdCard(idCardText);
-                if (validated == null) {
-                    LoginPane.showAlert(Alert.AlertType.WARNING, "身份证号不合法，请检查！");
-                    return null;
-                }
-                // 从身份证自动提取生日和性别
-                String birthStr = idCardText.substring(6, 14);
-                try {
-                    LocalDate bd = LocalDate.parse(birthStr.substring(0, 4) + "-" + birthStr.substring(4, 6) + "-" + birthStr.substring(6, 8));
-                    birthDate.setValue(bd);
-                } catch (Exception ignored) {}
-                int seqDigit = Integer.parseInt(idCardText.substring(14, 17));
-                gender.setValue(seqDigit % 2 == 1 ? "男" : "女");
+            if (!idCardText.isEmpty() && validateIdCard(idCardText) == null) {
+                // 表单上已有红色提示，不弹窗，保持对话框打开
+                return null;
             }
 
             String bedId = bedBox.getValue().split(" - ")[0];
@@ -620,14 +609,22 @@ public class AdminFrame {
                 } else {
                     for (Bed bed : beds) {
                         Label bedLabel = new Label(bed.getBedNo());
-                        bedLabel.setStyle("-fx-padding:4 10; -fx-background-radius:4; -fx-font-size:12px");
+                        bedLabel.setStyle("-fx-padding:8 18; -fx-background-radius:8; -fx-font-size:15px; -fx-font-weight:bold; -fx-min-width:70; -fx-alignment:center; -fx-border-radius:8");
                         switch (bed.getStatus()) {
-                            case "available": bedLabel.setStyle(bedLabel.getStyle() + "-fx-background-color:#2ecc71; -fx-text-fill:white"); break;
-                            case "occupied": bedLabel.setStyle(bedLabel.getStyle() + "-fx-background-color:#e74c3c; -fx-text-fill:white"); break;
-                            case "out": bedLabel.setStyle(bedLabel.getStyle() + "-fx-background-color:#f39c12; -fx-text-fill:white"); break;
-                            default: bedLabel.setStyle(bedLabel.getStyle() + "-fx-background-color:#95a5a6; -fx-text-fill:white"); break;
+                            case "available": bedLabel.setStyle(bedLabel.getStyle()
+                                + " -fx-background-color:#27ae60; -fx-text-fill:white; -fx-border-color:#1e8449; -fx-border-width:2"); break;
+                            case "occupied": bedLabel.setStyle(bedLabel.getStyle()
+                                + " -fx-background-color:#c0392b; -fx-text-fill:white; -fx-border-color:#922b21; -fx-border-width:2"); break;
+                            case "out": bedLabel.setStyle(bedLabel.getStyle()
+                                + " -fx-background-color:#e67e22; -fx-text-fill:white; -fx-border-color:#ca6f1e; -fx-border-width:2"); break;
+                            default: bedLabel.setStyle(bedLabel.getStyle()
+                                + " -fx-background-color:#7f8c8d; -fx-text-fill:white; -fx-border-color:#6c7a7a; -fx-border-width:2"); break;
                         }
-                        roomRow.getChildren().add(bedLabel);
+                        // 状态小标签
+                        String statusText = bed.getStatus().equals("available") ? "空闲" : bed.getStatus().equals("occupied") ? "占用" : bed.getStatus().equals("out") ? "外出" : bed.getStatus();
+                        Label statusTag = new Label(statusText);
+                        statusTag.setStyle("-fx-font-size:12px; -fx-text-fill:#555; -fx-padding:0 0 0 6; -fx-font-weight:bold");
+                        roomRow.getChildren().addAll(bedLabel, statusTag);
                     }
                 }
                 bedArea.getChildren().add(roomRow);
@@ -1178,6 +1175,15 @@ public class AdminFrame {
             if (sel == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择客户"); return; }
             String customerId = sel.split(" - ")[0];
             String customerName = sel.split(" - ")[1];
+            // 检查是否有未购买的项目
+            List<CustomerCareProject> owned = ctx.getCustomerCareProjectDao().findByCustomerId(customerId);
+            List<CareProject> available = ctx.getCareProjectDao().findAll().stream()
+                .filter(p -> owned.stream().noneMatch(o -> o.getProjectCode().equals(p.getCode())))
+                .toList();
+            if (available.isEmpty()) {
+                LoginPane.showAlert(Alert.AlertType.INFORMATION, "该客户已购买所有护理项目，无需再买");
+                return;
+            }
             showBuyProjectDialog(customerId, customerName, table);
         });
 
