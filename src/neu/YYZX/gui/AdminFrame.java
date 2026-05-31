@@ -40,6 +40,7 @@ public class AdminFrame {
     public AdminFrame(User user, String token) {
         this.user = user;
         this.token = token;
+        AuditLogger.setCurrentUser(user);
         this.stage = new Stage();
         stage.setTitle("东软颐养中心 - 管理员端 [" + user.getRealName() + "]");
         buildUI();
@@ -520,6 +521,27 @@ public class AdminFrame {
     }
 
     private void showEditElderlyDialog(Elderly elder, TableView<Elderly> table) {
+        // 快照旧值，用于撤销
+        Map<String, Object> snapshot = new HashMap<>();
+        snapshot.put("type", "elderly_edit");
+        snapshot.put("elderlyId", elder.getId());
+        snapshot.put("oldName", elder.getName());
+        snapshot.put("oldAge", elder.getAge());
+        snapshot.put("oldGender", elder.getGender());
+        snapshot.put("oldIdCard", elder.getIdCard());
+        snapshot.put("oldBloodType", elder.getBloodType());
+        snapshot.put("oldBirthDate", elder.getBirthDate());
+        snapshot.put("oldPhone", elder.getPhone());
+        snapshot.put("oldAddress", elder.getAddress());
+        snapshot.put("oldFamilyMember", elder.getFamilyMember());
+        snapshot.put("oldEmergencyContact", elder.getEmergencyContact());
+        snapshot.put("oldEmergencyPhone", elder.getEmergencyPhone());
+        snapshot.put("oldBedId", elder.getBedId());
+        snapshot.put("oldCheckInDate", elder.getCheckInDate());
+        snapshot.put("oldContractEndDate", elder.getContractEndDate());
+        snapshot.put("oldRoomNo", elder.getRoomNo());
+        snapshot.put("oldBuildingId", elder.getBuildingId());
+
         Dialog<Elderly> dlg = new Dialog<>();
         dlg.initOwner(stage);
         dlg.setTitle("编辑老人信息 - " + elder.getName());
@@ -651,7 +673,7 @@ public class AdminFrame {
             elder.setContractEndDate(contractEndDate.getValue() != null ? contractEndDate.getValue().toString() : "");
             ctx.getElderlyDao().update(elder);
             PersistentIdGenerator.getInstance().save();
-            AuditLogger.log("编辑老人信息", "老人管理", elder.getName());
+            AuditLogger.logReversible("编辑老人信息", "老人管理", elder.getName(), snapshot);
             refreshElderly(table, ctx.getElderlyDao().findAll());
             return elder;
         });
@@ -692,32 +714,56 @@ public class AdminFrame {
         dlg.setHeaderText("为 " + e.getName() + " 设置护理等级");
         dlg.showAndWait().ifPresent(sel -> {
             String code = sel.split(" - ")[0];
+            String oldLevelCode = e.getNursingLevelCode();
             e.setNursingLevelCode(code);
             ctx.getElderlyDao().update(e);
             // 批量添加该级别的护理项目
             String now = LocalDateTime.now().format(fmt);
             String expireDate = LocalDate.now().plusMonths(3).toString();
             List<NursingContent> contents = ctx.getNursingContentDao().findByLevelCode(code);
+            List<String> addedProjectIds = new ArrayList<>();
             for (NursingContent nc : contents) {
                 CustomerCareProject ccp = new CustomerCareProject(null, e.getId(),
                     nc.getCareProjectCode(), 1, now, expireDate);
                 ctx.getCustomerCareProjectDao().insert(ccp);
+                addedProjectIds.add(ccp.getId());
             }
             PersistentIdGenerator.getInstance().save();
-            AuditLogger.log("设置护理等级", "老人管理", e.getName() + " → " + code);
+            Map<String, Object> undoData = new HashMap<>();
+            undoData.put("type", "nursing_level_set");
+            undoData.put("elderlyId", e.getId());
+            undoData.put("oldLevelCode", oldLevelCode != null ? oldLevelCode : "");
+            undoData.put("newLevelCode", code);
+            undoData.put("addedProjectIds", addedProjectIds);
+            AuditLogger.logReversible("设置护理等级", "老人管理", e.getName() + " → " + code, undoData);
         });
     }
 
     private void removeCustomerLevel(Elderly e) {
+        String oldLevelCode = e.getNursingLevelCode();
+        // 删除前保存已购护理项目信息用于撤销
+        List<CustomerCareProject> owned = ctx.getCustomerCareProjectDao().findByCustomerId(e.getId());
+        List<Map<String, String>> removedProjects = new ArrayList<>();
+        for (CustomerCareProject ccp : owned) {
+            Map<String, String> info = new HashMap<>();
+            info.put("projectCode", ccp.getProjectCode());
+            info.put("quantity", String.valueOf(ccp.getQuantity()));
+            info.put("purchaseDate", ccp.getPurchaseDate());
+            info.put("expireDate", ccp.getExpireDate());
+            removedProjects.add(info);
+        }
         e.setNursingLevelCode(null);
         ctx.getElderlyDao().update(e);
-        // 删除客户所有已购护理项目
-        List<CustomerCareProject> owned = ctx.getCustomerCareProjectDao().findByCustomerId(e.getId());
         for (CustomerCareProject ccp : owned) {
             ctx.getCustomerCareProjectDao().delete(ccp.getId());
         }
         PersistentIdGenerator.getInstance().save();
-        AuditLogger.log("移除护理级别", "老人管理", e.getName());
+        Map<String, Object> undoData = new HashMap<>();
+        undoData.put("type", "nursing_level_remove");
+        undoData.put("elderlyId", e.getId());
+        undoData.put("oldLevelCode", oldLevelCode != null ? oldLevelCode : "");
+        undoData.put("removedProjects", removedProjects);
+        AuditLogger.logReversible("移除护理级别", "老人管理", e.getName(), undoData);
     }
 
     // ==================== 床位管理 ====================
@@ -1098,6 +1144,11 @@ public class AdminFrame {
 
                 if (elder == null || newBed == null) return null;
 
+                // 快照旧床位信息用于撤销
+                String oldBedId = elder.getBedId();
+                String oldRoomNo = elder.getRoomNo();
+                String oldBuildingId = elder.getBuildingId();
+
                 // 旧床位改为空闲
                 if (oldBed != null) oldBed.setStatus("available");
                 // 新床位改为有人
@@ -1112,7 +1163,14 @@ public class AdminFrame {
                 ctx.getElderlyDao().update(elder);
                 PersistentIdGenerator.getInstance().save();
                 onDone.run();
-                AuditLogger.log("床位调换", "床位管理", customerId + " → 床位 " + newBed.getBedNo());
+                Map<String, Object> undoData = new HashMap<>();
+                undoData.put("type", "bed_swap");
+                undoData.put("elderlyId", customerId);
+                undoData.put("oldBedId", oldBedId != null ? oldBedId : "");
+                undoData.put("newBedId", newBedId);
+                undoData.put("oldRoomNo", oldRoomNo != null ? oldRoomNo : "");
+                undoData.put("oldBuildingId", oldBuildingId != null ? oldBuildingId : "");
+                AuditLogger.logReversible("床位调换", "床位管理", customerId + " → 床位 " + newBed.getBedNo(), undoData);
             }
             return null;
         });
@@ -1891,7 +1949,10 @@ public class AdminFrame {
                 ctx.getServiceAssignmentDao().insert(sa);
                 PersistentIdGenerator.getInstance().save();
                 refreshTable(table, ctx.getServiceAssignmentDao().findByEmployeeId(empId));
-                AuditLogger.log("设置服务对象", "管家分配", empName + " ← " + clientSel);
+                Map<String, Object> undoData = new HashMap<>();
+                undoData.put("type", "service_assign");
+                undoData.put("assignmentId", sa.getAssignmentId());
+                AuditLogger.logReversible("设置服务对象", "管家分配", empName + " ← " + clientSel, undoData);
             });
         });
 
@@ -2302,7 +2363,10 @@ public class AdminFrame {
                 String sel = customerBox.getValue();
                 if (sel == null || "无 - 全部".equals(sel)) refreshTable(table, ctx.getHealthRecordDao().findAll());
                 else refreshTable(table, ctx.getHealthRecordDao().findByCustomerId(sel.split(" - ")[0]));
-                AuditLogger.log("登记健康记录", "健康记录", elderBox.getValue());
+                Map<String, Object> undoData = new HashMap<>();
+                undoData.put("type", "health_record");
+                undoData.put("recordId", hr.getHealthId());
+                AuditLogger.logReversible("登记健康记录", "健康记录", elderBox.getValue(), undoData);
             });
         });
 
@@ -2330,15 +2394,206 @@ public class AdminFrame {
     private VBox buildLogView() {
         VBox box = new VBox(10);
         box.setPadding(new Insets(15));
+
         TableView<OperationLog> table = new TableView<>();
         TableColumn<OperationLog, String> c1 = tc("操作人", "operatorName");
-        TableColumn<OperationLog, String> c2 = tc("操作", "action");
-        TableColumn<OperationLog, String> c3 = tc("目标", "target");
-        TableColumn<OperationLog, String> c4 = tc("时间", "time");
-        table.getColumns().addAll(c1, c2, c3, c4);
-        refreshTable(table, ctx.getOperationLogDao().findAll());
-        box.getChildren().add(table);
+        TableColumn<OperationLog, String> c2 = tc("角色", "operatorRole");
+        TableColumn<OperationLog, String> c3 = tc("操作", "action");
+        TableColumn<OperationLog, String> c4 = tc("目标", "target");
+        TableColumn<OperationLog, String> c5 = tc("详情", "detail");
+        TableColumn<OperationLog, String> c6 = tc("时间", "time");
+        TableColumn<OperationLog, String> c7 = new TableColumn<>("状态");
+        c7.setCellValueFactory(data -> {
+            OperationLog log = data.getValue();
+            String text;
+            if (log.getReversibleData() == null || log.getReversibleData().isEmpty()) {
+                text = "不可撤销";
+            } else if (log.isReverted()) {
+                text = "已撤销";
+            } else {
+                text = "可撤销";
+            }
+            return new SimpleStringProperty(text);
+        });
+        table.getColumns().addAll(c1, c2, c3, c4, c5, c6, c7);
+
+        List<OperationLog> logs = ctx.getOperationLogDao().findAll();
+        logs.sort((a, b) -> {
+            String ta = a.getTime() != null ? a.getTime() : "";
+            String tb = b.getTime() != null ? b.getTime() : "";
+            return tb.compareTo(ta); // 最新在前
+        });
+        refreshTable(table, logs);
+
+        Button undoBtn = new Button("撤销选中操作");
+        undoBtn.setOnAction(e -> {
+            OperationLog sel = table.getSelectionModel().getSelectedItem();
+            if (sel == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择一条操作日志"); return; }
+            if (sel.getReversibleData() == null || sel.getReversibleData().isEmpty()) {
+                LoginPane.showAlert(Alert.AlertType.WARNING, "此操作不支持撤销");
+                return;
+            }
+            if (sel.isReverted()) {
+                LoginPane.showAlert(Alert.AlertType.WARNING, "此操作已被撤销过");
+                return;
+            }
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                "确定要撤销操作 \"" + sel.getAction() + " - " + sel.getDetail() + "\" 吗？");
+            confirm.showAndWait().ifPresent(r -> {
+                if (r == ButtonType.YES) {
+                    boolean success = performUndo(sel);
+                    if (success) {
+                        sel.setReverted(true);
+                        ctx.getOperationLogDao().update(sel);
+                        PersistentIdGenerator.getInstance().save();
+                        AuditLogger.log("撤销操作", "操作日志", sel.getAction() + " - " + sel.getDetail());
+                        List<OperationLog> refreshed = ctx.getOperationLogDao().findAll();
+                        refreshed.sort((a, b) -> {
+                            String ta = a.getTime() != null ? a.getTime() : "";
+                            String tb = b.getTime() != null ? b.getTime() : "";
+                            return tb.compareTo(ta);
+                        });
+                        refreshTable(table, refreshed);
+                    }
+                }
+            });
+        });
+
+        HBox btnRow = new HBox(10, undoBtn);
+        box.getChildren().addAll(btnRow, table);
         return box;
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean performUndo(OperationLog log) {
+        Map<String, Object> data = AuditLogger.parseReversibleData(log.getReversibleData());
+        if (data == null) return false;
+        String type = (String) data.get("type");
+        try {
+            switch (type) {
+                case "elderly_edit": {
+                    String elderlyId = (String) data.get("elderlyId");
+                    Elderly e = ctx.getElderlyDao().findById(elderlyId);
+                    if (e == null) return false;
+                    e.setName((String) data.get("oldName"));
+                    e.setAge(data.get("oldAge") instanceof Integer ? (int) data.get("oldAge") : Integer.parseInt(String.valueOf(data.get("oldAge"))));
+                    e.setGender((String) data.get("oldGender"));
+                    e.setIdCard((String) data.get("oldIdCard"));
+                    e.setBloodType((String) data.get("oldBloodType"));
+                    e.setBirthDate((String) data.get("oldBirthDate"));
+                    e.setPhone((String) data.get("oldPhone"));
+                    e.setAddress((String) data.get("oldAddress"));
+                    e.setFamilyMember((String) data.get("oldFamilyMember"));
+                    e.setEmergencyContact((String) data.get("oldEmergencyContact"));
+                    e.setEmergencyPhone((String) data.get("oldEmergencyPhone"));
+                    // 恢复床位
+                    String oldBedId = (String) data.get("oldBedId");
+                    String curBedId = e.getBedId();
+                    if (oldBedId != null && !oldBedId.equals(curBedId)) {
+                        if (curBedId != null && !curBedId.isEmpty()) {
+                            Bed curBed = ctx.getBedDao().findById(curBedId);
+                            if (curBed != null) { curBed.setStatus("available"); ctx.getBedDao().update(curBed); }
+                        }
+                        if (!oldBedId.isEmpty()) {
+                            Bed oldBed = ctx.getBedDao().findById(oldBedId);
+                            if (oldBed != null) { oldBed.setStatus("occupied"); ctx.getBedDao().update(oldBed); }
+                        }
+                        e.setBedId(oldBedId.isEmpty() ? null : oldBedId);
+                    }
+                    e.setCheckInDate((String) data.get("oldCheckInDate"));
+                    e.setContractEndDate((String) data.get("oldContractEndDate"));
+                    e.setRoomNo((String) data.get("oldRoomNo"));
+                    e.setBuildingId((String) data.get("oldBuildingId"));
+                    ctx.getElderlyDao().update(e);
+                    PersistentIdGenerator.getInstance().save();
+                    return true;
+                }
+                case "nursing_level_set": {
+                    String elderlyId = (String) data.get("elderlyId");
+                    Elderly e = ctx.getElderlyDao().findById(elderlyId);
+                    if (e == null) return false;
+                    // 删除添加的护理项目
+                    List<String> addedIds = (List<String>) data.get("addedProjectIds");
+                    if (addedIds != null) {
+                        for (String id : addedIds) ctx.getCustomerCareProjectDao().delete(id);
+                    }
+                    // 恢复旧级别
+                    String oldLevelCode = (String) data.get("oldLevelCode");
+                    e.setNursingLevelCode(oldLevelCode.isEmpty() ? null : oldLevelCode);
+                    ctx.getElderlyDao().update(e);
+                    PersistentIdGenerator.getInstance().save();
+                    return true;
+                }
+                case "nursing_level_remove": {
+                    String elderlyId = (String) data.get("elderlyId");
+                    Elderly e = ctx.getElderlyDao().findById(elderlyId);
+                    if (e == null) return false;
+                    String oldLevelCode = (String) data.get("oldLevelCode");
+                    e.setNursingLevelCode(oldLevelCode.isEmpty() ? null : oldLevelCode);
+                    ctx.getElderlyDao().update(e);
+                    // 恢复已购护理项目
+                    List<Map<String, String>> removedProjects = (List<Map<String, String>>) data.get("removedProjects");
+                    if (removedProjects != null) {
+                        for (Map<String, String> info : removedProjects) {
+                            CustomerCareProject ccp = new CustomerCareProject(
+                                null, elderlyId,
+                                info.get("projectCode"),
+                                Integer.parseInt(info.get("quantity")),
+                                info.get("purchaseDate"),
+                                info.get("expireDate"));
+                            ctx.getCustomerCareProjectDao().insert(ccp);
+                        }
+                    }
+                    PersistentIdGenerator.getInstance().save();
+                    return true;
+                }
+                case "bed_swap": {
+                    String elderlyId = (String) data.get("elderlyId");
+                    Elderly e = ctx.getElderlyDao().findById(elderlyId);
+                    if (e == null) return false;
+                    String oldBedId = (String) data.get("oldBedId");
+                    String newBedId = (String) data.get("newBedId");
+                    // 换回去：当前占用的床位释放，旧床位恢复占用
+                    if (newBedId != null && !newBedId.isEmpty()) {
+                        Bed newBed = ctx.getBedDao().findById(newBedId);
+                        if (newBed != null) { newBed.setStatus("available"); ctx.getBedDao().update(newBed); }
+                    }
+                    if (oldBedId != null && !oldBedId.isEmpty()) {
+                        Bed oldBed = ctx.getBedDao().findById(oldBedId);
+                        if (oldBed != null) { oldBed.setStatus("occupied"); ctx.getBedDao().update(oldBed); }
+                    }
+                    e.setBedId(oldBedId.isEmpty() ? null : oldBedId);
+                    e.setRoomNo((String) data.get("oldRoomNo"));
+                    e.setBuildingId((String) data.get("oldBuildingId"));
+                    ctx.getElderlyDao().update(e);
+                    PersistentIdGenerator.getInstance().save();
+                    return true;
+                }
+                case "service_assign": {
+                    String assignmentId = (String) data.get("assignmentId");
+                    ctx.getServiceAssignmentDao().delete(assignmentId);
+                    PersistentIdGenerator.getInstance().save();
+                    return true;
+                }
+                case "health_record": {
+                    String recordId = (String) data.get("recordId");
+                    ctx.getHealthRecordDao().delete(recordId);
+                    PersistentIdGenerator.getInstance().save();
+                    return true;
+                }
+                case "diet_preference": {
+                    String preferenceId = (String) data.get("preferenceId");
+                    ctx.getDietPreferenceDao().delete(preferenceId);
+                    PersistentIdGenerator.getInstance().save();
+                    return true;
+                }
+                default:
+                    return false;
+            }
+        } catch (Exception ex) {
+            LoginPane.showAlert(Alert.AlertType.ERROR, "撤销失败: " + ex.getMessage());
+            return false;
+        }
     }
 
     // ==================== 辅助方法 ====================

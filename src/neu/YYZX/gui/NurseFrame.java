@@ -40,6 +40,7 @@ public class NurseFrame {
     public NurseFrame(User user, String token) {
         this.user = user;
         this.token = token;
+        AuditLogger.setCurrentUser(user);
         this.stage = new Stage();
         stage.setTitle("东软颐养中心 - 护工端 [" + (user.getRealName() != null ? user.getRealName() : user.getUsername()) + "]");
         buildUI();
@@ -341,6 +342,26 @@ public class NurseFrame {
     }
 
     private void showEditElderlyDialog(Elderly elder, TableView<Elderly> table) {
+        Map<String, Object> snapshot = new HashMap<>();
+        snapshot.put("type", "elderly_edit");
+        snapshot.put("elderlyId", elder.getId());
+        snapshot.put("oldName", elder.getName());
+        snapshot.put("oldAge", elder.getAge());
+        snapshot.put("oldGender", elder.getGender());
+        snapshot.put("oldIdCard", elder.getIdCard());
+        snapshot.put("oldBloodType", elder.getBloodType());
+        snapshot.put("oldBirthDate", elder.getBirthDate());
+        snapshot.put("oldPhone", elder.getPhone());
+        snapshot.put("oldAddress", elder.getAddress());
+        snapshot.put("oldFamilyMember", elder.getFamilyMember());
+        snapshot.put("oldEmergencyContact", elder.getEmergencyContact());
+        snapshot.put("oldEmergencyPhone", elder.getEmergencyPhone());
+        snapshot.put("oldBedId", elder.getBedId());
+        snapshot.put("oldCheckInDate", elder.getCheckInDate());
+        snapshot.put("oldContractEndDate", elder.getContractEndDate());
+        snapshot.put("oldRoomNo", elder.getRoomNo());
+        snapshot.put("oldBuildingId", elder.getBuildingId());
+
         Dialog<Elderly> dlg = new Dialog<>();
         dlg.initOwner(stage);
         dlg.setTitle("编辑老人信息 - " + elder.getName());
@@ -469,7 +490,7 @@ public class NurseFrame {
             elder.setContractEndDate(contractEndDate.getValue() != null ? contractEndDate.getValue().toString() : "");
             ctx.getElderlyDao().update(elder);
             PersistentIdGenerator.getInstance().save();
-            AuditLogger.log("编辑老人信息", "老人管理", elder.getName());
+            AuditLogger.logReversible("编辑老人信息", "老人管理", elder.getName(), snapshot);
             refresh(table, ctx.getElderlyDao().findAll());
             return elder;
         });
@@ -679,7 +700,10 @@ public class NurseFrame {
                     ctx.getDietPreferenceDao().insert(dp);
                     PersistentIdGenerator.getInstance().save();
                     refresh(table, ctx.getDietPreferenceDao().findAll());
-                    AuditLogger.log("添加膳食偏好", "膳食管理", elderName);
+                    Map<String, Object> undoData = new HashMap<>();
+                    undoData.put("type", "diet_preference");
+                    undoData.put("preferenceId", dp.getPreferenceId());
+                    AuditLogger.logReversible("添加膳食偏好", "膳食管理", elderName, undoData);
                 });
             });
         });

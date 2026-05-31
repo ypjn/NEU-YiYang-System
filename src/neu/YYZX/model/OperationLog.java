@@ -11,6 +11,8 @@ public class OperationLog {
     private String target;
     private String detail;
     private String time;
+    private String reversibleData;
+    private boolean reverted;
 
     public OperationLog() {}
 
@@ -39,4 +41,8 @@ public class OperationLog {
     public void setDetail(String detail) { this.detail = detail; }
     public String getTime() { return time; }
     public void setTime(String time) { this.time = time; }
+    public String getReversibleData() { return reversibleData; }
+    public void setReversibleData(String reversibleData) { this.reversibleData = reversibleData; }
+    public boolean isReverted() { return reverted; }
+    public void setReverted(boolean reverted) { this.reverted = reverted; }
 }

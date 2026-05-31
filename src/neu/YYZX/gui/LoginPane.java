@@ -7,6 +7,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import neu.YYZX.common.AuditLogger;
 import neu.YYZX.common.LoginContext;
 import neu.YYZX.model.User;
 import neu.YYZX.service.DataInitializer;
@@ -79,6 +80,7 @@ public class LoginPane extends VBox {
         }
 
         String token = LoginContext.login(user);
+        AuditLogger.setCurrentUser(user);
         stage.hide();
 
         if ("admin".equals(user.getRole())) {
