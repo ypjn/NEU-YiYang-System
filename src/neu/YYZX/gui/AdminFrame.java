@@ -2778,7 +2778,7 @@ public class AdminFrame {
                 return;
             }
             Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
-                "确定要撤销操作 \"" + sel.getAction() + " - " + sel.getDetail() + "\" 吗？");
+                "确定要撤销操作 \"" + sel.getAction() + " - " + sel.getDetail() + "\" 吗？", ButtonType.YES, ButtonType.NO);
             confirm.showAndWait().ifPresent(r -> {
                 if (r == ButtonType.YES) {
                     boolean success = performUndo(sel);
