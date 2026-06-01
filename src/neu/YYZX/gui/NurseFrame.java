@@ -272,8 +272,7 @@ public class NurseFrame {
                 idCard.setStyle("-fx-border-color:red; -fx-border-width:1px");
                 idCardMsg.setText(nv.length() == 18 ? "身份证格式错误" : "");
                 idCardMsg.setStyle("-fx-text-fill:red; -fx-font-size:11px");
-                age.setDisable(false); birthDate.setDisable(false);
-                age.setStyle(""); birthDate.setStyle("");
+                age.setDisable(false); birthDate.setDisable(false); gender.setDisable(false);
             } else {
                 idCard.setStyle("");
                 String birth = nv.substring(6, 14);
@@ -283,8 +282,7 @@ public class NurseFrame {
                 age.setText(String.valueOf(calculatedAge));
                 int seqDigit = Integer.parseInt(nv.substring(14, 17));
                 gender.setValue(seqDigit % 2 == 1 ? "男" : "女");
-                age.setDisable(true); birthDate.setDisable(true);
-                age.setStyle("-fx-background-color:#f0f0f0"); birthDate.setStyle("-fx-background-color:#f0f0f0");
+                age.setDisable(true); birthDate.setDisable(true); gender.setDisable(true);
                 idCardMsg.setText("✓ 出生: " + result + "  性别: " + gender.getValue() + "  年龄: " + calculatedAge);
                 idCardMsg.setStyle("-fx-text-fill:green; -fx-font-size:11px");
             }

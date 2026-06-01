@@ -480,9 +480,8 @@ public class AdminFrame {
                 idCard.setStyle("-fx-border-color:red; -fx-border-width:1px");
                 idCardMsg.setText(nv.length() == 18 ? "身份证格式错误" : "");
                 idCardMsg.setStyle("-fx-text-fill:red; -fx-font-size:11px");
-                // 解锁年龄和出生日期
-                age.setDisable(false); birthDate.setDisable(false);
-                age.setStyle(""); birthDate.setStyle("");
+                // 解锁年龄、出生日期、性别
+                age.setDisable(false); birthDate.setDisable(false); gender.setDisable(false);
             } else {
                 idCard.setStyle("");
                 // 自动提取并填充出生日期
@@ -495,9 +494,8 @@ public class AdminFrame {
                 // 自动识别性别 (第17位，奇数为男)
                 int seqDigit = Integer.parseInt(nv.substring(14, 17));
                 gender.setValue(seqDigit % 2 == 1 ? "男" : "女");
-                // 锁定年龄和出生日期
-                age.setDisable(true); birthDate.setDisable(true);
-                age.setStyle("-fx-background-color:#f0f0f0"); birthDate.setStyle("-fx-background-color:#f0f0f0");
+                // 锁定年龄、出生日期、性别
+                age.setDisable(true); birthDate.setDisable(true); gender.setDisable(true);
                 idCardMsg.setText("✓ 出生: " + result + "  性别: " + gender.getValue() + "  年龄: " + calculatedAge);
                 idCardMsg.setStyle("-fx-text-fill:green; -fx-font-size:11px");
             }
