@@ -418,4 +418,25 @@
   "quantity" : 1,
   "purchaseDate" : "2026-06-01 15:34:00",
   "expireDate" : "2026-09-01"
+}, {
+  "id" : "CCP0066",
+  "customerId" : "E0034",
+  "projectCode" : "LZ-002",
+  "quantity" : 5,
+  "purchaseDate" : "2026-06-01 20:02:47",
+  "expireDate" : "2026-09-01"
+}, {
+  "id" : "CCP0067",
+  "customerId" : "E0034",
+  "projectCode" : "LZ-005",
+  "quantity" : 1,
+  "purchaseDate" : "2026-06-01 20:02:52",
+  "expireDate" : "2026-09-01"
+}, {
+  "id" : "CCP0068",
+  "customerId" : "E0034",
+  "projectCode" : "LZ-006",
+  "quantity" : 3,
+  "purchaseDate" : "2026-06-01 20:03:02",
+  "expireDate" : "2026-12-01"
 } ]

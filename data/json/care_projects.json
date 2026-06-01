@@ -148,4 +148,14 @@
   "executionCount" : 1,
   "status" : "启用",
   "remark" : "一对一谈心"
+}, {
+  "code" : "LZ-008",
+  "name" : "叫醒服务",
+  "category" : "生活照料",
+  "unit" : "天",
+  "price" : 5.0,
+  "cycle" : "每天",
+  "executionCount" : 1,
+  "status" : "启用",
+  "remark" : ""
 } ]

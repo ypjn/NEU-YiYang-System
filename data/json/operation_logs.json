@@ -1,4 +1,184 @@
 [ {
+  "logId" : "LOG0050",
+  "operatorName" : "系统管理员",
+  "operatorRole" : "admin",
+  "action" : "设置服务对象",
+  "target" : "管家分配",
+  "detail" : "张三 ← E0028 - 黄一一",
+  "time" : "2026-06-01 20:16:38",
+  "reversibleData" : "{\"type\":\"service_assign\",\"assignmentId\":\"SA0021\"}",
+  "reverted" : true
+}, {
+  "logId" : "LOG0049",
+  "operatorName" : "系统管理员",
+  "operatorRole" : "admin",
+  "action" : "撤销操作",
+  "target" : "操作日志",
+  "detail" : "设置服务对象 - 王管家 ← E0034 - 王坚果",
+  "time" : "2026-06-01 20:15:12",
+  "reversibleData" : null,
+  "reverted" : false
+}, {
+  "logId" : "LOG0048",
+  "operatorName" : "系统管理员",
+  "operatorRole" : "admin",
+  "action" : "登记健康记录",
+  "target" : "健康记录",
+  "detail" : "E0033 - 王建国",
+  "time" : "2026-06-01 20:13:42",
+  "reversibleData" : "{\"recordId\":\"HR0015\",\"type\":\"health_record\"}",
+  "reverted" : false
+}, {
+  "logId" : "LOG0047",
+  "operatorName" : "护工张三",
+  "operatorRole" : "nurse",
+  "action" : "添加膳食偏好",
+  "target" : "膳食管理",
+  "detail" : "王坚果",
+  "time" : "2026-06-01 20:07:28",
+  "reversibleData" : "{\"preferenceId\":\"DP0012\",\"type\":\"diet_preference\"}",
+  "reverted" : false
+}, {
+  "logId" : "LOG0046",
+  "operatorName" : "系统管理员",
+  "operatorRole" : "admin",
+  "action" : "设置服务对象",
+  "target" : "管家分配",
+  "detail" : "王管家 ← E0034 - 王坚果",
+  "time" : "2026-06-01 20:03:48",
+  "reversibleData" : "{\"type\":\"service_assign\",\"assignmentId\":\"SA0020\"}",
+  "reverted" : true
+}, {
+  "logId" : "LOG0045",
+  "operatorName" : "系统管理员",
+  "operatorRole" : "admin",
+  "action" : "续费护理项目",
+  "target" : "服务关注",
+  "detail" : "LZ-006",
+  "time" : "2026-06-01 20:03:18",
+  "reversibleData" : "{\"oldQuantity\":3,\"oldExpireDate\":\"2026-09-01\",\"type\":\"care_project_renew\",\"projectId\":\"CCP0068\"}",
+  "reverted" : false
+}, {
+  "logId" : "LOG0044",
+  "operatorName" : "系统管理员",
+  "operatorRole" : "admin",
+  "action" : "购买护理项目",
+  "target" : "服务关注",
+  "detail" : "王坚果 ← LZ-006",
+  "time" : "2026-06-01 20:03:02",
+  "reversibleData" : "{\"type\":\"care_project_buy\",\"projectId\":\"CCP0068\"}",
+  "reverted" : false
+}, {
+  "logId" : "LOG0043",
+  "operatorName" : "系统管理员",
+  "operatorRole" : "admin",
+  "action" : "购买护理项目",
+  "target" : "服务关注",
+  "detail" : "王坚果 ← LZ-005",
+  "time" : "2026-06-01 20:02:52",
+  "reversibleData" : "{\"type\":\"care_project_buy\",\"projectId\":\"CCP0067\"}",
+  "reverted" : false
+}, {
+  "logId" : "LOG0042",
+  "operatorName" : "系统管理员",
+  "operatorRole" : "admin",
+  "action" : "购买护理项目",
+  "target" : "服务关注",
+  "detail" : "王坚果 ← LZ-002",
+  "time" : "2026-06-01 20:02:47",
+  "reversibleData" : "{\"type\":\"care_project_buy\",\"projectId\":\"CCP0066\"}",
+  "reverted" : false
+}, {
+  "logId" : "LOG0041",
+  "operatorName" : "护工张三",
+  "operatorRole" : "nurse",
+  "action" : "老人入住",
+  "target" : "老人管理",
+  "detail" : "王坚果",
+  "time" : "2026-06-01 19:59:12",
+  "reversibleData" : "{\"elderlyId\":\"E0034\",\"bedId\":\"BD0058\",\"type\":\"elderly_checkin\"}",
+  "reverted" : false
+}, {
+  "logId" : "LOG0040",
+  "operatorName" : "系统管理员",
+  "operatorRole" : "admin",
+  "action" : "登记健康记录",
+  "target" : "健康记录",
+  "detail" : "E0017 - 郑秀英",
+  "time" : "2026-06-01 15:35:27",
+  "reversibleData" : "{\"recordId\":\"HR0014\",\"type\":\"health_record\"}",
+  "reverted" : false
+}, {
+  "logId" : "LOG0039",
+  "operatorName" : "系统管理员",
+  "operatorRole" : "admin",
+  "action" : "设置服务对象",
+  "target" : "管家分配",
+  "detail" : "李管家 ← E0033 - 王建国",
+  "time" : "2026-06-01 15:34:35",
+  "reversibleData" : "{\"type\":\"service_assign\",\"assignmentId\":\"SA0019\"}",
+  "reverted" : false
+}, {
+  "logId" : "LOG0038",
+  "operatorName" : "系统管理员",
+  "operatorRole" : "admin",
+  "action" : "购买护理项目",
+  "target" : "服务关注",
+  "detail" : "王建国 ← LZ-003",
+  "time" : "2026-06-01 15:34:00",
+  "reversibleData" : "{\"type\":\"care_project_buy\",\"projectId\":\"CCP0065\"}",
+  "reverted" : false
+}, {
+  "logId" : "LOG0037",
+  "operatorName" : "系统管理员",
+  "operatorRole" : "admin",
+  "action" : "设置护理等级",
+  "target" : "老人管理",
+  "detail" : "王建国 → HL-1",
+  "time" : "2026-06-01 15:30:59",
+  "reversibleData" : "{\"elderlyId\":\"E0033\",\"newLevelCode\":\"HL-1\",\"addedProjectIds\":[\"CCP0060\",\"CCP0061\",\"CCP0062\",\"CCP0063\",\"CCP0064\"],\"type\":\"nursing_level_set\",\"oldLevelCode\":\"\"}",
+  "reverted" : false
+}, {
+  "logId" : "LOG0036",
+  "operatorName" : "系统管理员",
+  "operatorRole" : "admin",
+  "action" : "床位调换",
+  "target" : "床位管理",
+  "detail" : "E0033 → 床位 401-3",
+  "time" : "2026-06-01 15:30:22",
+  "reversibleData" : "{\"elderlyId\":\"E0033\",\"newBedId\":\"BD0073\",\"oldRoomNo\":\"401\",\"type\":\"bed_swap\",\"oldBedId\":\"BD0057\",\"oldBuildingId\":\"B0004\"}",
+  "reverted" : false
+}, {
+  "logId" : "LOG0035",
+  "operatorName" : "护工张三",
+  "operatorRole" : "nurse",
+  "action" : "编辑老人信息",
+  "target" : "老人管理",
+  "detail" : "王建国",
+  "time" : "2026-06-01 15:27:08",
+  "reversibleData" : "{\"oldCheckInDate\":\"2026-06-01 00:00:00\",\"oldBirthDate\":\"1950-06-15\",\"oldEmergencyContact\":\"\",\"oldPhone\":\"\",\"oldContractEndDate\":\"2027-06-01\",\"oldFamilyMember\":\"\",\"oldEmergencyPhone\":\"\",\"type\":\"elderly_edit\",\"oldBedId\":\"BD0057\",\"oldGender\":\"男\",\"oldBloodType\":\"B\",\"oldAddress\":null,\"elderlyId\":\"E0033\",\"oldAge\":75,\"oldRoomNo\":\"401\",\"oldName\":\"王建国\",\"oldIdCard\":\"120101195006151232\",\"oldBuildingId\":\"B0004\"}",
+  "reverted" : false
+}, {
+  "logId" : "LOG0034",
+  "operatorName" : "护工张三",
+  "operatorRole" : "nurse",
+  "action" : "老人入住",
+  "target" : "老人管理",
+  "detail" : "王建国",
+  "time" : "2026-06-01 15:26:39",
+  "reversibleData" : "{\"elderlyId\":\"E0033\",\"bedId\":\"BD0057\",\"type\":\"elderly_checkin\"}",
+  "reverted" : false
+}, {
+  "logId" : "LOG0033",
+  "operatorName" : "系统管理员",
+  "operatorRole" : "admin",
+  "action" : "登记健康记录",
+  "target" : "健康记录",
+  "detail" : "E0017 - 郑秀英",
+  "time" : "2026-06-01 15:13:30",
+  "reversibleData" : "{\"recordId\":\"HR0013\",\"type\":\"health_record\"}",
+  "reverted" : false
+}, {
   "logId" : "LOG0032",
   "operatorName" : "系统管理员",
   "operatorRole" : "admin",
@@ -319,83 +499,13 @@
   "reversibleData" : null,
   "reverted" : false
 }, {
-  "logId" : "LOG0033",
+  "logId" : "LOG0051",
   "operatorName" : "系统管理员",
   "operatorRole" : "admin",
-  "action" : "登记健康记录",
-  "target" : "健康记录",
-  "detail" : "E0017 - 郑秀英",
-  "time" : "2026-06-01 15:13:30",
-  "reversibleData" : "{\"recordId\":\"HR0013\",\"type\":\"health_record\"}",
-  "reverted" : false
-}, {
-  "logId" : "LOG0034",
-  "operatorName" : "护工张三",
-  "operatorRole" : "nurse",
-  "action" : "老人入住",
-  "target" : "老人管理",
-  "detail" : "王建国",
-  "time" : "2026-06-01 15:26:39",
-  "reversibleData" : "{\"elderlyId\":\"E0033\",\"bedId\":\"BD0057\",\"type\":\"elderly_checkin\"}",
-  "reverted" : false
-}, {
-  "logId" : "LOG0035",
-  "operatorName" : "护工张三",
-  "operatorRole" : "nurse",
-  "action" : "编辑老人信息",
-  "target" : "老人管理",
-  "detail" : "王建国",
-  "time" : "2026-06-01 15:27:08",
-  "reversibleData" : "{\"oldCheckInDate\":\"2026-06-01 00:00:00\",\"oldBirthDate\":\"1950-06-15\",\"oldEmergencyContact\":\"\",\"oldPhone\":\"\",\"oldContractEndDate\":\"2027-06-01\",\"oldFamilyMember\":\"\",\"oldEmergencyPhone\":\"\",\"type\":\"elderly_edit\",\"oldBedId\":\"BD0057\",\"oldGender\":\"男\",\"oldBloodType\":\"B\",\"oldAddress\":null,\"elderlyId\":\"E0033\",\"oldAge\":75,\"oldRoomNo\":\"401\",\"oldName\":\"王建国\",\"oldIdCard\":\"120101195006151232\",\"oldBuildingId\":\"B0004\"}",
-  "reverted" : false
-}, {
-  "logId" : "LOG0036",
-  "operatorName" : "系统管理员",
-  "operatorRole" : "admin",
-  "action" : "床位调换",
-  "target" : "床位管理",
-  "detail" : "E0033 → 床位 401-3",
-  "time" : "2026-06-01 15:30:22",
-  "reversibleData" : "{\"elderlyId\":\"E0033\",\"newBedId\":\"BD0073\",\"oldRoomNo\":\"401\",\"type\":\"bed_swap\",\"oldBedId\":\"BD0057\",\"oldBuildingId\":\"B0004\"}",
-  "reverted" : false
-}, {
-  "logId" : "LOG0037",
-  "operatorName" : "系统管理员",
-  "operatorRole" : "admin",
-  "action" : "设置护理等级",
-  "target" : "老人管理",
-  "detail" : "王建国 → HL-1",
-  "time" : "2026-06-01 15:30:59",
-  "reversibleData" : "{\"elderlyId\":\"E0033\",\"newLevelCode\":\"HL-1\",\"addedProjectIds\":[\"CCP0060\",\"CCP0061\",\"CCP0062\",\"CCP0063\",\"CCP0064\"],\"type\":\"nursing_level_set\",\"oldLevelCode\":\"\"}",
-  "reverted" : false
-}, {
-  "logId" : "LOG0038",
-  "operatorName" : "系统管理员",
-  "operatorRole" : "admin",
-  "action" : "购买护理项目",
-  "target" : "服务关注",
-  "detail" : "王建国 ← LZ-003",
-  "time" : "2026-06-01 15:34:00",
-  "reversibleData" : "{\"type\":\"care_project_buy\",\"projectId\":\"CCP0065\"}",
-  "reverted" : false
-}, {
-  "logId" : "LOG0039",
-  "operatorName" : "系统管理员",
-  "operatorRole" : "admin",
-  "action" : "设置服务对象",
-  "target" : "管家分配",
-  "detail" : "李管家 ← E0033 - 王建国",
-  "time" : "2026-06-01 15:34:35",
-  "reversibleData" : "{\"type\":\"service_assign\",\"assignmentId\":\"SA0019\"}",
-  "reverted" : false
-}, {
-  "logId" : "LOG0040",
-  "operatorName" : "系统管理员",
-  "operatorRole" : "admin",
-  "action" : "登记健康记录",
-  "target" : "健康记录",
-  "detail" : "E0017 - 郑秀英",
-  "time" : "2026-06-01 15:35:27",
-  "reversibleData" : "{\"recordId\":\"HR0014\",\"type\":\"health_record\"}",
+  "action" : "撤销操作",
+  "target" : "操作日志",
+  "detail" : "设置服务对象 - 张三 ← E0028 - 黄一一",
+  "time" : "2026-06-01 20:16:43",
+  "reversibleData" : null,
   "reverted" : false
 } ]

@@ -1,1 +1,85 @@
-[ ]
+[ {
+  "messageId" : "MSG0002",
+  "receiverName" : "系统管理员",
+  "content" : "新老人【王坚果】已办理入住",
+  "time" : "2026-06-01 19:59:12",
+  "read" : false
+}, {
+  "messageId" : "MSG0003",
+  "receiverName" : "王管家",
+  "content" : "管理员为您分配了新客户【王坚果】，请及时跟进",
+  "time" : "2026-06-01 20:03:48",
+  "read" : false
+}, {
+  "messageId" : "MSG0004",
+  "receiverName" : "王管家",
+  "content" : "老人【王见过】已从您的服务列表中移除",
+  "time" : "2026-06-01 20:04:10",
+  "read" : false
+}, {
+  "messageId" : "MSG0005",
+  "receiverName" : "王管家",
+  "content" : "老人【王坚果】的膳食偏好已被护工添加",
+  "time" : "2026-06-01 20:07:28",
+  "read" : false
+}, {
+  "messageId" : "MSG0006",
+  "receiverName" : "王管家",
+  "content" : "老人【王坚果】执行了护理项目【LZ-006】，扣减1次，剩余3次",
+  "time" : "2026-06-01 20:08:35",
+  "read" : false
+}, {
+  "messageId" : "MSG0007",
+  "receiverName" : "系统管理员",
+  "content" : "老人【王坚果】申请外出，事由：探亲",
+  "time" : "2026-06-01 20:10:03",
+  "read" : false
+}, {
+  "messageId" : "MSG0008",
+  "receiverName" : "王管家",
+  "content" : "老人【王坚果】的外出申请已审批通过",
+  "time" : "2026-06-01 20:10:44",
+  "read" : false
+}, {
+  "messageId" : "MSG0009",
+  "receiverName" : "王管家",
+  "content" : "老人【王坚果】已登记归来（护工操作）",
+  "time" : "2026-06-01 20:11:27",
+  "read" : false
+}, {
+  "messageId" : "MSG0010",
+  "receiverName" : "系统管理员",
+  "content" : "老人【王坚果】申请退住，类型：正常退住",
+  "time" : "2026-06-01 20:12:02",
+  "read" : false
+}, {
+  "messageId" : "MSG0011",
+  "receiverName" : "王管家",
+  "content" : "老人【王坚果】的退住申请已审批通过，老人已退住",
+  "time" : "2026-06-01 20:12:34",
+  "read" : false
+}, {
+  "messageId" : "MSG0012",
+  "receiverName" : "李管家",
+  "content" : "老人【王建国】登记了新的健康记录",
+  "time" : "2026-06-01 20:13:42",
+  "read" : false
+}, {
+  "messageId" : "MSG0013",
+  "receiverName" : "王管家",
+  "content" : "老人【王坚果】的服务分配已被管理员撤销",
+  "time" : "2026-06-01 20:15:12",
+  "read" : false
+}, {
+  "messageId" : "MSG0014",
+  "receiverName" : "张三",
+  "content" : "管理员为您分配了新客户【黄一一】，请及时跟进",
+  "time" : "2026-06-01 20:16:38",
+  "read" : false
+}, {
+  "messageId" : "MSG0015",
+  "receiverName" : "张三",
+  "content" : "老人【黄一一】的服务分配已被管理员撤销",
+  "time" : "2026-06-01 20:16:43",
+  "read" : false
+} ]

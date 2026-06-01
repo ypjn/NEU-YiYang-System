@@ -128,4 +128,14 @@
   "weight" : "65",
   "temperature" : "35",
   "remark" : ""
+}, {
+  "healthId" : "HR0015",
+  "customerId" : "E0033",
+  "recordDate" : "2026-06-01",
+  "bloodPressure" : "130/80",
+  "heartRate" : "70",
+  "bloodSugar" : "3.5",
+  "weight" : "80",
+  "temperature" : "36",
+  "remark" : ""
 } ]

@@ -1,136 +1,170 @@
-[ {
-  "bedId" : "BD0045",
-  "bedNo" : "101-1",
-  "roomId" : "RM0023",
-  "status" : "occupied"
-}, {
-  "bedId" : "BD0047",
-  "bedNo" : "102-1",
-  "roomId" : "RM0024",
-  "status" : "available"
-}, {
-  "bedId" : "BD0048",
-  "bedNo" : "102-2",
-  "roomId" : "RM0024",
-  "status" : "occupied"
-}, {
-  "bedId" : "BD0049",
-  "bedNo" : "201-1",
-  "roomId" : "RM0025",
-  "status" : "occupied"
-}, {
-  "bedId" : "BD0050",
-  "bedNo" : "201-2",
-  "roomId" : "RM0025",
-  "status" : "occupied"
-}, {
-  "bedId" : "BD0051",
-  "bedNo" : "202-1",
-  "roomId" : "RM0026",
-  "status" : "occupied"
-}, {
-  "bedId" : "BD0052",
-  "bedNo" : "202-2",
-  "roomId" : "RM0026",
-  "status" : "occupied"
-}, {
-  "bedId" : "BD0053",
-  "bedNo" : "301-1",
-  "roomId" : "RM0027",
-  "status" : "out"
-}, {
-  "bedId" : "BD0054",
-  "bedNo" : "301-2",
-  "roomId" : "RM0027",
-  "status" : "occupied"
-}, {
-  "bedId" : "BD0055",
-  "bedNo" : "302-1",
-  "roomId" : "RM0028",
-  "status" : "occupied"
-}, {
-  "bedId" : "BD0056",
-  "bedNo" : "302-2",
-  "roomId" : "RM0028",
-  "status" : "available"
-}, {
-  "bedId" : "BD0057",
-  "bedNo" : "401-1",
-  "roomId" : "RM0029",
-  "status" : "available"
-}, {
-  "bedId" : "BD0058",
-  "bedNo" : "401-2",
-  "roomId" : "RM0029",
-  "status" : "available"
-}, {
-  "bedId" : "BD0059",
-  "bedNo" : "402-1",
-  "roomId" : "RM0030",
-  "status" : "occupied"
-}, {
-  "bedId" : "BD0060",
-  "bedNo" : "402-2",
-  "roomId" : "RM0030",
-  "status" : "occupied"
-}, {
-  "bedId" : "BD0061",
-  "bedNo" : "501-1",
-  "roomId" : "RM0031",
-  "status" : "available"
-}, {
-  "bedId" : "BD0062",
-  "bedNo" : "501-2",
-  "roomId" : "RM0031",
-  "status" : "available"
-}, {
-  "bedId" : "BD0063",
-  "bedNo" : "502-1",
-  "roomId" : "RM0032",
-  "status" : "available"
-}, {
-  "bedId" : "BD0064",
-  "bedNo" : "502-2",
-  "roomId" : "RM0032",
-  "status" : "available"
-}, {
-  "bedId" : "BD0065",
-  "bedNo" : "601-1",
-  "roomId" : "RM0033",
-  "status" : "available"
-}, {
-  "bedId" : "BD0066",
-  "bedNo" : "601-2",
-  "roomId" : "RM0033",
-  "status" : "available"
-}, {
-  "bedId" : "BD0067",
-  "bedNo" : "602-1",
-  "roomId" : "RM0034",
-  "status" : "available"
-}, {
-  "bedId" : "BD0068",
-  "bedNo" : "602-2",
-  "roomId" : "RM0034",
-  "status" : "available"
-}, {
-  "bedId" : "BD0070",
-  "bedNo" : "101-2",
-  "roomId" : "RM0023",
-  "status" : "occupied"
-}, {
-  "bedId" : "BD0071",
-  "bedNo" : "301-3",
-  "roomId" : "RM0027",
-  "status" : "available"
-}, {
-  "bedId" : "BD0072",
-  "bedNo" : "302-3",
-  "roomId" : "RM0028",
-  "status" : "available"
-}, {
-  "bedId" : "BD0073",
-  "bedNo" : "401-3",
-  "roomId" : "RM0029",
-  "status" : "available"
-} ]
+[
+  {
+    "bedId": "BD0045",
+    "bedNo": "101-1",
+    "roomId": "RM0023",
+    "status": "occupied"
+  },
+  {
+    "bedId": "BD0047",
+    "bedNo": "102-1",
+    "roomId": "RM0024",
+    "status": "available"
+  },
+  {
+    "bedId": "BD0048",
+    "bedNo": "102-2",
+    "roomId": "RM0024",
+    "status": "occupied"
+  },
+  {
+    "bedId": "BD0049",
+    "bedNo": "201-1",
+    "roomId": "RM0025",
+    "status": "occupied"
+  },
+  {
+    "bedId": "BD0050",
+    "bedNo": "201-2",
+    "roomId": "RM0025",
+    "status": "occupied"
+  },
+  {
+    "bedId": "BD0051",
+    "bedNo": "202-1",
+    "roomId": "RM0026",
+    "status": "occupied"
+  },
+  {
+    "bedId": "BD0052",
+    "bedNo": "202-2",
+    "roomId": "RM0026",
+    "status": "occupied"
+  },
+  {
+    "bedId": "BD0053",
+    "bedNo": "301-1",
+    "roomId": "RM0027",
+    "status": "out"
+  },
+  {
+    "bedId": "BD0054",
+    "bedNo": "301-2",
+    "roomId": "RM0027",
+    "status": "occupied"
+  },
+  {
+    "bedId": "BD0055",
+    "bedNo": "302-1",
+    "roomId": "RM0028",
+    "status": "occupied"
+  },
+  {
+    "bedId": "BD0056",
+    "bedNo": "302-2",
+    "roomId": "RM0028",
+    "status": "available"
+  },
+  {
+    "bedId": "BD0057",
+    "bedNo": "401-1",
+    "roomId": "RM0029",
+    "status": "available"
+  },
+  {
+    "bedId": "BD0058",
+    "bedNo": "401-2",
+    "roomId": "RM0029",
+    "status": "available"
+  },
+  {
+    "bedId": "BD0059",
+    "bedNo": "402-1",
+    "roomId": "RM0030",
+    "status": "occupied"
+  },
+  {
+    "bedId": "BD0060",
+    "bedNo": "402-2",
+    "roomId": "RM0030",
+    "status": "occupied"
+  },
+  {
+    "bedId": "BD0061",
+    "bedNo": "501-1",
+    "roomId": "RM0031",
+    "status": "available"
+  },
+  {
+    "bedId": "BD0062",
+    "bedNo": "501-2",
+    "roomId": "RM0031",
+    "status": "available"
+  },
+  {
+    "bedId": "BD0063",
+    "bedNo": "502-1",
+    "roomId": "RM0032",
+    "status": "available"
+  },
+  {
+    "bedId": "BD0064",
+    "bedNo": "502-2",
+    "roomId": "RM0032",
+    "status": "available"
+  },
+  {
+    "bedId": "BD0065",
+    "bedNo": "601-1",
+    "roomId": "RM0033",
+    "status": "available"
+  },
+  {
+    "bedId": "BD0066",
+    "bedNo": "601-2",
+    "roomId": "RM0033",
+    "status": "available"
+  },
+  {
+    "bedId": "BD0067",
+    "bedNo": "602-1",
+    "roomId": "RM0034",
+    "status": "available"
+  },
+  {
+    "bedId": "BD0068",
+    "bedNo": "602-2",
+    "roomId": "RM0034",
+    "status": "available"
+  },
+  {
+    "bedId": "BD0070",
+    "bedNo": "101-2",
+    "roomId": "RM0023",
+    "status": "occupied"
+  },
+  {
+    "bedId": "BD0071",
+    "bedNo": "301-3",
+    "roomId": "RM0027",
+    "status": "available"
+  },
+  {
+    "bedId": "BD0072",
+    "bedNo": "302-3",
+    "roomId": "RM0028",
+    "status": "available"
+  },
+  {
+    "bedId": "BD0073",
+    "bedNo": "401-3",
+    "roomId": "RM0029",
+    "status": "occupied"
+  },
+  {
+    "bedId": "BD0074",
+    "bedNo": "402-3",
+    "roomId": "RM0030",
+    "status": "available"
+  }
+]

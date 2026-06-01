@@ -86,4 +86,12 @@
   "allergies" : "无",
   "taboos" : "忌过咸、忌过油",
   "remark" : null
+}, {
+  "preferenceId" : "DP0012",
+  "customerId" : "E0034",
+  "taste" : "偏清淡",
+  "dietaryAdvice" : "少盐少糖",
+  "allergies" : "无",
+  "taboos" : "忌油腻",
+  "remark" : null
 } ]
