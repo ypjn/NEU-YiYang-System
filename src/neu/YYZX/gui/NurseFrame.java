@@ -36,6 +36,7 @@ public class NurseFrame {
     private final DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private final Map<String, ToggleButton> navButtons = new LinkedHashMap<>();
     private final Label moduleTitle = new Label();
+    private Label topBarUserLabel;
 
     public NurseFrame(User user, String token) {
         this.user = user;
@@ -102,13 +103,8 @@ public class NurseFrame {
         topBar.setStyle("-fx-background-color:#ecf0f1");
         topBar.setAlignment(Pos.CENTER_RIGHT);
         String displayName = user.getRealName() != null ? user.getRealName() : user.getUsername();
-        Label userLabel = new Label("当前用户：" + displayName + "（" + user.getUsername() + "）");
-
-        int unread = 0;
-        for (Message m : ctx.getMessageDao().findAll()) {
-            if (displayName.equals(m.getReceiverName()) && !m.isRead()) unread++;
-        }
-        if (unread > 0) userLabel.setText(userLabel.getText() + " | 未读消息：" + unread + " 条");
+        topBarUserLabel = new Label("当前用户：" + displayName + "（" + user.getUsername() + "）");
+        updateUnreadBadge();
 
         Button logoutBtn = new Button("退出登录");
         logoutBtn.setOnAction(e -> {
@@ -120,7 +116,7 @@ public class NurseFrame {
             loginStage.setResizable(false);
             loginStage.show();
         });
-        topBar.getChildren().addAll(userLabel, logoutBtn);
+        topBar.getChildren().addAll(topBarUserLabel, logoutBtn);
 
         root.setTop(topBar);
         root.setLeft(nav);
@@ -512,6 +508,7 @@ public class NurseFrame {
             ctx.getElderlyDao().update(elder);
             PersistentIdGenerator.getInstance().save();
             AuditLogger.logReversible("编辑老人信息", "老人管理", elder.getName(), snapshot);
+            notifyButlerByElderly(elder.getId(), "的信息已被护工编辑更新");
             refresh(table, ctx.getElderlyDao().findAll());
             return elder;
         });
@@ -1055,6 +1052,7 @@ public class NurseFrame {
                 if (bed != null) { bed.setStatus("occupied"); ctx.getBedDao().update(bed); }
             }
             PersistentIdGenerator.getInstance().save();
+            notifyButlerByElderly(r.getCustomerId(), "已登记归来（护工操作）");
             refresh(table, ctx.getOutRegistrationDao().findAll().stream()
                 .filter(o -> nurseName.equals(o.getCompanion())).toList());
         });
@@ -1152,6 +1150,18 @@ public class NurseFrame {
 
         String displayName = user.getRealName() != null ? user.getRealName() : user.getUsername();
 
+        // 进入消息中心自动全部已读
+        List<Message> allMsgs = ctx.getMessageDao().findByReceiver(displayName);
+        boolean anyUnread = false;
+        for (Message m : allMsgs) {
+            if (!m.isRead()) {
+                m.setRead(true);
+                ctx.getMessageDao().update(m);
+                anyUnread = true;
+            }
+        }
+        if (anyUnread) { PersistentIdGenerator.getInstance().save(); updateUnreadBadge(); }
+
         TableView<Message> table = new TableView<>();
         TableColumn<Message, String> c1 = col("内容", "content");
         TableColumn<Message, String> c2 = col("时间", "time");
@@ -1161,20 +1171,18 @@ public class NurseFrame {
             TableRow<Message> row = new TableRow<>();
             row.setOnMouseClicked(e -> {
                 if (e.getClickCount() == 2 && !row.isEmpty()) {
-                    Message msg = row.getItem();
-                    if (!msg.isRead()) {
-                        msg.setRead(true);
-                        ctx.getMessageDao().update(msg);
-                        refresh(table, ctx.getMessageDao().findByReceiver(displayName));
-                    }
+                    String content = row.getItem().getContent() != null ? row.getItem().getContent() : "";
                     // 根据消息内容关键字跳转到对应模块
-                    String content = msg.getContent() != null ? msg.getContent() : "";
-                    if (content.contains("护理") || content.contains("服务") || content.contains("管家")) {
+                    if (content.contains("护理记录") || content.contains("护理项目") || content.contains("护理等级") || content.contains("扣减")) {
                         switchContent("records");
-                    } else if (content.contains("外出") || content.contains("退住")) {
-                        switchContent("elderly");
-                    } else if (content.contains("膳食") || content.contains("饮食")) {
+                    } else if (content.contains("外出")) {
+                        switchContent("outreg");
+                    } else if (content.contains("退住")) {
+                        switchContent("checkout");
+                    } else if (content.contains("膳食") || content.contains("饮食") || content.contains("食物")) {
                         switchContent("diet");
+                    } else if (content.contains("健康")) {
+                        switchContent("health");
                     } else {
                         switchContent("elderly");
                     }
@@ -1185,34 +1193,10 @@ public class NurseFrame {
 
         refresh(table, ctx.getMessageDao().findByReceiver(displayName));
 
-        Button markReadBtn = new Button("标记已读");
-        markReadBtn.setOnAction(e -> {
-            Message sel = table.getSelectionModel().getSelectedItem();
-            if (sel == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择消息"); return; }
-            sel.setRead(true);
-            ctx.getMessageDao().update(sel);
-            PersistentIdGenerator.getInstance().save();
-            refresh(table, ctx.getMessageDao().findByReceiver(displayName));
-        });
-
-        Button markAllReadBtn = new Button("全部已读");
-        markAllReadBtn.setOnAction(e -> {
-            List<Message> msgs = ctx.getMessageDao().findByReceiver(displayName);
-            for (Message m : msgs) {
-                if (!m.isRead()) {
-                    m.setRead(true);
-                    ctx.getMessageDao().update(m);
-                }
-            }
-            PersistentIdGenerator.getInstance().save();
-            refresh(table, ctx.getMessageDao().findByReceiver(displayName));
-        });
-
-        HBox btns = new HBox(10, markReadBtn, markAllReadBtn);
-        Label hint = new Label("双击未读消息可标记已读并跳转到对应页面");
+        Label hint = new Label("进入消息中心自动全部已读，双击消息可跳转到对应功能模块");
         hint.setStyle("-fx-text-fill:#7f8c8d; -fx-font-size:12px");
 
-        box.getChildren().addAll(hint, btns, table);
+        box.getChildren().addAll(hint, table);
         return box;
     }
 
@@ -1329,6 +1313,7 @@ public class NurseFrame {
             dlg.showAndWait().ifPresent(hr -> {
                 ctx.getHealthRecordDao().insert(hr);
                 PersistentIdGenerator.getInstance().save();
+                notifyButlerByElderly(hr.getCustomerId(), "的健康记录已被护工登记");
                 String sel = customerBox.getValue();
                 if (sel == null || "无 - 全部".equals(sel)) refresh(table, ctx.getHealthRecordDao().findAll());
                 else refresh(table, ctx.getHealthRecordDao().findByCustomerId(sel.split(" - ")[0]));
@@ -1341,8 +1326,10 @@ public class NurseFrame {
             Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "确定删除此健康记录吗？", ButtonType.YES, ButtonType.NO);
             confirm.showAndWait().ifPresent(r -> {
                 if (r == ButtonType.YES) {
+                    String customerId = sel.getCustomerId();
                     ctx.getHealthRecordDao().delete(sel.getHealthId());
                     PersistentIdGenerator.getInstance().save();
+                    notifyButlerByElderly(customerId, "的健康记录已被护工删除");
                     String selValue = customerBox.getValue();
                     if (selValue == null || "无 - 全部".equals(selValue)) refresh(table, ctx.getHealthRecordDao().findAll());
                     else refresh(table, ctx.getHealthRecordDao().findByCustomerId(selValue.split(" - ")[0]));
@@ -1423,6 +1410,19 @@ public class NurseFrame {
         dlg.getDialogPane().getButtonTypes().add(closeBtn);
         dlg.getDialogPane().setContent(grid);
         dlg.showAndWait();
+    }
+
+    /** 更新顶部栏未读消息数 */
+    private void updateUnreadBadge() {
+        String displayName = user.getRealName() != null ? user.getRealName() : user.getUsername();
+        int unread = 0;
+        for (Message m : ctx.getMessageDao().findAll()) {
+            if (displayName.equals(m.getReceiverName()) && !m.isRead()) unread++;
+        }
+        if (unread > 0)
+            topBarUserLabel.setText("当前用户：" + displayName + "（" + user.getUsername() + "） | 未读消息：" + unread + " 条");
+        else
+            topBarUserLabel.setText("当前用户：" + displayName + "（" + user.getUsername() + "）");
     }
 
     private String nvl(String s) { return s != null && !s.isEmpty() ? s : "-"; }

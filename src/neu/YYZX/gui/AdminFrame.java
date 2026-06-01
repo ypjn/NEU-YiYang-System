@@ -1942,6 +1942,7 @@ public class AdminFrame {
                     ctx.getCustomerCareProjectDao().delete(ccp.getId());
                     PersistentIdGenerator.getInstance().save();
                     AuditLogger.logReversible("移除护理项目", "服务关注", ccp.getProjectCode(), undoData);
+                    notifyButlerByElderly(ccp.getCustomerId(), "的护理项目【" + ccp.getProjectCode() + "】已被管理员移除");
                     String sel = customerBox.getValue();
                     if (sel == null) return;
                     if ("无 - 全部".equals(sel)) refreshTable(table, ctx.getCustomerCareProjectDao().findAll());
@@ -2718,8 +2719,10 @@ public class AdminFrame {
             Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "确定删除此健康记录吗？", ButtonType.YES, ButtonType.NO);
             confirm.showAndWait().ifPresent(r -> {
                 if (r == ButtonType.YES) {
+                    String customerId = sel.getCustomerId();
                     ctx.getHealthRecordDao().delete(sel.getHealthId());
                     PersistentIdGenerator.getInstance().save();
+                    notifyButlerByElderly(customerId, "的健康记录已被管理员删除");
                     String selValue = customerBox.getValue();
                     if (selValue == null || "无 - 全部".equals(selValue)) refreshTable(table, ctx.getHealthRecordDao().findAll());
                     else refreshTable(table, ctx.getHealthRecordDao().findByCustomerId(selValue.split(" - ")[0]));
