@@ -158,4 +158,54 @@
   "time" : "2026-06-01 11:53:01",
   "reversibleData" : "{\"elderlyId\":\"E0027\",\"newLevelCode\":\"ZL\",\"addedProjectIds\":[\"CCP0043\",\"CCP0044\",\"CCP0045\"],\"type\":\"nursing_level_set\",\"oldLevelCode\":\"\"}",
   "reverted" : false
+}, {
+  "logId" : "LOG0017",
+  "operatorName" : "系统管理员",
+  "operatorRole" : "admin",
+  "action" : "老人入住",
+  "target" : "老人管理",
+  "detail" : "黄一一",
+  "time" : "2026-06-01 13:19:18",
+  "reversibleData" : "{\"elderlyId\":\"E0028\",\"bedId\":\"BD0054\",\"type\":\"elderly_checkin\"}",
+  "reverted" : false
+}, {
+  "logId" : "LOG0018",
+  "operatorName" : "系统管理员",
+  "operatorRole" : "admin",
+  "action" : "编辑老人信息",
+  "target" : "老人管理",
+  "detail" : "黄一一",
+  "time" : "2026-06-01 13:20:25",
+  "reversibleData" : "{\"oldCheckInDate\":\"2026-06-01 00:00:00\",\"oldBirthDate\":\"1956-12-11\",\"oldEmergencyContact\":\"\",\"oldPhone\":\"13756789876\",\"oldContractEndDate\":\"2027-06-02\",\"oldFamilyMember\":\"黄二\",\"oldEmergencyPhone\":\"\",\"type\":\"elderly_edit\",\"oldBedId\":\"BD0054\",\"oldGender\":\"男\",\"oldBloodType\":\"AB\",\"oldAddress\":\"东北大学浑南校区\",\"elderlyId\":\"E0028\",\"oldAge\":70,\"oldRoomNo\":\"301\",\"oldName\":\"黄一一\",\"oldIdCard\":\"210703195612113014\",\"oldBuildingId\":\"B0004\"}",
+  "reverted" : false
+}, {
+  "logId" : "LOG0019",
+  "operatorName" : "系统管理员",
+  "operatorRole" : "admin",
+  "action" : "老人入住",
+  "target" : "老人管理",
+  "detail" : "王一一",
+  "time" : "2026-06-01 13:27:15",
+  "reversibleData" : "{\"elderlyId\":\"E0029\",\"bedId\":\"BD0047\",\"type\":\"elderly_checkin\"}",
+  "reverted" : false
+}, {
+  "logId" : "LOG0020",
+  "operatorName" : "系统管理员",
+  "operatorRole" : "admin",
+  "action" : "编辑老人信息",
+  "target" : "老人管理",
+  "detail" : "王一一",
+  "time" : "2026-06-01 13:27:37",
+  "reversibleData" : "{\"oldCheckInDate\":\"2026-06-01 00:00:00\",\"oldBirthDate\":\"1949-05-16\",\"oldEmergencyContact\":\"\",\"oldPhone\":\"13467588876\",\"oldContractEndDate\":\"2027-06-01\",\"oldFamilyMember\":\"\",\"oldEmergencyPhone\":\"\",\"type\":\"elderly_edit\",\"oldBedId\":\"BD0047\",\"oldGender\":\"女\",\"oldBloodType\":\"B\",\"oldAddress\":\"\",\"elderlyId\":\"E0029\",\"oldAge\":77,\"oldRoomNo\":\"102\",\"oldName\":\"王一一\",\"oldIdCard\":\"330101194905165827\",\"oldBuildingId\":\"B0004\"}",
+  "reverted" : false
+}, {
+  "logId" : "LOG0021",
+  "operatorName" : "系统管理员",
+  "operatorRole" : "admin",
+  "action" : "设置护理等级",
+  "target" : "老人管理",
+  "detail" : "王一一 → HL-1",
+  "time" : "2026-06-01 13:27:40",
+  "reversibleData" : "{\"elderlyId\":\"E0029\",\"newLevelCode\":\"HL-1\",\"addedProjectIds\":[\"CCP0046\",\"CCP0047\",\"CCP0048\",\"CCP0049\",\"CCP0050\"],\"type\":\"nursing_level_set\",\"oldLevelCode\":\"\"}",
+  "reverted" : false
 } ]

@@ -197,7 +197,8 @@ public class AdminFrame {
         stats.setVgap(15);
         stats.setAlignment(Pos.CENTER);
 
-        int elderlyCount = ctx.getElderlyDao().size();
+        int elderlyCount = (int) ctx.getElderlyDao().findAll().stream()
+            .filter(e -> "在住".equals(e.getStatus())).count();
         int bedTotal = ctx.getBedDao().size();
         int bedUsed = 0;
         for (Bed b : ctx.getBedDao().findAll()) {
@@ -429,7 +430,10 @@ public class AdminFrame {
         editBtn.setOnAction(e -> {
             Elderly sel = table.getSelectionModel().getSelectedItem();
             if (sel == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择要编辑的老人"); return; }
-            showEditElderlyDialog(sel, table);
+            // 重新从DAO获取最新数据
+            Elderly latest = ctx.getElderlyDao().findById(sel.getId());
+            if (latest == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "该老人信息已不存在"); return; }
+            showEditElderlyDialog(latest, table);
         });
         setLevelBtn.setOnAction(e -> {
             Elderly sel = table.getSelectionModel().getSelectedItem();

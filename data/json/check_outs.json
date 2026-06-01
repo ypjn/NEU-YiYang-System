@@ -18,4 +18,14 @@
   "approvalTime" : "2026-06-01 12:22:58",
   "approver" : "系统管理员",
   "remark" : null
+}, {
+  "checkoutId" : "CO0003",
+  "customerId" : "E0029",
+  "checkoutType" : "正常退住",
+  "checkoutDate" : "2026-06-01",
+  "reason" : "回家，不续住",
+  "approvalStatus" : "通过",
+  "approvalTime" : "2026-06-01 13:31:43",
+  "approver" : "系统管理员",
+  "remark" : null
 } ]

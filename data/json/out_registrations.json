@@ -34,4 +34,16 @@
   "approvalStatus" : "通过",
   "approvalTime" : "2026-06-01 12:22:25",
   "approver" : "系统管理员"
+}, {
+  "outId" : "OUT0006",
+  "customerId" : "E0029",
+  "outTime" : "2026-06-02 13:28",
+  "expectedReturnTime" : "2026-06-03 18:00",
+  "actualReturnTime" : "2026-06-01 13:30:21",
+  "companion" : "护工张三",
+  "reason" : "探亲",
+  "status" : "已归来",
+  "approvalStatus" : "通过",
+  "approvalTime" : "2026-06-01 13:30:12",
+  "approver" : "系统管理员"
 } ]

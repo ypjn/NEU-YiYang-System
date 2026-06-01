@@ -228,7 +228,9 @@ public class NurseFrame {
         editBtn.setOnAction(e -> {
             Elderly sel = table.getSelectionModel().getSelectedItem();
             if (sel == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择要编辑的老人"); return; }
-            showEditElderlyDialog(sel, table);
+            Elderly latest = ctx.getElderlyDao().findById(sel.getId());
+            if (latest == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "该老人信息已不存在"); return; }
+            showEditElderlyDialog(latest, table);
         });
 
         HBox topRow = new HBox(10, searchField, checkinBtn, editBtn);

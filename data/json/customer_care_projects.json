@@ -299,4 +299,39 @@
   "quantity" : 1,
   "purchaseDate" : "2026-06-01 11:53:01",
   "expireDate" : "2026-09-01"
+}, {
+  "id" : "CCP0046",
+  "customerId" : "E0029",
+  "projectCode" : "LZ-001",
+  "quantity" : 1,
+  "purchaseDate" : "2026-06-01 13:27:40",
+  "expireDate" : "2026-09-01"
+}, {
+  "id" : "CCP0047",
+  "customerId" : "E0029",
+  "projectCode" : "LZ-002",
+  "quantity" : 1,
+  "purchaseDate" : "2026-06-01 13:27:40",
+  "expireDate" : "2026-09-01"
+}, {
+  "id" : "CCP0048",
+  "customerId" : "E0029",
+  "projectCode" : "LZ-006",
+  "quantity" : 1,
+  "purchaseDate" : "2026-06-01 13:27:40",
+  "expireDate" : "2026-09-01"
+}, {
+  "id" : "CCP0049",
+  "customerId" : "E0029",
+  "projectCode" : "YL-001",
+  "quantity" : 1,
+  "purchaseDate" : "2026-06-01 13:27:40",
+  "expireDate" : "2026-09-01"
+}, {
+  "id" : "CCP0050",
+  "customerId" : "E0029",
+  "projectCode" : "YL-002",
+  "quantity" : 1,
+  "purchaseDate" : "2026-06-01 13:27:40",
+  "expireDate" : "2026-09-01"
 } ]
