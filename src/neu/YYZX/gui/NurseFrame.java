@@ -280,7 +280,7 @@ public class NurseFrame {
                 String birth = nv.substring(6, 14);
                 LocalDate bd = LocalDate.parse(birth.substring(0, 4) + "-" + birth.substring(4, 6) + "-" + birth.substring(6, 8));
                 birthDate.setValue(bd);
-                int calculatedAge = LocalDate.now().getYear() - bd.getYear();
+                int calculatedAge = java.time.Period.between(bd, LocalDate.now()).getYears();
                 age.setText(String.valueOf(calculatedAge));
                 int seqDigit = Integer.parseInt(nv.substring(14, 17));
                 gender.setValue(seqDigit % 2 == 1 ? "男" : "女");
@@ -328,7 +328,7 @@ public class NurseFrame {
             e.setBloodType(bloodType.getValue());
             if (birthDate.getValue() != null) {
                 e.setBirthDate(birthDate.getValue().toString());
-                e.setAge(LocalDate.now().getYear() - birthDate.getValue().getYear());
+                e.setAge(java.time.Period.between(birthDate.getValue(), LocalDate.now()).getYears());
             } else {
                 try { e.setAge(Integer.parseInt(age.getText())); } catch (Exception ex) { e.setAge(0); }
             }
@@ -411,7 +411,8 @@ public class NurseFrame {
         }
         ctx.getBedDao().findAll().stream().filter(b -> "available".equals(b.getStatus()))
             .forEach(b -> bedBox.getItems().add(b.getBedId() + " - " + b.getBedNo()));
-        if (!bedBox.getItems().isEmpty()) bedBox.setValue(bedBox.getItems().get(0));
+        if (elder.getBedId() != null && !elder.getBedId().isEmpty() && !bedBox.getItems().isEmpty())
+            bedBox.setValue(bedBox.getItems().get(0));
         DatePicker checkinDate = new DatePicker();
         if (elder.getCheckInDate() != null && !elder.getCheckInDate().isEmpty()) {
             try { checkinDate.setValue(LocalDate.parse(elder.getCheckInDate().substring(0, 10))); } catch (Exception ex) {}
@@ -434,7 +435,7 @@ public class NurseFrame {
                 String birth = nv.substring(6, 14);
                 LocalDate bd = LocalDate.parse(birth.substring(0, 4) + "-" + birth.substring(4, 6) + "-" + birth.substring(6, 8));
                 birthDate.setValue(bd);
-                int calculatedAge = LocalDate.now().getYear() - bd.getYear();
+                int calculatedAge = java.time.Period.between(bd, LocalDate.now()).getYears();
                 age.setText(String.valueOf(calculatedAge));
                 int seqDigit = Integer.parseInt(nv.substring(14, 17));
                 gender.setValue(seqDigit % 2 == 1 ? "男" : "女");
@@ -496,7 +497,7 @@ public class NurseFrame {
             elder.setBloodType(bloodType.getValue());
             if (birthDate.getValue() != null) {
                 elder.setBirthDate(birthDate.getValue().toString());
-                elder.setAge(LocalDate.now().getYear() - birthDate.getValue().getYear());
+                elder.setAge(java.time.Period.between(birthDate.getValue(), LocalDate.now()).getYears());
             } else {
                 try { elder.setAge(Integer.parseInt(age.getText())); } catch (Exception ex) { elder.setAge(0); }
             }
@@ -1247,6 +1248,7 @@ public class NurseFrame {
 
     private <T> void refresh(TableView<T> table, List<T> data) {
         table.setItems(FXCollections.observableArrayList(data));
+        table.refresh();
     }
 
     private void showElderlyInfoDialog(Elderly e) {

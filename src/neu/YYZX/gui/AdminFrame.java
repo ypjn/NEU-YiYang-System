@@ -204,7 +204,8 @@ public class AdminFrame {
         for (Bed b : ctx.getBedDao().findAll()) {
             if ("occupied".equals(b.getStatus())) bedUsed++;
         }
-        int outCount = ctx.getOutRegistrationDao().size();
+        int outCount = (int) ctx.getOutRegistrationDao().findAll().stream()
+            .filter(o -> o.getActualReturnTime() == null || o.getActualReturnTime().isEmpty()).count();
         int empCount = ctx.getEmployeeDao().size();
         int recordCount = ctx.getCareRecordDao().size();
 
@@ -493,7 +494,7 @@ public class AdminFrame {
                 LocalDate bd = LocalDate.parse(birth.substring(0, 4) + "-" + birth.substring(4, 6) + "-" + birth.substring(6, 8));
                 birthDate.setValue(bd);
                 // 自动计算年龄
-                int calculatedAge = LocalDate.now().getYear() - bd.getYear();
+                int calculatedAge = java.time.Period.between(bd, LocalDate.now()).getYears();
                 age.setText(String.valueOf(calculatedAge));
                 // 自动识别性别 (第17位，奇数为男)
                 int seqDigit = Integer.parseInt(nv.substring(14, 17));
@@ -547,7 +548,7 @@ public class AdminFrame {
             e.setBloodType(bloodType.getValue());
             if (birthDate.getValue() != null) {
                 e.setBirthDate(birthDate.getValue().toString());
-                e.setAge(LocalDate.now().getYear() - birthDate.getValue().getYear());
+                e.setAge(java.time.Period.between(birthDate.getValue(), LocalDate.now()).getYears());
             } else {
                 try { e.setAge(Integer.parseInt(age.getText())); } catch (Exception ex) { e.setAge(0); }
             }
@@ -633,7 +634,8 @@ public class AdminFrame {
         }
         ctx.getBedDao().findAll().stream().filter(b -> "available".equals(b.getStatus()))
             .forEach(b -> bedBox.getItems().add(b.getBedId() + " - " + b.getBedNo()));
-        if (!bedBox.getItems().isEmpty()) bedBox.setValue(bedBox.getItems().get(0));
+        if (elder.getBedId() != null && !elder.getBedId().isEmpty() && !bedBox.getItems().isEmpty())
+            bedBox.setValue(bedBox.getItems().get(0));
         DatePicker checkinDate = new DatePicker();
         if (elder.getCheckInDate() != null && !elder.getCheckInDate().isEmpty()) {
             try { checkinDate.setValue(LocalDate.parse(elder.getCheckInDate().substring(0, 10))); } catch (Exception ex) {}
@@ -656,7 +658,7 @@ public class AdminFrame {
                 String birth = nv.substring(6, 14);
                 LocalDate bd = LocalDate.parse(birth.substring(0, 4) + "-" + birth.substring(4, 6) + "-" + birth.substring(6, 8));
                 birthDate.setValue(bd);
-                int calculatedAge = LocalDate.now().getYear() - bd.getYear();
+                int calculatedAge = java.time.Period.between(bd, LocalDate.now()).getYears();
                 age.setText(String.valueOf(calculatedAge));
                 int seqDigit = Integer.parseInt(nv.substring(14, 17));
                 gender.setValue(seqDigit % 2 == 1 ? "男" : "女");
@@ -720,7 +722,7 @@ public class AdminFrame {
             elder.setBloodType(bloodType.getValue());
             if (birthDate.getValue() != null) {
                 elder.setBirthDate(birthDate.getValue().toString());
-                elder.setAge(LocalDate.now().getYear() - birthDate.getValue().getYear());
+                elder.setAge(java.time.Period.between(birthDate.getValue(), LocalDate.now()).getYears());
             } else {
                 try { elder.setAge(Integer.parseInt(age.getText())); } catch (Exception ex) { elder.setAge(0); }
             }
@@ -922,6 +924,11 @@ public class AdminFrame {
 
         Runnable refreshBedArea = () -> {
             bedArea.getChildren().clear();
+            List<Bed> bedsForStats = ctx.getBedDao().findAll();
+            totalLabel.setText("总床位: " + bedsForStats.size());
+            availLabel.setText("空闲: " + bedsForStats.stream().filter(b -> "available".equals(b.getStatus())).count());
+            occupLabel.setText("有人: " + bedsForStats.stream().filter(b -> "occupied".equals(b.getStatus())).count());
+            outLabel.setText("外出: " + bedsForStats.stream().filter(b -> "out".equals(b.getStatus())).count());
             String floorSel = floorBox.getValue() != null ? floorBox.getValue() : "全部";
             Building building = ctx.getBuildingDao().findAll().stream().findFirst().orElse(null);
             if (building == null) { bedArea.getChildren().add(new Label("无楼栋数据")); return; }
@@ -1064,9 +1071,11 @@ public class AdminFrame {
             bedDlg.showAndWait().ifPresent(bedNo -> {
                 String trimmed = bedNo.trim();
                 if (trimmed.isEmpty()) return;
-                // 如果输入不含"-"，自动补齐为"房间号-床位号"
-                if (!trimmed.contains("-")) {
-                    trimmed = roomNo + "-" + trimmed;
+                // 如果输入不含"-"或只有尾部"-"，自动补齐为"房间号-床位号"
+                if (!trimmed.contains("-") || trimmed.endsWith("-")) {
+                    String suffix = trimmed.replace("-", "");
+                    if (suffix.isEmpty()) { LoginPane.showAlert(Alert.AlertType.WARNING, "请输入有效的床位编号"); return; }
+                    trimmed = roomNo + "-" + suffix;
                 }
                 if (existingNos.contains(trimmed)) {
                     LoginPane.showAlert(Alert.AlertType.WARNING, "床位号「" + trimmed + "」已存在，请使用其他编号");
@@ -1789,6 +1798,13 @@ public class AdminFrame {
         refreshCustomerBox.run();
         customerBox.setValue("无 - 全部");
 
+        // 饮食偏好提示条
+        HBox dietBar = new HBox(10);
+        dietBar.setPadding(new Insets(8, 12, 8, 12));
+        dietBar.setStyle("-fx-background-color:#fff3cd; -fx-background-radius:6; -fx-border-color:#ffc107; -fx-border-radius:6; -fx-border-width:1");
+        dietBar.setVisible(false);
+        dietBar.setManaged(false);
+
         searchField.textProperty().addListener((o, ov, nv) -> {
             customerBox.getItems().clear();
             customerBox.getItems().add("无 - 全部");
@@ -1796,6 +1812,8 @@ public class AdminFrame {
                 : ctx.getElderlyDao().findByName(nv.trim());
             list.forEach(e -> customerBox.getItems().add(e.getId() + " - " + e.getName()));
             customerBox.setValue("无 - 全部");
+            dietBar.setVisible(false);
+            dietBar.setManaged(false);
         });
         searchRow.getChildren().addAll(new Label("客户："), searchField, customerBox);
 
@@ -1841,13 +1859,6 @@ public class AdminFrame {
             });
             return row;
         });
-
-        // 饮食偏好提示条
-        HBox dietBar = new HBox(10);
-        dietBar.setPadding(new Insets(8, 12, 8, 12));
-        dietBar.setStyle("-fx-background-color:#fff3cd; -fx-background-radius:6; -fx-border-color:#ffc107; -fx-border-radius:6; -fx-border-width:1");
-        dietBar.setVisible(false);
-        dietBar.setManaged(false);
 
         // 选中客户时加载其服务项目 + 显示饮食偏好
         customerBox.setOnAction(e -> {
@@ -2738,7 +2749,9 @@ public class AdminFrame {
         if (target == null) return null;
         if (target.contains("老人")) return "elderly";
         if (target.contains("床位")) return "beds";
-        if (target.contains("护理级别") || target.contains("护理项目") || target.contains("护理记录")) return "nlevels";
+        if (target.contains("护理级别")) return "nlevels";
+        if (target.contains("护理项目")) return "nprojects";
+        if (target.contains("护理记录")) return "nrecords";
         if (target.contains("服务关注") || target.contains("服务")) return "serviceFocus";
         if (target.contains("管家")) return "butlerAssign";
         if (target.contains("健康")) return "health";
@@ -2858,37 +2871,32 @@ public class AdminFrame {
                 }
                 case "service_assign": {
                     String assignmentId = (String) data.get("assignmentId");
-                    ctx.getServiceAssignmentDao().delete(assignmentId);
-                    PersistentIdGenerator.getInstance().save();
+                    if (!ctx.getServiceAssignmentDao().delete(assignmentId)) return false;
                     return true;
                 }
                 case "health_record": {
                     String recordId = (String) data.get("recordId");
-                    ctx.getHealthRecordDao().delete(recordId);
-                    PersistentIdGenerator.getInstance().save();
+                    if (!ctx.getHealthRecordDao().delete(recordId)) return false;
                     return true;
                 }
                 case "diet_preference": {
                     String preferenceId = (String) data.get("preferenceId");
-                    ctx.getDietPreferenceDao().delete(preferenceId);
-                    PersistentIdGenerator.getInstance().save();
+                    if (!ctx.getDietPreferenceDao().delete(preferenceId)) return false;
                     return true;
                 }
                 case "elderly_checkin": {
                     String elderlyId = (String) data.get("elderlyId");
                     String bedId = (String) data.get("bedId");
-                    ctx.getElderlyDao().delete(elderlyId);
+                    if (!ctx.getElderlyDao().delete(elderlyId)) return false;
                     if (bedId != null && !bedId.isEmpty()) {
                         Bed bed = ctx.getBedDao().findById(bedId);
                         if (bed != null) { bed.setStatus("available"); ctx.getBedDao().update(bed); }
                     }
-                    PersistentIdGenerator.getInstance().save();
                     return true;
                 }
                 case "care_project_buy": {
                     String projectId = (String) data.get("projectId");
-                    ctx.getCustomerCareProjectDao().delete(projectId);
-                    PersistentIdGenerator.getInstance().save();
+                    if (!ctx.getCustomerCareProjectDao().delete(projectId)) return false;
                     return true;
                 }
                 case "care_project_renew": {
@@ -2969,10 +2977,12 @@ public class AdminFrame {
 
     private void refreshElderly(TableView<Elderly> table, List<Elderly> data) {
         table.setItems(FXCollections.observableArrayList(data));
+        table.refresh();
     }
 
     private void refreshBeds(TableView<Bed> table, List<Bed> data) {
         table.setItems(FXCollections.observableArrayList(data));
+        table.refresh();
     }
 
     private TableView<Elderly> elderlyTable() {
