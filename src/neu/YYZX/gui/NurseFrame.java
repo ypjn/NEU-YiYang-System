@@ -827,44 +827,106 @@ public class NurseFrame {
         TableColumn<Food, String> fc3 = new TableColumn<>("营养");
         fc3.setCellValueFactory(new PropertyValueFactory<>("nutrition"));
         fc3.setPrefWidth(200);
-        TableColumn<Food, String> fc4 = new TableColumn<>("注意");
-        fc4.setCellValueFactory(data -> {
-            DietPreference sel = table.getSelectionModel().getSelectedItem();
-            if (sel == null) return new SimpleStringProperty("");
-            Food food = data.getValue();
-            String combined = (food.getNutrition() != null ? food.getNutrition() : "")
-                + " " + (food.getRemark() != null ? food.getRemark() : "");
-            // 仅检查过敏原冲突
-            if (sel.getAllergies() != null && !sel.getAllergies().isEmpty()) {
-                for (String allergen : sel.getAllergies().split("[、，,;；]")) {
-                    String a = allergen.trim();
-                    if (!a.isEmpty() && combined.contains(a)) {
-                        return new SimpleStringProperty("含" + a);
-                    }
-                }
-            }
-            return new SimpleStringProperty("");
-        });
-        fc4.setPrefWidth(100);
+        TableColumn<Food, String> fc4 = new TableColumn<>("单价");
+        fc4.setCellValueFactory(data ->
+            new SimpleStringProperty(String.format("%.0f元", data.getValue().getPrice())));
+        fc4.setPrefWidth(80);
         foodTable.getColumns().addAll(fc1, fc2, fc3, fc4);
 
         // 默认显示全部食物
-        refresh(foodTable, ctx.getFoodDao().findAll());
+        List<Food> allFoods = ctx.getFoodDao().findAll();
+        refresh(foodTable, allFoods);
 
-        // 选中老人时更新推荐
+        // 选中老人时智能推荐：过滤忌口和过敏原不匹配的食物
         table.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
+            dietSummary.setText("");
+            dietSummary.setVisible(false);
             if (nv == null) {
-                refresh(foodTable, ctx.getFoodDao().findAll());
+                refresh(foodTable, allFoods);
                 foodTitle.setText("推荐食物（请在上方选择一位老人）");
                 return;
             }
             Elderly elder = ctx.getElderlyDao().findById(nv.getCustomerId());
             String name = elder != null ? elder.getName() : nv.getCustomerId();
-            foodTitle.setText("推荐食物 — " + name + "（根据膳食偏好匹配）");
-            refresh(foodTable, ctx.getFoodDao().findAll());
+
+            // 收集忌口关键词
+            java.util.Set<String> banKeywords = new java.util.LinkedHashSet<>();
+            // 过敏原
+            if (nv.getAllergies() != null && !nv.getAllergies().isEmpty() && !"无".equals(nv.getAllergies())) {
+                for (String a : nv.getAllergies().split("[、，,;；]")) {
+                    String kw = a.trim();
+                    if (!kw.isEmpty()) banKeywords.add(kw);
+                }
+            }
+            // 忌口 → 扩展关键词映射
+            if (nv.getTaboos() != null && !nv.getTaboos().isEmpty()) {
+                String[] tabooItems = nv.getTaboos().split("[、，,;；]");
+                for (String item : tabooItems) {
+                    String t = item.trim().replace("忌", "").replace("少", "").replace("过量", "").trim();
+                    if (t.isEmpty()) continue;
+                    // 映射表：忌口概念 → 食物匹配关键词
+                    java.util.Map<String, String[]> map = Map.ofEntries(
+                        Map.entry("辛辣", new String[]{"辣"}),
+                        Map.entry("油腻", new String[]{"炸", "油", "肥", "红烧"}),
+                        Map.entry("生冷", new String[]{"冷", "凉", "冰"}),
+                        Map.entry("海鲜", new String[]{"鱼", "虾", "蟹", "贝"}),
+                        Map.entry("高糖", new String[]{"糖", "甜", "蜜"}),
+                        Map.entry("糖", new String[]{"糖", "甜", "蜜"}),
+                        Map.entry("高盐", new String[]{"咸", "腌", "腊", "酱", "熏"}),
+                        Map.entry("过咸", new String[]{"咸", "腌", "腊", "酱", "熏"}),
+                        Map.entry("腌制", new String[]{"咸", "腌", "腊", "酱", "熏"}),
+                        Map.entry("动物内脏", new String[]{"肝", "腰", "心", "肚", "肠"}),
+                        Map.entry("油炸", new String[]{"炸"}),
+                        Map.entry("硬食", new String[]{"坚果", "硬", "核桃"}),
+                        Map.entry("过硬", new String[]{"坚果", "硬", "核桃"}),
+                        Map.entry("豆制品", new String[]{"豆腐", "豆浆", "豆"}),
+                        Map.entry("糯米", new String[]{"糯米", "糍"}),
+                        Map.entry("黏食", new String[]{"黏", "糍", "年糕"}),
+                        Map.entry("肥肉", new String[]{"肥", "扣肉"}),
+                        Map.entry("过油", new String[]{"炸", "油", "肥", "红烧"}),
+                        Map.entry("浓茶", new String[]{"茶"}),
+                        Map.entry("大块肉类", new String[]{"大块"}),
+                        Map.entry("香蕉", new String[]{"香蕉"}),
+                        Map.entry("橘子", new String[]{"橘子", "橙"}),
+                        Map.entry("蛋黄", new String[]{"蛋黄", "蛋"})
+                    );
+                    if (map.containsKey(t)) {
+                        for (String kw : map.get(t)) banKeywords.add(kw);
+                    } else {
+                        banKeywords.add(t);
+                    }
+                }
+            }
+
+            // 过滤：名称/营养/备注中包含任一禁止关键词的食物排除
+            List<Food> recommended = new java.util.ArrayList<>();
+            for (Food f : allFoods) {
+                String combined = (f.getFoodName() != null ? f.getFoodName() : "")
+                    + " " + (f.getNutrition() != null ? f.getNutrition() : "")
+                    + " " + (f.getRemark() != null ? f.getRemark() : "");
+                boolean banned = false;
+                for (String kw : banKeywords) {
+                    if (combined.contains(kw)) { banned = true; break; }
+                }
+                if (!banned) recommended.add(f);
+            }
+
+            // 显示摘要
+            java.util.List<String> tags = new java.util.ArrayList<>();
+            if (nv.getTaste() != null && !nv.getTaste().isEmpty()) tags.add("口味：" + nv.getTaste());
+            if (nv.getAllergies() != null && !nv.getAllergies().isEmpty() && !"无".equals(nv.getAllergies()))
+                tags.add("过敏：" + nv.getAllergies());
+            if (nv.getTaboos() != null && !nv.getTaboos().isEmpty()) tags.add("忌口：" + nv.getTaboos());
+            if (!tags.isEmpty()) {
+                dietSummary.setText(" " + String.join("  |  ", tags));
+                dietSummary.setVisible(true);
+            }
+
+            foodTitle.setText("推荐食物 — " + name + "（已为您过滤，共" + recommended.size() + "款适合）");
+            refresh(foodTable, recommended);
         });
 
-        box.getChildren().addAll(btns, table, foodTitle, foodTable);
+        box.getChildren().addAll(btns, table, dietSummary, foodTitle, foodTable);
         return box;
     }
 
