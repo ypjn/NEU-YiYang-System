@@ -764,8 +764,13 @@ public class NurseFrame {
         HBox btns = new HBox(10, addBtn, editBtn, delBtn);
 
         // 食物推荐区域
-        Label foodTitle = new Label("推荐食物（根据膳食偏好匹配）");
+        Label foodTitle = new Label("推荐食物（请在上方选择一位老人）");
         foodTitle.setStyle("-fx-font-size:14px; -fx-font-weight:bold; -fx-text-fill:#1a5276; -fx-padding:10 0 5 0");
+
+        // 选中老人的膳食偏好摘要
+        Label dietSummary = new Label();
+        dietSummary.setStyle("-fx-font-size:12px; -fx-text-fill:#856404; -fx-padding:0 0 5 0");
+        dietSummary.setVisible(false);
 
         TableView<Food> foodTable = new TableView<>();
         TableColumn<Food, String> fc1 = new TableColumn<>("名称");
@@ -776,51 +781,26 @@ public class NurseFrame {
         fc2.setPrefWidth(80);
         TableColumn<Food, String> fc3 = new TableColumn<>("营养");
         fc3.setCellValueFactory(new PropertyValueFactory<>("nutrition"));
-        fc3.setPrefWidth(150);
-        TableColumn<Food, String> fc4 = new TableColumn<>("匹配原因");
+        fc3.setPrefWidth(200);
+        TableColumn<Food, String> fc4 = new TableColumn<>("注意");
         fc4.setCellValueFactory(data -> {
-            // 动态计算匹配原因
             DietPreference sel = table.getSelectionModel().getSelectedItem();
             if (sel == null) return new SimpleStringProperty("");
             Food food = data.getValue();
-            java.util.List<String> reasons = new java.util.ArrayList<>();
-            String nut = food.getNutrition() != null ? food.getNutrition() : "";
-            String rmk = food.getRemark() != null ? food.getRemark() : "";
-            String combined = nut + " " + rmk;
-            // 检查是否与过敏原冲突
+            String combined = (food.getNutrition() != null ? food.getNutrition() : "")
+                + " " + (food.getRemark() != null ? food.getRemark() : "");
+            // 仅检查过敏原冲突
             if (sel.getAllergies() != null && !sel.getAllergies().isEmpty()) {
                 for (String allergen : sel.getAllergies().split("[、，,;；]")) {
                     String a = allergen.trim();
                     if (!a.isEmpty() && combined.contains(a)) {
-                        reasons.add("含" + a);
+                        return new SimpleStringProperty("含" + a);
                     }
                 }
             }
-            // 检查是否匹配口味
-            if (sel.getTaste() != null && !sel.getTaste().isEmpty()) {
-                if (combined.contains("清淡") && sel.getTaste().contains("清淡")) reasons.add("口味匹配");
-                if (combined.contains("低盐") && sel.getTaste().contains("清淡")) reasons.add("低盐适宜");
-            }
-            // 检查是否匹配饮食建议
-            if (sel.getDietaryAdvice() != null && !sel.getDietaryAdvice().isEmpty()) {
-                String advice = sel.getDietaryAdvice();
-                if (advice.contains("低盐") && combined.contains("低盐")) reasons.add("低盐推荐");
-                if (advice.contains("高蛋白") && combined.contains("高蛋白")) reasons.add("高蛋白");
-                if (advice.contains("低糖") && combined.contains("低糖")) reasons.add("低糖");
-                if (advice.contains("低脂") && combined.contains("低脂")) reasons.add("低脂");
-            }
-            // 检查是否匹配忌口
-            if (sel.getTaboos() != null && !sel.getTaboos().isEmpty()) {
-                for (String taboo : sel.getTaboos().split("[、，,;；]")) {
-                    String t = taboo.trim().replace("忌", "");
-                    if (!t.isEmpty() && (combined.contains(t) || nut.contains(t))) {
-                        reasons.add("含" + t);
-                    }
-                }
-            }
-            return new SimpleStringProperty(reasons.isEmpty() ? "—" : String.join("、", reasons));
+            return new SimpleStringProperty("");
         });
-        fc4.setPrefWidth(140);
+        fc4.setPrefWidth(100);
         foodTable.getColumns().addAll(fc1, fc2, fc3, fc4);
 
         // 默认显示全部食物
