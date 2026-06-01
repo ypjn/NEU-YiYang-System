@@ -68,7 +68,7 @@ public class NurseFrame {
         nav.setStyle("-fx-background-color:#2c3e50");
 
         String[][] items = {
-            {"老人信息", "elderly"}, {"护理记录", "records"}, {"服务管理", "services"},
+            {"老人信息", "elderly"}, {"护理记录", "records"},
             {"膳食偏好", "diet"}, {"健康记录", "health"}, {"外出申请", "outreg"},
             {"退住申请", "checkout"}, {"我的消息", "messages"}
         };
@@ -142,7 +142,7 @@ public class NurseFrame {
     }
 
     private Map<String, String> moduleNames = Map.of(
-        "elderly", "老人信息", "records", "护理记录", "services", "服务管理",
+        "elderly", "老人信息", "records", "护理记录",
         "diet", "膳食偏好", "outreg", "外出申请", "checkout", "退住申请",
         "messages", "我的消息"
     );
@@ -155,7 +155,6 @@ public class NurseFrame {
         switch (key) {
             case "elderly": content = buildElderlyInfo(); break;
             case "records": content = buildCareRecords(); break;
-            case "services": content = buildServices(); break;
             case "diet": content = buildDiet(); break;
             case "health": content = buildHealthRecords(); break;
             case "outreg": content = buildOutRegApply(); break;
@@ -622,62 +621,6 @@ public class NurseFrame {
             return cr;
         });
         dlg.showAndWait();
-    }
-
-    // ==================== 服务管理 ====================
-    private VBox buildServices() {
-        VBox box = new VBox(10);
-        box.setPadding(new Insets(15));
-
-        TableView<ServiceAssignment> table = new TableView<>();
-        TableColumn<ServiceAssignment, String> c0 = new TableColumn<>("老人姓名");
-        c0.setCellValueFactory(data -> {
-            Elderly e = ctx.getElderlyDao().findById(data.getValue().getElderlyId());
-            return new SimpleStringProperty(e != null ? e.getName() : data.getValue().getElderlyId());
-        });
-        TableColumn<ServiceAssignment, String> c1 = col("服务类型", "serviceType");
-        TableColumn<ServiceAssignment, String> c2 = col("开始日期", "startDate");
-        TableColumn<ServiceAssignment, String> c3 = col("结束日期", "endDate");
-        TableColumn<ServiceAssignment, String> c4 = col("状态", "status");
-        table.getColumns().addAll(c0, c1, c2, c3, c4);
-        refresh(table, ctx.getServiceAssignmentDao().findAll());
-
-        table.setRowFactory(tv -> {
-            TableRow<ServiceAssignment> row = new TableRow<>();
-            row.setOnMouseClicked(event -> {
-                if (event.getClickCount() == 2 && !row.isEmpty()) {
-                    Elderly e = ctx.getElderlyDao().findById(row.getItem().getElderlyId());
-                    if (e != null) showElderlyInfoDialog(e);
-                }
-            });
-            return row;
-        });
-
-        Button endServiceBtn = new Button("结束服务");
-        endServiceBtn.setOnAction(e -> {
-            ServiceAssignment sa = table.getSelectionModel().getSelectedItem();
-            if (sa == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择服务记录"); return; }
-            if (!"服务中".equals(sa.getStatus())) {
-                LoginPane.showAlert(Alert.AlertType.WARNING, "该服务已结束或已撤销");
-                return;
-            }
-            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
-                "确定要结束此服务吗？\n老人：" + c0.getCellData(sa) + "\n服务类型：" + sa.getServiceType(),
-                ButtonType.YES, ButtonType.NO);
-            confirm.showAndWait().ifPresent(r -> {
-                if (r == ButtonType.YES) {
-                    sa.setStatus("已结束");
-                    sa.setEndDate(LocalDate.now().toString());
-                    ctx.getServiceAssignmentDao().update(sa);
-                    PersistentIdGenerator.getInstance().save();
-                    refresh(table, ctx.getServiceAssignmentDao().findAll());
-                }
-            });
-        });
-
-        HBox btnRow = new HBox(10, endServiceBtn);
-        box.getChildren().addAll(btnRow, table);
-        return box;
     }
 
     // ==================== 膳食偏好 ====================
