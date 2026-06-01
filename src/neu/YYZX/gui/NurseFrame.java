@@ -585,11 +585,41 @@ public class NurseFrame {
 
         ComboBox<String> elderlyBox = new ComboBox<>();
         ctx.getElderlyDao().findAll().forEach(e -> elderlyBox.getItems().add(e.getId() + " - " + e.getName()));
-        // 只显示启用状态的护理项目
+
         ComboBox<String> projectBox = new ComboBox<>();
-        ctx.getCareProjectDao().findAll().stream()
-        .filter(p -> "启用".equals(p.getStatus()))
-        .forEach(p -> projectBox.getItems().add(p.getCode() + " - " + p.getName()));
+        Label remainHint = new Label("");
+
+        // 选择老人后，只显示已购买且剩余次数>0的项目
+        elderlyBox.setOnAction(e -> {
+            projectBox.getItems().clear();
+            remainHint.setText("");
+            if (elderlyBox.getValue() == null) return;
+            String eid = elderlyBox.getValue().split(" - ")[0];
+            List<CustomerCareProject> owned = ctx.getCustomerCareProjectDao().findByCustomerId(eid);
+            for (CustomerCareProject ccp : owned) {
+                if (ccp.getQuantity() <= 0) continue;
+                CareProject cp = ctx.getCareProjectDao().findByCode(ccp.getProjectCode());
+                if (cp == null || !"启用".equals(cp.getStatus())) continue;
+                projectBox.getItems().add(ccp.getProjectCode() + " - " + cp.getName()
+                    + " (剩余" + ccp.getQuantity() + "次)");
+            }
+            if (projectBox.getItems().isEmpty()) {
+                remainHint.setText("该老人暂无可用护理项目，请先在服务关注中购买");
+                remainHint.setStyle("-fx-text-fill:#dc3545; -fx-font-size:12px");
+            }
+        });
+
+        // 选项目后显示剩余次数
+        projectBox.setOnAction(e -> {
+            if (elderlyBox.getValue() == null || projectBox.getValue() == null) return;
+            String eid = elderlyBox.getValue().split(" - ")[0];
+            String pcode = projectBox.getValue().split(" - ")[0];
+            CustomerCareProject ccp = ctx.getCustomerCareProjectDao().findByCustomerAndProject(eid, pcode);
+            if (ccp != null && ccp.getQuantity() > 0) {
+                remainHint.setText("剩余次数：" + ccp.getQuantity() + "，本次最多可执行 " + ccp.getQuantity() + " 次");
+                remainHint.setStyle("-fx-text-fill:#28a745; -fx-font-size:12px");
+            }
+        });
 
         TextField quantity = new TextField("1");
         TextField remark = new TextField();
@@ -600,6 +630,7 @@ public class NurseFrame {
         grid.add(new Label("护理数量："), 0, 2); grid.add(quantity, 1, 2);
         grid.add(new Label("执行日期："), 0, 3); grid.add(execDate, 1, 3);
         grid.add(new Label("备注："), 0, 4); grid.add(remark, 1, 4);
+        grid.add(remainHint, 0, 5, 2, 1);
 
         dlg.getDialogPane().setContent(grid);
         ButtonType okBtn = new ButtonType("确定", ButtonBar.ButtonData.OK_DONE);
@@ -609,10 +640,24 @@ public class NurseFrame {
             if (btn != okBtn || elderlyBox.getValue() == null || projectBox.getValue() == null) return null;
             String eid = elderlyBox.getValue().split(" - ")[0];
             String pcode = projectBox.getValue().split(" - ")[0];
-            String execTime = (execDate.getValue() != null ? execDate.getValue().toString() : LocalDate.now().toString())
-                + " " + LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
             int qty = 1;
             try { qty = Integer.parseInt(quantity.getText().trim()); } catch (Exception ex) { }
+            // 检查剩余次数是否足够
+            CustomerCareProject ccp = ctx.getCustomerCareProjectDao().findByCustomerAndProject(eid, pcode);
+            if (ccp == null || ccp.getQuantity() <= 0) {
+                LoginPane.showAlert(Alert.AlertType.WARNING, "剩余次数不足，请先购买或续费");
+                return null;
+            }
+            if (qty > ccp.getQuantity()) {
+                LoginPane.showAlert(Alert.AlertType.WARNING, "本次数量(" + qty + ")超过剩余次数(" + ccp.getQuantity() + ")，已自动调整为剩余次数");
+                qty = ccp.getQuantity();
+            }
+            // 扣减已购项目次数
+            ccp.setQuantity(ccp.getQuantity() - qty);
+            ctx.getCustomerCareProjectDao().update(ccp);
+
+            String execTime = (execDate.getValue() != null ? execDate.getValue().toString() : LocalDate.now().toString())
+                + " " + LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
             CareRecord cr = new CareRecord(null, eid, pcode,
                 execTime, qty, nurseName, remark.getText().trim());
             ctx.getCareRecordDao().insert(cr);
