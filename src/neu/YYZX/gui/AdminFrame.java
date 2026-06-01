@@ -36,6 +36,7 @@ public class AdminFrame {
     private final DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private final Map<String, ToggleButton> navButtons = new LinkedHashMap<>();
     private final Label moduleTitle = new Label();
+    private Label topBarUserLabel;
 
     public AdminFrame(User user, String token) {
         this.user = user;
@@ -73,7 +74,7 @@ public class AdminFrame {
             {"床位管理", "beds"}, {"护理等级", "nlevels"}, {"护理项目", "nprojects"},
             {"护理记录", "nrecords"}, {"服务关注", "serviceFocus"}, {"管家分配", "butlerAssign"}, {"膳食管理", "foods"}, {"员工管理", "employees"},
             {"外出手续", "outreg"}, {"退住管理", "checkout"}, {"健康记录", "health"},
-            {"操作日志", "logs"}
+            {"操作日志", "logs"}, {"我的消息", "messages"}
         };
 
         ToggleGroup group = new ToggleGroup();
@@ -106,10 +107,11 @@ public class AdminFrame {
         topBar.setPadding(new Insets(8, 15, 8, 15));
         topBar.setStyle("-fx-background-color:#ecf0f1");
         topBar.setAlignment(Pos.CENTER_RIGHT);
-        Label userLabel = new Label("当前用户：" + user.getRealName() + "（" + user.getUsername() + "）");
+        topBarUserLabel = new Label("当前用户：" + user.getRealName() + "（" + user.getUsername() + "）");
+        updateUnreadBadge();
         Button logoutBtn = new Button("退出登录");
         logoutBtn.setOnAction(e -> logout());
-        topBar.getChildren().addAll(userLabel, logoutBtn);
+        topBar.getChildren().addAll(topBarUserLabel, logoutBtn);
 
         root.setTop(topBar);
         root.setLeft(nav);
@@ -135,7 +137,7 @@ public class AdminFrame {
         Map.entry("beds", "床位管理"), Map.entry("nlevels", "护理等级"), Map.entry("nprojects", "护理项目"),
         Map.entry("nrecords", "护理记录"), Map.entry("serviceFocus", "服务关注"), Map.entry("butlerAssign", "管家分配"), Map.entry("foods", "膳食管理"), Map.entry("employees", "员工管理"),
         Map.entry("outreg", "外出手续"), Map.entry("checkout", "退住管理"), Map.entry("health", "健康记录"),
-        Map.entry("logs", "操作日志")
+        Map.entry("logs", "操作日志"), Map.entry("messages", "我的消息")
     );
 
     private void switchContent(String key) {
@@ -159,6 +161,7 @@ public class AdminFrame {
             case "checkout": content = buildCheckoutManage(); break;
             case "health": content = buildHealthRecords(); break;
             case "logs": content = buildLogView(); break;
+            case "messages": content = buildMessages(); break;
             default: content = new Label("开发中...");
         }
 
@@ -3189,5 +3192,63 @@ public class AdminFrame {
         TableColumn<Bed, String> c3 = tc("状态", "status");
         table.getColumns().addAll(c1, c2, c3);
         return table;
+    }
+
+    // ==================== 我的消息 ====================
+    private VBox buildMessages() {
+        VBox box = new VBox(10);
+        box.setPadding(new Insets(15));
+
+        // 自动全部已读
+        List<Message> allMsgs = ctx.getMessageDao().findByReceiver(user.getRealName());
+        boolean anyUnread = false;
+        for (Message m : allMsgs) {
+            if (!m.isRead()) { m.setRead(true); ctx.getMessageDao().update(m); anyUnread = true; }
+        }
+        if (anyUnread) { PersistentIdGenerator.getInstance().save(); updateUnreadBadge(); }
+
+        TableView<Message> table = new TableView<>();
+        TableColumn<Message, String> c1 = tc("内容", "content"); c1.setPrefWidth(400);
+        TableColumn<Message, String> c2 = tc("时间", "time");
+        TableColumn<Message, String> c3 = new TableColumn<>("已读");
+        c3.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().isRead() ? "是" : "否"));
+        table.getColumns().addAll(c1, c2, c3);
+
+        table.setRowFactory(tv -> {
+            TableRow<Message> row = new TableRow<>();
+            row.setOnMouseClicked(e -> {
+                if (e.getClickCount() == 2 && !row.isEmpty()) {
+                    String content = row.getItem().getContent() != null ? row.getItem().getContent() : "";
+                    if (content.contains("外出")) switchContent("outreg");
+                    else if (content.contains("退住")) switchContent("checkout");
+                    else if (content.contains("护理等级") || content.contains("护理项目")) switchContent("nlevels");
+                    else if (content.contains("护理")) switchContent("nrecords");
+                    else if (content.contains("管家") || content.contains("服务分配")) switchContent("butlerAssign");
+                    else if (content.contains("膳食") || content.contains("饮食")) switchContent("foods");
+                    else if (content.contains("健康")) switchContent("health");
+                    else if (content.contains("入住") || content.contains("老人") || content.contains("编辑")) switchContent("elderly");
+                    else switchContent("elderly");
+                }
+            });
+            return row;
+        });
+
+        refreshTable(table, ctx.getMessageDao().findByReceiver(user.getRealName()));
+
+        Label hint = new Label("进入消息中心自动全部已读，双击消息可跳转到对应功能模块");
+        hint.setStyle("-fx-text-fill:#7f8c8d; -fx-font-size:12px");
+        box.getChildren().addAll(hint, table);
+        return box;
+    }
+
+    private void updateUnreadBadge() {
+        int unread = 0;
+        for (Message m : ctx.getMessageDao().findAll()) {
+            if (user.getRealName().equals(m.getReceiverName()) && !m.isRead()) unread++;
+        }
+        if (unread > 0)
+            topBarUserLabel.setText("当前用户：" + user.getRealName() + "（" + user.getUsername() + "） | 未读消息：" + unread + " 条");
+        else
+            topBarUserLabel.setText("当前用户：" + user.getRealName() + "（" + user.getUsername() + "）");
     }
 }
