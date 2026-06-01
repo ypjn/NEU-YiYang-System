@@ -21,11 +21,21 @@
 }, {
   "userId" : "U0004",
   "username" : "小苏",
-  "password" : "000000",
+  "password" : "0000",
   "role" : "nurse",
   "realName" : "苏一一",
   "phone" : "16666666666",
   "securityQuestion" : null,
   "securityAnswer" : null,
   "createTime" : "2026-05-25 20:01:15"
+}, {
+  "userId" : "U0008",
+  "username" : "苏二",
+  "password" : "0000",
+  "role" : "nurse",
+  "realName" : "苏二",
+  "phone" : "1234567890",
+  "securityQuestion" : "你的母亲的名字是什么？",
+  "securityAnswer" : "王密",
+  "createTime" : "2026-06-01 15:37:26"
 } ]

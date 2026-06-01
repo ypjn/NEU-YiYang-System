@@ -28,4 +28,44 @@
   "approvalTime" : "2026-06-01 13:31:43",
   "approver" : "系统管理员",
   "remark" : null
+}, {
+  "checkoutId" : "CO0004",
+  "customerId" : "E0030",
+  "checkoutType" : "正常退住",
+  "checkoutDate" : "2026-06-02",
+  "reason" : "回家",
+  "approvalStatus" : "通过",
+  "approvalTime" : "2026-06-01 13:45:05",
+  "approver" : "系统管理员",
+  "remark" : null
+}, {
+  "checkoutId" : "CO0005",
+  "customerId" : "E0031",
+  "checkoutType" : "正常退住",
+  "checkoutDate" : "2026-06-11",
+  "reason" : "回家",
+  "approvalStatus" : "通过",
+  "approvalTime" : "2026-06-01 14:07:14",
+  "approver" : "系统管理员",
+  "remark" : null
+}, {
+  "checkoutId" : "CO0006",
+  "customerId" : "E0032",
+  "checkoutType" : "正常退住",
+  "checkoutDate" : "2026-06-01",
+  "reason" : "",
+  "approvalStatus" : "通过",
+  "approvalTime" : "2026-06-01 15:12:24",
+  "approver" : "系统管理员",
+  "remark" : null
+}, {
+  "checkoutId" : "CO0007",
+  "customerId" : "E0033",
+  "checkoutType" : "正常退住",
+  "checkoutDate" : "2026-06-02",
+  "reason" : "",
+  "approvalStatus" : "通过",
+  "approvalTime" : "2026-06-01 15:38:56",
+  "approver" : "系统管理员",
+  "remark" : null
 } ]

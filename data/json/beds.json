@@ -72,7 +72,7 @@
   "bedId" : "BD0060",
   "bedNo" : "402-2",
   "roomId" : "RM0030",
-  "status" : "available"
+  "status" : "occupied"
 }, {
   "bedId" : "BD0061",
   "bedNo" : "501-1",
@@ -122,5 +122,15 @@
   "bedId" : "BD0071",
   "bedNo" : "301-3",
   "roomId" : "RM0027",
+  "status" : "available"
+}, {
+  "bedId" : "BD0072",
+  "bedNo" : "302-3",
+  "roomId" : "RM0028",
+  "status" : "available"
+}, {
+  "bedId" : "BD0073",
+  "bedNo" : "401-3",
+  "roomId" : "RM0029",
   "status" : "available"
 } ]

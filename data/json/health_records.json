@@ -118,4 +118,14 @@
   "weight" : "72",
   "temperature" : "36.5",
   "remark" : "术后恢复良好"
+}, {
+  "healthId" : "HR0014",
+  "customerId" : "E0017",
+  "recordDate" : "2026-06-01",
+  "bloodPressure" : "130/80",
+  "heartRate" : "65",
+  "bloodSugar" : "",
+  "weight" : "65",
+  "temperature" : "35",
+  "remark" : ""
 } ]

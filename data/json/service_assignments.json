@@ -108,4 +108,26 @@
   "status" : "服务中",
   "remark" : null,
   "operatorName" : "系统管理员"
+}, {
+  "assignmentId" : "SA0018",
+  "employeeId" : "EMP0017",
+  "elderlyId" : "E0032",
+  "serviceType" : "日常护理",
+  "startDate" : "2026-06-01",
+  "endDate" : null,
+  "fee" : 0.0,
+  "status" : "服务中",
+  "remark" : null,
+  "operatorName" : null
+}, {
+  "assignmentId" : "SA0019",
+  "employeeId" : "EMP0016",
+  "elderlyId" : "E0033",
+  "serviceType" : "日常护理",
+  "startDate" : "2026-06-01",
+  "endDate" : null,
+  "fee" : 0.0,
+  "status" : "服务中",
+  "remark" : null,
+  "operatorName" : null
 } ]

@@ -96,7 +96,7 @@
   "price" : 50.0,
   "cycle" : "隔天",
   "executionCount" : 1,
-  "status" : "启用",
+  "status" : "停用",
   "remark" : "需医生开具处方"
 }, {
   "code" : "YL-004",

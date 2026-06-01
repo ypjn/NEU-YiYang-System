@@ -46,4 +46,52 @@
   "approvalStatus" : "通过",
   "approvalTime" : "2026-06-01 13:30:12",
   "approver" : "系统管理员"
+}, {
+  "outId" : "OUT0007",
+  "customerId" : "E0030",
+  "outTime" : "2026-06-02 13:42",
+  "expectedReturnTime" : "2026-06-03 18:00",
+  "actualReturnTime" : "2026-06-01 13:44:12",
+  "companion" : "护工张三",
+  "reason" : "探亲",
+  "status" : "已归来",
+  "approvalStatus" : "通过",
+  "approvalTime" : "2026-06-01 13:43:33",
+  "approver" : "系统管理员"
+}, {
+  "outId" : "OUT0008",
+  "customerId" : "E0031",
+  "outTime" : "2026-06-03 14:05",
+  "expectedReturnTime" : "2026-06-04 18:00",
+  "actualReturnTime" : "2026-06-01 14:06:16",
+  "companion" : "护工张三",
+  "reason" : "访友",
+  "status" : "已归来",
+  "approvalStatus" : "通过",
+  "approvalTime" : "2026-06-01 14:05:55",
+  "approver" : "系统管理员"
+}, {
+  "outId" : "OUT0009",
+  "customerId" : "E0032",
+  "outTime" : "2026-06-11 15:10",
+  "expectedReturnTime" : "2026-06-12 18:00",
+  "actualReturnTime" : "2026-06-01 15:12:41",
+  "companion" : "护工张三",
+  "reason" : "探亲",
+  "status" : "已归来",
+  "approvalStatus" : "通过",
+  "approvalTime" : "2026-06-01 15:11:21",
+  "approver" : "系统管理员"
+}, {
+  "outId" : "OUT0010",
+  "customerId" : "E0033",
+  "outTime" : "2026-06-10 15:27",
+  "expectedReturnTime" : "2026-06-11 18:00",
+  "actualReturnTime" : "2026-06-01 15:28:44",
+  "companion" : "护工张三",
+  "reason" : "探亲",
+  "status" : "已归来",
+  "approvalStatus" : "通过",
+  "approvalTime" : "2026-06-01 15:28:31",
+  "approver" : "系统管理员"
 } ]
