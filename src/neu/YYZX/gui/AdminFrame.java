@@ -471,7 +471,7 @@ public class AdminFrame {
         DatePicker checkinDate = new DatePicker(LocalDate.now());
         DatePicker contractEndDate = new DatePicker(LocalDate.now().plusYears(1));
 
-        // 身份证校验 + 自动提取生日/性别
+        // 身份证校验 + 自动提取生日/性别，锁定年龄和出生日期
         Label idCardMsg = new Label();
         idCardMsg.setStyle("-fx-font-size:11px");
         idCard.textProperty().addListener((o, ov, nv) -> {
@@ -480,6 +480,9 @@ public class AdminFrame {
                 idCard.setStyle("-fx-border-color:red; -fx-border-width:1px");
                 idCardMsg.setText(nv.length() == 18 ? "身份证格式错误" : "");
                 idCardMsg.setStyle("-fx-text-fill:red; -fx-font-size:11px");
+                // 解锁年龄和出生日期
+                age.setDisable(false); birthDate.setDisable(false);
+                age.setStyle(""); birthDate.setStyle("");
             } else {
                 idCard.setStyle("");
                 // 自动提取并填充出生日期
@@ -492,18 +495,21 @@ public class AdminFrame {
                 // 自动识别性别 (第17位，奇数为男)
                 int seqDigit = Integer.parseInt(nv.substring(14, 17));
                 gender.setValue(seqDigit % 2 == 1 ? "男" : "女");
+                // 锁定年龄和出生日期
+                age.setDisable(true); birthDate.setDisable(true);
+                age.setStyle("-fx-background-color:#f0f0f0"); birthDate.setStyle("-fx-background-color:#f0f0f0");
                 idCardMsg.setText("✓ 出生: " + result + "  性别: " + gender.getValue() + "  年龄: " + calculatedAge);
                 idCardMsg.setStyle("-fx-text-fill:green; -fx-font-size:11px");
             }
         });
 
         grid.add(new Label("姓名："), 0, 0); grid.add(name, 1, 0);
-        grid.add(new Label("年龄："), 0, 1); grid.add(age, 1, 1);
-        grid.add(new Label("出生日期："), 2, 1); grid.add(birthDate, 3, 1);
-        grid.add(new Label("性别："), 0, 2); grid.add(gender, 1, 2);
-        grid.add(new Label("血型："), 2, 2); grid.add(bloodType, 3, 2);
-        grid.add(new Label("身份证："), 0, 3); grid.add(idCard, 1, 3);
-        grid.add(idCardMsg, 2, 3, 2, 1);
+        grid.add(new Label("身份证："), 0, 1); grid.add(idCard, 1, 1);
+        grid.add(idCardMsg, 2, 1, 2, 1);
+        grid.add(new Label("年龄："), 0, 2); grid.add(age, 1, 2);
+        grid.add(new Label("出生日期："), 2, 2); grid.add(birthDate, 3, 2);
+        grid.add(new Label("性别："), 0, 3); grid.add(gender, 1, 3);
+        grid.add(new Label("血型："), 2, 3); grid.add(bloodType, 3, 3);
         grid.add(new Label("电话："), 0, 4); grid.add(phone, 1, 4);
         grid.add(new Label("地址："), 2, 4); grid.add(address, 3, 4);
         grid.add(new Label("家属："), 0, 5); grid.add(familyMember, 1, 5);
@@ -2304,14 +2310,18 @@ public class AdminFrame {
         box.setPadding(new Insets(15));
         Label title = new Label("外出登记列表");
         TableView<OutRegistration> table = new TableView<>();
-        TableColumn<OutRegistration, String> c1 = tc("老人ID", "customerId");
+        TableColumn<OutRegistration, String> c0 = new TableColumn<>("老人姓名");
+        c0.setCellValueFactory(data -> {
+            Elderly e = ctx.getElderlyDao().findById(data.getValue().getCustomerId());
+            return new SimpleStringProperty(e != null ? e.getName() : data.getValue().getCustomerId());
+        });
         TableColumn<OutRegistration, String> c2 = tc("外出时间", "outTime");
         TableColumn<OutRegistration, String> c3 = tc("预计归时", "expectedReturnTime");
         TableColumn<OutRegistration, String> c4 = tc("实际归时", "actualReturnTime");
         TableColumn<OutRegistration, String> c5 = tc("审批状态", "approvalStatus");
         TableColumn<OutRegistration, String> c6 = tc("审批人", "approver");
         TableColumn<OutRegistration, String> c7 = tc("审批时间", "approvalTime");
-        table.getColumns().addAll(c1, c2, c3, c4, c5, c6, c7);
+        table.getColumns().addAll(c0, c2, c3, c4, c5, c6, c7);
 
         Runnable refresh = () -> refreshTable(table, ctx.getOutRegistrationDao().findAll());
         refresh.run();
@@ -2388,14 +2398,18 @@ public class AdminFrame {
         box.setPadding(new Insets(15));
         Label title = new Label("退住登记列表");
         TableView<CheckOut> table = new TableView<>();
-        TableColumn<CheckOut, String> c1 = tc("老人ID", "customerId");
+        TableColumn<CheckOut, String> c0 = new TableColumn<>("老人姓名");
+        c0.setCellValueFactory(data -> {
+            Elderly e = ctx.getElderlyDao().findById(data.getValue().getCustomerId());
+            return new SimpleStringProperty(e != null ? e.getName() : data.getValue().getCustomerId());
+        });
         TableColumn<CheckOut, String> c2 = tc("退住类型", "checkoutType");
         TableColumn<CheckOut, String> c3 = tc("退住日期", "checkoutDate");
         TableColumn<CheckOut, String> c4 = tc("原因", "reason");
         TableColumn<CheckOut, String> c5 = tc("审批状态", "approvalStatus");
         TableColumn<CheckOut, String> c6 = tc("审批人", "approver");
         TableColumn<CheckOut, String> c7 = tc("审批时间", "approvalTime");
-        table.getColumns().addAll(c1, c2, c3, c4, c5, c6, c7);
+        table.getColumns().addAll(c0, c2, c3, c4, c5, c6, c7);
 
         Runnable refresh = () -> refreshTable(table, ctx.getCheckOutDao().findAll());
         refresh.run();
