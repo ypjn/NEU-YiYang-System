@@ -736,6 +736,7 @@ public class AdminFrame {
             ctx.getElderlyDao().update(elder);
             PersistentIdGenerator.getInstance().save();
             AuditLogger.logReversible("编辑老人信息", "老人管理", elder.getName(), snapshot);
+            notifyButlerByElderly(elder.getId(), "的信息已被管理员编辑更新");
             refreshElderly(table, ctx.getElderlyDao().findAll());
             return elder;
         });
@@ -848,6 +849,7 @@ public class AdminFrame {
             undoData.put("newLevelCode", code);
             undoData.put("addedProjectIds", addedProjectIds);
             AuditLogger.logReversible("设置护理等级", "老人管理", e.getName() + " → " + code, undoData);
+            notifyButlerByElderly(e.getId(), "的护理等级已变更为 " + code);
         });
     }
 
@@ -876,6 +878,7 @@ public class AdminFrame {
         undoData.put("oldLevelCode", oldLevelCode != null ? oldLevelCode : "");
         undoData.put("removedProjects", removedProjects);
         AuditLogger.logReversible("移除护理级别", "老人管理", e.getName(), undoData);
+        notifyButlerByElderly(e.getId(), "的护理等级已被管理员移除");
     }
 
     // ==================== 床位管理 ====================
@@ -1295,6 +1298,7 @@ public class AdminFrame {
                 undoData.put("oldRoomNo", oldRoomNo != null ? oldRoomNo : "");
                 undoData.put("oldBuildingId", oldBuildingId != null ? oldBuildingId : "");
                 AuditLogger.logReversible("床位调换", "床位管理", customerId + " → 床位 " + newBed.getBedNo(), undoData);
+            notifyButlerByElderly(customerId, "的床位已更换至 " + newBed.getBedNo());
             }
             return null;
         });
@@ -1994,6 +1998,7 @@ public class AdminFrame {
                 undoData.put("type", "care_project_buy");
                 undoData.put("projectId", newCcp.getId());
                 AuditLogger.logReversible("购买护理项目", "服务关注", customerName + " ← " + projectCode, undoData);
+                notifyButlerByElderly(customerId, "购买了新的护理项目【" + projectCode + "】，数量：" + qty + "次");
                 refreshTable(table, ctx.getCustomerCareProjectDao().findByCustomerId(customerId));
             }
             return null;
@@ -2042,6 +2047,7 @@ public class AdminFrame {
                 undoData.put("oldQuantity", oldQty);
                 undoData.put("oldExpireDate", oldExpireDate != null ? oldExpireDate : "");
                 AuditLogger.logReversible("续费护理项目", "服务关注", ccp.getProjectCode(), undoData);
+                notifyButlerByElderly(ccp.getCustomerId(), "的护理项目【" + ccp.getProjectCode() + "】已续费，新增" + addQty + "次");
                 refreshTable(table, ctx.getCustomerCareProjectDao().findByCustomerId(ccp.getCustomerId()));
             }
             return null;
@@ -2145,6 +2151,8 @@ public class AdminFrame {
                 undoData.put("type", "service_assign");
                 undoData.put("assignmentId", sa.getAssignmentId());
                 AuditLogger.logReversible("设置服务对象", "管家分配", empName + " ← " + clientSel, undoData);
+                // 通知管家
+                notifyByEmployeeId(empId, "管理员为您分配了新客户【" + clientSel.split(" - ")[1] + "】，请及时跟进");
             });
         });
 
@@ -2154,12 +2162,17 @@ public class AdminFrame {
             Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "确定移除此服务客户吗？移除操作不会影响护理记录。", ButtonType.YES, ButtonType.NO);
             confirm.showAndWait().ifPresent(r -> {
                 if (r == ButtonType.YES) {
+                    String empId = sa.getEmployeeId();
+                    String elyId = sa.getElderlyId();
+                    Elderly elder = ctx.getElderlyDao().findById(elyId);
+                    String elderName = elder != null ? elder.getName() : elyId;
                     ctx.getServiceAssignmentDao().delete(sa.getAssignmentId());
                     PersistentIdGenerator.getInstance().save();
                     String selValue = butlerBox.getValue();
                     if (selValue == null) return;
                     if ("无 - 全部".equals(selValue)) refreshTable(table, ctx.getServiceAssignmentDao().findAll());
                     else refreshTable(table, ctx.getServiceAssignmentDao().findByEmployeeId(selValue.split(" - ")[0]));
+                    notifyByEmployeeId(empId, "老人【" + elderName + "】已从您的服务列表中移除");
                 }
             });
         });
@@ -2432,6 +2445,7 @@ public class AdminFrame {
                     if (bed != null) { bed.setStatus("out"); ctx.getBedDao().update(bed); }
                 }
                 PersistentIdGenerator.getInstance().save();
+                notifyButlerByElderly(r.getCustomerId(), "的外出申请已审批通过");
                 refresh.run();
             });
         });
@@ -2451,6 +2465,7 @@ public class AdminFrame {
                 r.setApprover(user.getRealName());
                 ctx.getOutRegistrationDao().update(r);
                 PersistentIdGenerator.getInstance().save();
+                notifyButlerByElderly(r.getCustomerId(), "的外出申请已被驳回");
                 refresh.run();
             });
         });
@@ -2471,6 +2486,7 @@ public class AdminFrame {
                 if (bed != null) { bed.setStatus("occupied"); ctx.getBedDao().update(bed); }
             }
             PersistentIdGenerator.getInstance().save();
+            notifyButlerByElderly(r.getCustomerId(), "已登记归来");
             refresh.run();
         });
 
@@ -2541,6 +2557,7 @@ public class AdminFrame {
                     }
                 }
                 PersistentIdGenerator.getInstance().save();
+                notifyButlerByElderly(co.getCustomerId(), "的退住申请已审批通过，老人已退住");
                 refresh.run();
             });
         });
@@ -2560,6 +2577,7 @@ public class AdminFrame {
                 co.setApprover(user.getRealName());
                 ctx.getCheckOutDao().update(co);
                 PersistentIdGenerator.getInstance().save();
+                notifyButlerByElderly(co.getCustomerId(), "的退住申请已被驳回");
                 refresh.run();
             });
         });
@@ -2690,6 +2708,7 @@ public class AdminFrame {
                 undoData.put("type", "health_record");
                 undoData.put("recordId", hr.getHealthId());
                 AuditLogger.logReversible("登记健康记录", "健康记录", elderBox.getValue(), undoData);
+                notifyButlerByElderly(hr.getCustomerId(), "登记了新的健康记录");
             });
         });
 
@@ -2866,6 +2885,7 @@ public class AdminFrame {
                     e.setBuildingId((String) data.get("oldBuildingId"));
                     ctx.getElderlyDao().update(e);
                     PersistentIdGenerator.getInstance().save();
+                    notifyButlerByElderly(elderlyId, "的信息编辑已被管理员撤销");
                     return true;
                 }
                 case "nursing_level_set": {
@@ -2882,6 +2902,7 @@ public class AdminFrame {
                     e.setNursingLevelCode(oldLevelCode.isEmpty() ? null : oldLevelCode);
                     ctx.getElderlyDao().update(e);
                     PersistentIdGenerator.getInstance().save();
+                    notifyButlerByElderly(elderlyId, "的护理等级设置已被管理员撤销");
                     return true;
                 }
                 case "nursing_level_remove": {
@@ -2905,6 +2926,7 @@ public class AdminFrame {
                         }
                     }
                     PersistentIdGenerator.getInstance().save();
+                    notifyButlerByElderly(elderlyId, "的护理等级移除已被管理员撤销");
                     return true;
                 }
                 case "bed_swap": {
@@ -2927,47 +2949,82 @@ public class AdminFrame {
                     e.setBuildingId((String) data.get("oldBuildingId"));
                     ctx.getElderlyDao().update(e);
                     PersistentIdGenerator.getInstance().save();
+                    notifyButlerByElderly(elderlyId, "的床位更换已被管理员撤销");
                     return true;
                 }
                 case "service_assign": {
                     String assignmentId = (String) data.get("assignmentId");
+                    ServiceAssignment sa = ctx.getServiceAssignmentDao().findById(assignmentId);
+                    String empId = sa != null ? sa.getEmployeeId() : null;
+                    String elyId = sa != null ? sa.getElderlyId() : null;
                     if (!ctx.getServiceAssignmentDao().delete(assignmentId)) return false;
+                    if (elyId != null) {
+                        Elderly elder = ctx.getElderlyDao().findById(elyId);
+                        String elderName = elder != null ? elder.getName() : elyId;
+                        notifyByEmployeeId(empId, "老人【" + elderName + "】的服务分配已被管理员撤销");
+                    }
                     return true;
                 }
                 case "health_record": {
                     String recordId = (String) data.get("recordId");
+                    HealthRecord hr = ctx.getHealthRecordDao().findById(recordId);
+                    String customerId = hr != null ? hr.getCustomerId() : null;
                     if (!ctx.getHealthRecordDao().delete(recordId)) return false;
+                    if (customerId != null) notifyButlerByElderly(customerId, "的健康记录已被管理员撤销删除");
                     return true;
                 }
                 case "diet_preference": {
                     String preferenceId = (String) data.get("preferenceId");
+                    DietPreference dp = ctx.getDietPreferenceDao().findById(preferenceId);
+                    String customerId = dp != null ? dp.getCustomerId() : null;
                     if (!ctx.getDietPreferenceDao().delete(preferenceId)) return false;
+                    if (customerId != null) notifyButlerByElderly(customerId, "的膳食偏好已被管理员撤销删除");
                     return true;
                 }
                 case "elderly_checkin": {
                     String elderlyId = (String) data.get("elderlyId");
                     String bedId = (String) data.get("bedId");
+                    // 先查老人姓名用于通知
+                    Elderly elder = ctx.getElderlyDao().findById(elderlyId);
+                    String elderName = elder != null ? elder.getName() : elderlyId;
+                    // 先查管家用于通知（删除老人后ServiceAssignment可能失效）
+                    List<ServiceAssignment> assignments = ctx.getServiceAssignmentDao().findAll().stream()
+                        .filter(a -> a.getElderlyId().equals(elderlyId)).toList();
+                    List<String> notifyEmpIds = new java.util.ArrayList<>();
+                    for (ServiceAssignment sa : assignments) {
+                        Employee emp = ctx.getEmployeeDao().findById(sa.getEmployeeId());
+                        if (emp != null) notifyEmpIds.add(sa.getEmployeeId());
+                    }
                     if (!ctx.getElderlyDao().delete(elderlyId)) return false;
                     if (bedId != null && !bedId.isEmpty()) {
                         Bed bed = ctx.getBedDao().findById(bedId);
                         if (bed != null) { bed.setStatus("available"); ctx.getBedDao().update(bed); }
                     }
+                    // 通知管家
+                    for (String empId : notifyEmpIds) {
+                        notifyByEmployeeId(empId, "老人【" + elderName + "】的入住登记已被管理员撤销（已退住）");
+                    }
                     return true;
                 }
                 case "care_project_buy": {
                     String projectId = (String) data.get("projectId");
+                    CustomerCareProject ccp = ctx.getCustomerCareProjectDao().findById(projectId);
+                    String customerId = ccp != null ? ccp.getCustomerId() : null;
                     if (!ctx.getCustomerCareProjectDao().delete(projectId)) return false;
+                    if (customerId != null) notifyButlerByElderly(customerId, "的护理项目购买已被管理员撤销");
                     return true;
                 }
                 case "care_project_renew": {
                     String projectId = (String) data.get("projectId");
                     CustomerCareProject ccp = ctx.getCustomerCareProjectDao().findById(projectId);
                     if (ccp == null) return false;
+                    String customerId = ccp.getCustomerId();
                     int oldQty = data.get("oldQuantity") instanceof Integer ? (int) data.get("oldQuantity") : Integer.parseInt(String.valueOf(data.get("oldQuantity")));
                     ccp.setQuantity(oldQty);
                     ccp.setExpireDate((String) data.get("oldExpireDate"));
                     ctx.getCustomerCareProjectDao().update(ccp);
                     PersistentIdGenerator.getInstance().save();
+                    if (customerId != null) notifyButlerByElderly(customerId, "的护理项目续费已被管理员撤销");
                     return true;
                 }
                 case "care_project_remove": {
@@ -2979,6 +3036,7 @@ public class AdminFrame {
                     CustomerCareProject ccp = new CustomerCareProject(null, customerId, projectCode, qty, purchaseDate, expireDate);
                     ctx.getCustomerCareProjectDao().insert(ccp);
                     PersistentIdGenerator.getInstance().save();
+                    if (customerId != null) notifyButlerByElderly(customerId, "的护理项目移除已被管理员撤销");
                     return true;
                 }
                 default:
@@ -2991,6 +3049,45 @@ public class AdminFrame {
     }
 
     // ==================== 辅助方法 ====================
+
+    /** 根据老人ID查找其管家并发送通知 */
+    private void notifyButlerByElderly(String elderlyId, String actionDesc) {
+        try {
+            Elderly elder = ctx.getElderlyDao().findById(elderlyId);
+            String elderName = elder != null ? elder.getName() : elderlyId;
+            List<ServiceAssignment> assignments = ctx.getServiceAssignmentDao().findAll().stream()
+                .filter(a -> a.getElderlyId().equals(elderlyId) && "服务中".equals(a.getStatus()))
+                .toList();
+            for (ServiceAssignment sa : assignments) {
+                Employee emp = ctx.getEmployeeDao().findById(sa.getEmployeeId());
+                if (emp != null) {
+                    Message msg = new Message();
+                    msg.setReceiverName(emp.getName());
+                    msg.setContent("老人【" + elderName + "】" + actionDesc);
+                    msg.setTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                    msg.setRead(false);
+                    ctx.getMessageDao().insert(msg);
+                }
+            }
+            if (!assignments.isEmpty()) PersistentIdGenerator.getInstance().save();
+        } catch (Exception ignored) {}
+    }
+
+    /** 根据员工ID发送通知 */
+    private void notifyByEmployeeId(String employeeId, String content) {
+        try {
+            Employee emp = ctx.getEmployeeDao().findById(employeeId);
+            if (emp != null) {
+                Message msg = new Message();
+                msg.setReceiverName(emp.getName());
+                msg.setContent(content);
+                msg.setTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                msg.setRead(false);
+                ctx.getMessageDao().insert(msg);
+                PersistentIdGenerator.getInstance().save();
+            }
+        } catch (Exception ignored) {}
+    }
 
     /** 校验18位身份证号，合法返回出生日期字符串(YYYY-MM-DD)，否则返回null */
     private String validateIdCard(String id) {

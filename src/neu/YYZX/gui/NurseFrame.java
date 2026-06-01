@@ -353,6 +353,8 @@ public class NurseFrame {
             undoData.put("elderlyId", e.getId());
             undoData.put("bedId", bedId);
             AuditLogger.logReversible("老人入住", "老人管理", e.getName(), undoData);
+            notifyButlerByElderly(e.getId(), "已办理入住");
+            notifyAdmins("新老人【" + e.getName() + "】已办理入住");
             refresh(table, ctx.getElderlyDao().findAll());
             return e;
         });
@@ -662,6 +664,7 @@ public class NurseFrame {
                 execTime, qty, nurseName, remark.getText().trim());
             ctx.getCareRecordDao().insert(cr);
             PersistentIdGenerator.getInstance().save();
+            notifyButlerByElderly(eid, "执行了护理项目【" + pcode + "】，扣减" + qty + "次，剩余" + ccp.getQuantity() + "次");
             refresh(table, ctx.getCareRecordDao().findByNurseName(nurseName));
             return cr;
         });
@@ -744,6 +747,7 @@ public class NurseFrame {
                 dlg.showAndWait().ifPresent(dp -> {
                     ctx.getDietPreferenceDao().insert(dp);
                     PersistentIdGenerator.getInstance().save();
+                    notifyButlerByElderly(elderId, "的膳食偏好已被护工添加");
                     refresh(table, ctx.getDietPreferenceDao().findAll());
                     Map<String, Object> undoData = new HashMap<>();
                     undoData.put("type", "diet_preference");
@@ -787,6 +791,7 @@ public class NurseFrame {
             dlg.showAndWait().ifPresent(dp -> {
                 ctx.getDietPreferenceDao().update(dp);
                 PersistentIdGenerator.getInstance().save();
+                notifyButlerByElderly(dp.getCustomerId(), "的膳食偏好已被护工修改");
                 refresh(table, ctx.getDietPreferenceDao().findAll());
             });
         });
@@ -799,8 +804,10 @@ public class NurseFrame {
             confirm.initOwner(stage);
             confirm.showAndWait().ifPresent(r -> {
                 if (r == ButtonType.YES) {
+                    String customerId = sel.getCustomerId();
                     ctx.getDietPreferenceDao().delete(sel.getPreferenceId());
                     PersistentIdGenerator.getInstance().save();
+                    notifyButlerByElderly(customerId, "的膳食偏好已被护工删除");
                     refresh(table, ctx.getDietPreferenceDao().findAll());
                 }
             });
@@ -1024,6 +1031,7 @@ public class NurseFrame {
                     r.setApprovalStatus("待审批");
                     ctx.getOutRegistrationDao().insert(r);
                     PersistentIdGenerator.getInstance().save();
+                    notifyAdmins("老人【" + elderSel.split(" - ")[1] + "】申请外出，事由：" + reason.getText().trim());
                     refresh(table, ctx.getOutRegistrationDao().findAll().stream()
                         .filter(o -> nurseName.equals(o.getCompanion())).toList());
                     return r;
@@ -1125,6 +1133,7 @@ public class NurseFrame {
                     co.setApprovalStatus("待审批");
                     ctx.getCheckOutDao().insert(co);
                     PersistentIdGenerator.getInstance().save();
+                    notifyAdmins("老人【" + elderSel.split(" - ")[1] + "】申请退住，类型：" + typeBox.getValue());
                     refresh(table, ctx.getCheckOutDao().findAll());
                     return co;
                 });
@@ -1417,4 +1426,44 @@ public class NurseFrame {
     }
 
     private String nvl(String s) { return s != null && !s.isEmpty() ? s : "-"; }
+
+    /** 根据老人ID通知其管家/护工 */
+    private void notifyButlerByElderly(String elderlyId, String actionDesc) {
+        try {
+            Elderly elder = ctx.getElderlyDao().findById(elderlyId);
+            String elderName = elder != null ? elder.getName() : elderlyId;
+            List<ServiceAssignment> assignments = ctx.getServiceAssignmentDao().findAll().stream()
+                .filter(a -> a.getElderlyId().equals(elderlyId) && "服务中".equals(a.getStatus()))
+                .toList();
+            for (ServiceAssignment sa : assignments) {
+                Employee emp = ctx.getEmployeeDao().findById(sa.getEmployeeId());
+                if (emp != null) {
+                    Message msg = new Message();
+                    msg.setReceiverName(emp.getName());
+                    msg.setContent("老人【" + elderName + "】" + actionDesc);
+                    msg.setTime(LocalDateTime.now().format(fmt));
+                    msg.setRead(false);
+                    ctx.getMessageDao().insert(msg);
+                }
+            }
+            if (!assignments.isEmpty()) PersistentIdGenerator.getInstance().save();
+        } catch (Exception ignored) {}
+    }
+
+    /** 通知所有管理员 */
+    private void notifyAdmins(String content) {
+        try {
+            List<User> admins = ctx.getUserDao().findAll().stream()
+                .filter(u -> "admin".equals(u.getRole())).toList();
+            for (User admin : admins) {
+                Message msg = new Message();
+                msg.setReceiverName(admin.getRealName());
+                msg.setContent(content);
+                msg.setTime(LocalDateTime.now().format(fmt));
+                msg.setRead(false);
+                ctx.getMessageDao().insert(msg);
+            }
+            PersistentIdGenerator.getInstance().save();
+        } catch (Exception ignored) {}
+    }
 }
