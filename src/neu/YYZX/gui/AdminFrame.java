@@ -3053,6 +3053,23 @@ public class AdminFrame {
 
     // ==================== 辅助方法 ====================
 
+    /** 根据员工姓名查找用户真实姓名用于消息接收 */
+    private String resolveReceiverName(String employeeName) {
+        // 在 User 表中查找 realName 包含员工姓名的用户（如 "护工张三" 包含 "张三"）
+        for (User u : ctx.getUserDao().findAll()) {
+            if (u.getRealName() != null && u.getRealName().contains(employeeName)) {
+                return u.getRealName();
+            }
+        }
+        // 反向查找：员工姓名包含用户 realName
+        for (User u : ctx.getUserDao().findAll()) {
+            if (u.getRealName() != null && employeeName.contains(u.getRealName())) {
+                return u.getRealName();
+            }
+        }
+        return employeeName;
+    }
+
     /** 根据老人ID查找其管家并发送通知 */
     private void notifyButlerByElderly(String elderlyId, String actionDesc) {
         try {
@@ -3065,7 +3082,7 @@ public class AdminFrame {
                 Employee emp = ctx.getEmployeeDao().findById(sa.getEmployeeId());
                 if (emp != null) {
                     Message msg = new Message();
-                    msg.setReceiverName(emp.getName());
+                    msg.setReceiverName(resolveReceiverName(emp.getName()));
                     msg.setContent("老人【" + elderName + "】" + actionDesc);
                     msg.setTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
                     msg.setRead(false);
@@ -3082,7 +3099,7 @@ public class AdminFrame {
             Employee emp = ctx.getEmployeeDao().findById(employeeId);
             if (emp != null) {
                 Message msg = new Message();
-                msg.setReceiverName(emp.getName());
+                msg.setReceiverName(resolveReceiverName(emp.getName()));
                 msg.setContent(content);
                 msg.setTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
                 msg.setRead(false);

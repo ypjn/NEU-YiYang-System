@@ -1427,6 +1427,17 @@ public class NurseFrame {
 
     private String nvl(String s) { return s != null && !s.isEmpty() ? s : "-"; }
 
+    /** 根据员工姓名查找用户真实姓名 */
+    private String resolveReceiverName(String employeeName) {
+        for (User u : ctx.getUserDao().findAll()) {
+            if (u.getRealName() != null && u.getRealName().contains(employeeName)) return u.getRealName();
+        }
+        for (User u : ctx.getUserDao().findAll()) {
+            if (u.getRealName() != null && employeeName.contains(u.getRealName())) return u.getRealName();
+        }
+        return employeeName;
+    }
+
     /** 根据老人ID通知其管家/护工 */
     private void notifyButlerByElderly(String elderlyId, String actionDesc) {
         try {
@@ -1439,7 +1450,7 @@ public class NurseFrame {
                 Employee emp = ctx.getEmployeeDao().findById(sa.getEmployeeId());
                 if (emp != null) {
                     Message msg = new Message();
-                    msg.setReceiverName(emp.getName());
+                    msg.setReceiverName(resolveReceiverName(emp.getName()));
                     msg.setContent("老人【" + elderName + "】" + actionDesc);
                     msg.setTime(LocalDateTime.now().format(fmt));
                     msg.setRead(false);
