@@ -2625,13 +2625,11 @@ public class AdminFrame {
             Dialog<HealthRecord> dlg = new Dialog<>();
             dlg.initOwner(stage);
             dlg.setTitle("登记健康记录");
-            dlg.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
             GridPane grid = new GridPane();
             grid.setHgap(10); grid.setVgap(10); grid.setPadding(new Insets(20));
 
             ComboBox<String> elderBox = new ComboBox<>();
-            elderBox.setPromptText("选择老人");
             ctx.getElderlyDao().findAll().forEach(el ->
                 elderBox.getItems().add(el.getId() + " - " + el.getName()));
             if (elderBox.getItems().isEmpty()) {
@@ -2663,8 +2661,11 @@ public class AdminFrame {
             grid.add(new Label("备注："), 0, 7); grid.add(remarkField, 1, 7);
             dlg.getDialogPane().setContent(grid);
 
+            ButtonType okBtn = new ButtonType("确定", ButtonBar.ButtonData.OK_DONE);
+            dlg.getDialogPane().getButtonTypes().addAll(okBtn, ButtonType.CANCEL);
+
             dlg.setResultConverter(bt -> {
-                if (bt == ButtonType.OK) {
+                if (bt == okBtn) {
                     HealthRecord hr = new HealthRecord();
                     hr.setCustomerId(elderBox.getValue().split(" - ")[0]);
                     hr.setRecordDate(datePick.getValue().toString());
