@@ -2174,13 +2174,72 @@ public class AdminFrame {
         VBox box = new VBox(10);
         box.setPadding(new Insets(15));
 
+        // 老人选择器
+        HBox elderRow = new HBox(10);
+        ComboBox<String> elderBox = new ComboBox<>();
+        elderBox.setPromptText("选择老人查看饮食偏好");
+        elderBox.getItems().add("无 - 暂不选择");
+        ctx.getElderlyDao().findAll().stream()
+            .filter(e -> "在住".equals(e.getStatus()))
+            .forEach(e -> elderBox.getItems().add(e.getId() + " - " + e.getName()));
+        elderBox.setValue("无 - 暂不选择");
+        elderRow.getChildren().addAll(new Label("关联老人："), elderBox);
+
+        // 饮食偏好提示条
+        HBox dietHintBar = new HBox(10);
+        dietHintBar.setPadding(new Insets(8, 12, 8, 12));
+        dietHintBar.setStyle("-fx-background-color:#fff3cd; -fx-background-radius:6; -fx-border-color:#ffc107; -fx-border-radius:6; -fx-border-width:1");
+        dietHintBar.setVisible(false);
+        dietHintBar.setManaged(false);
+
+        // 食物表格 — 增加营养和备注列
         TableView<Food> table = new TableView<>();
         TableColumn<Food, String> c1 = tc("名称", "foodName");
         TableColumn<Food, String> c2 = tc("类别", "category");
         TableColumn<Food, String> c3 = tc("单位", "unit");
         TableColumn<Food, String> c4 = tc("价格", "price");
-        table.getColumns().addAll(c1, c2, c3, c4);
+        TableColumn<Food, String> c5 = new TableColumn<>("营养");
+        c5.setCellValueFactory(new PropertyValueFactory<>("nutrition"));
+        c5.setPrefWidth(150);
+        TableColumn<Food, String> c6 = new TableColumn<>("备注");
+        c6.setCellValueFactory(new PropertyValueFactory<>("remark"));
+        c6.setPrefWidth(120);
+        table.getColumns().addAll(c1, c2, c3, c4, c5, c6);
         refreshTable(table, ctx.getFoodDao().findAll());
+
+        // 选中老人时显示饮食偏好 + 高亮相关食物
+        elderBox.setOnAction(e -> {
+            dietHintBar.getChildren().clear();
+            dietHintBar.setVisible(false);
+            dietHintBar.setManaged(false);
+            String sel = elderBox.getValue();
+            if (sel == null || "无 - 暂不选择".equals(sel)) return;
+            String elderId = sel.split(" - ")[0];
+            String elderName = sel.split(" - ")[1];
+            List<DietPreference> prefs = ctx.getDietPreferenceDao().findAll().stream()
+                .filter(p -> elderId.equals(p.getCustomerId())).toList();
+            if (!prefs.isEmpty()) {
+                DietPreference dp = prefs.get(0);
+                java.util.List<String> tags = new java.util.ArrayList<>();
+                if (dp.getTaste() != null && !dp.getTaste().isEmpty()) tags.add("口味：" + dp.getTaste());
+                if (dp.getAllergies() != null && !dp.getAllergies().isEmpty()) tags.add("⚠ 过敏原：" + dp.getAllergies());
+                if (dp.getTaboos() != null && !dp.getTaboos().isEmpty()) tags.add("忌口：" + dp.getTaboos());
+                if (dp.getDietaryAdvice() != null && !dp.getDietaryAdvice().isEmpty()) tags.add("建议：" + dp.getDietaryAdvice());
+                if (!tags.isEmpty()) {
+                    Label dietLabel = new Label(elderName + "  |  " + String.join("  |  ", tags));
+                    dietLabel.setStyle("-fx-font-size:13px; -fx-text-fill:#856404");
+                    dietHintBar.getChildren().add(dietLabel);
+                    dietHintBar.setVisible(true);
+                    dietHintBar.setManaged(true);
+                }
+            } else {
+                Label noPref = new Label(elderName + " 尚无膳食偏好记录，可在护工端添加");
+                noPref.setStyle("-fx-font-size:13px; -fx-text-fill:#856404");
+                dietHintBar.getChildren().add(noPref);
+                dietHintBar.setVisible(true);
+                dietHintBar.setManaged(true);
+            }
+        });
 
         Button addBtn = new Button("新增食物");
         addBtn.setOnAction(e -> {
@@ -2210,7 +2269,7 @@ public class AdminFrame {
         });
 
         HBox btns = new HBox(10, addBtn, delBtn);
-        box.getChildren().addAll(btns, table);
+        box.getChildren().addAll(elderRow, dietHintBar, btns, table);
         return box;
     }
 
