@@ -37,7 +37,7 @@
   "bedId" : "BD0053",
   "bedNo" : "301-1",
   "roomId" : "RM0027",
-  "status" : "occupied"
+  "status" : "out"
 }, {
   "bedId" : "BD0054",
   "bedNo" : "301-2",
@@ -57,7 +57,7 @@
   "bedId" : "BD0057",
   "bedNo" : "401-1",
   "roomId" : "RM0029",
-  "status" : "occupied"
+  "status" : "available"
 }, {
   "bedId" : "BD0058",
   "bedNo" : "401-2",

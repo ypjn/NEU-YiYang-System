@@ -2341,29 +2341,44 @@ public class AdminFrame {
         approveBtn.setOnAction(e -> {
             OutRegistration r = table.getSelectionModel().getSelectedItem();
             if (r == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择记录"); return; }
-            r.setApprovalStatus("通过");
-            r.setApprovalTime(LocalDateTime.now().format(fmt));
-            r.setApprover(user.getRealName());
-            ctx.getOutRegistrationDao().update(r);
-            // 修改床位状态为外出
-            Elderly elder = ctx.getElderlyDao().findById(r.getCustomerId());
-            if (elder != null && elder.getBedId() != null) {
-                Bed bed = ctx.getBedDao().findById(elder.getBedId());
-                if (bed != null) { bed.setStatus("out"); ctx.getBedDao().update(bed); }
+            if (!"待审批".equals(r.getApprovalStatus())) {
+                LoginPane.showAlert(Alert.AlertType.WARNING, "该申请已审批（" + r.getApprovalStatus() + "），无法再次审批");
+                return;
             }
-            PersistentIdGenerator.getInstance().save();
-            refresh.run();
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "确认通过此外出申请？", ButtonType.YES, ButtonType.NO);
+            confirm.showAndWait().ifPresent(btn -> {
+                if (btn != ButtonType.YES) return;
+                r.setApprovalStatus("通过");
+                r.setApprovalTime(LocalDateTime.now().format(fmt));
+                r.setApprover(user.getRealName());
+                ctx.getOutRegistrationDao().update(r);
+                Elderly elder = ctx.getElderlyDao().findById(r.getCustomerId());
+                if (elder != null && elder.getBedId() != null) {
+                    Bed bed = ctx.getBedDao().findById(elder.getBedId());
+                    if (bed != null) { bed.setStatus("out"); ctx.getBedDao().update(bed); }
+                }
+                PersistentIdGenerator.getInstance().save();
+                refresh.run();
+            });
         });
 
         rejectBtn.setOnAction(e -> {
             OutRegistration r = table.getSelectionModel().getSelectedItem();
             if (r == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择记录"); return; }
-            r.setApprovalStatus("不通过");
-            r.setApprovalTime(LocalDateTime.now().format(fmt));
-            r.setApprover(user.getRealName());
-            ctx.getOutRegistrationDao().update(r);
-            PersistentIdGenerator.getInstance().save();
-            refresh.run();
+            if (!"待审批".equals(r.getApprovalStatus())) {
+                LoginPane.showAlert(Alert.AlertType.WARNING, "该申请已审批（" + r.getApprovalStatus() + "），无法再次审批");
+                return;
+            }
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "确认驳回此外出申请？", ButtonType.YES, ButtonType.NO);
+            confirm.showAndWait().ifPresent(btn -> {
+                if (btn != ButtonType.YES) return;
+                r.setApprovalStatus("不通过");
+                r.setApprovalTime(LocalDateTime.now().format(fmt));
+                r.setApprover(user.getRealName());
+                ctx.getOutRegistrationDao().update(r);
+                PersistentIdGenerator.getInstance().save();
+                refresh.run();
+            });
         });
 
         Button returnBtn = new Button("登记归来");
@@ -2429,35 +2444,50 @@ public class AdminFrame {
         approveBtn.setOnAction(e -> {
             CheckOut co = table.getSelectionModel().getSelectedItem();
             if (co == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择记录"); return; }
-            co.setApprovalStatus("通过");
-            co.setApprovalTime(LocalDateTime.now().format(fmt));
-            co.setApprover(user.getRealName());
-            ctx.getCheckOutDao().update(co);
-            // 正常退住或死亡退住：修改床位为空闲
-            if ("正常退住".equals(co.getCheckoutType()) || "死亡退住".equals(co.getCheckoutType())) {
-                Elderly elder = ctx.getElderlyDao().findById(co.getCustomerId());
-                if (elder != null) {
-                    elder.setStatus("退住");
-                    ctx.getElderlyDao().update(elder);
-                    if (elder.getBedId() != null) {
-                        Bed bed = ctx.getBedDao().findById(elder.getBedId());
-                        if (bed != null) { bed.setStatus("available"); ctx.getBedDao().update(bed); }
+            if (!"待审批".equals(co.getApprovalStatus())) {
+                LoginPane.showAlert(Alert.AlertType.WARNING, "该退住申请已审批（" + co.getApprovalStatus() + "），无法再次审批");
+                return;
+            }
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "确认通过此退住申请？", ButtonType.YES, ButtonType.NO);
+            confirm.showAndWait().ifPresent(btn -> {
+                if (btn != ButtonType.YES) return;
+                co.setApprovalStatus("通过");
+                co.setApprovalTime(LocalDateTime.now().format(fmt));
+                co.setApprover(user.getRealName());
+                ctx.getCheckOutDao().update(co);
+                if ("正常退住".equals(co.getCheckoutType()) || "死亡退住".equals(co.getCheckoutType())) {
+                    Elderly elder = ctx.getElderlyDao().findById(co.getCustomerId());
+                    if (elder != null) {
+                        elder.setStatus("退住");
+                        ctx.getElderlyDao().update(elder);
+                        if (elder.getBedId() != null) {
+                            Bed bed = ctx.getBedDao().findById(elder.getBedId());
+                            if (bed != null) { bed.setStatus("available"); ctx.getBedDao().update(bed); }
+                        }
                     }
                 }
-            }
-            PersistentIdGenerator.getInstance().save();
-            refresh.run();
+                PersistentIdGenerator.getInstance().save();
+                refresh.run();
+            });
         });
 
         rejectBtn.setOnAction(e -> {
             CheckOut co = table.getSelectionModel().getSelectedItem();
             if (co == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择记录"); return; }
-            co.setApprovalStatus("不通过");
-            co.setApprovalTime(LocalDateTime.now().format(fmt));
-            co.setApprover(user.getRealName());
-            ctx.getCheckOutDao().update(co);
-            PersistentIdGenerator.getInstance().save();
-            refresh.run();
+            if (!"待审批".equals(co.getApprovalStatus())) {
+                LoginPane.showAlert(Alert.AlertType.WARNING, "该退住申请已审批（" + co.getApprovalStatus() + "），无法再次审批");
+                return;
+            }
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "确认驳回此退住申请？", ButtonType.YES, ButtonType.NO);
+            confirm.showAndWait().ifPresent(btn -> {
+                if (btn != ButtonType.YES) return;
+                co.setApprovalStatus("不通过");
+                co.setApprovalTime(LocalDateTime.now().format(fmt));
+                co.setApprover(user.getRealName());
+                ctx.getCheckOutDao().update(co);
+                PersistentIdGenerator.getInstance().save();
+                refresh.run();
+            });
         });
 
         HBox btns = new HBox(10, approveBtn, rejectBtn);

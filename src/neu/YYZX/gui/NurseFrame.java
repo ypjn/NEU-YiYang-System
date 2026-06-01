@@ -875,6 +875,10 @@ public class NurseFrame {
                 DatePicker outDate = new DatePicker(LocalDate.now());
                 TextField outTimeField = new TextField(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
                 DatePicker returnDate = new DatePicker(LocalDate.now().plusDays(1));
+                // 外出日期变化时，预计归日自动设为下一天
+                outDate.valueProperty().addListener((o, ov, nv) -> {
+                    if (nv != null) returnDate.setValue(nv.plusDays(1));
+                });
                 TextField returnTimeField = new TextField("18:00");
                 TextField reason = new TextField();
                 grid.add(new Label("外出日期："), 0, 0); grid.add(outDate, 1, 0);
