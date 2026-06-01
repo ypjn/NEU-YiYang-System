@@ -5,7 +5,9 @@
   "action" : "新增用户",
   "target" : "用户管理",
   "detail" : "添加用户 test_log（nurse）",
-  "time" : "2026-05-25 20:16:51"
+  "time" : "2026-05-25 20:16:51",
+  "reversibleData" : null,
+  "reverted" : false
 }, {
   "logId" : "LOG0002",
   "operatorName" : "系统管理员",
@@ -13,7 +15,9 @@
   "action" : "撤销服务",
   "target" : "管家服务",
   "detail" : "服务 SA0003 已撤销",
-  "time" : "2026-05-25 20:24:24"
+  "time" : "2026-05-25 20:24:24",
+  "reversibleData" : null,
+  "reverted" : false
 }, {
   "logId" : "LOG0003",
   "operatorName" : "护工张三",
@@ -21,7 +25,9 @@
   "action" : "服务购买",
   "target" : "管家服务",
   "detail" : "老人 E0001 购买 康复训练",
-  "time" : "2026-05-25 20:25:35"
+  "time" : "2026-05-25 20:25:35",
+  "reversibleData" : null,
+  "reverted" : false
 }, {
   "logId" : "LOG0004",
   "operatorName" : "系统管理员",
@@ -29,7 +35,9 @@
   "action" : "撤销服务",
   "target" : "管家服务",
   "detail" : "服务 SA0004 已撤销",
-  "time" : "2026-05-25 20:25:35"
+  "time" : "2026-05-25 20:25:35",
+  "reversibleData" : null,
+  "reverted" : false
 }, {
   "logId" : "LOG0005",
   "operatorName" : "系统管理员",
@@ -37,7 +45,9 @@
   "action" : "入住登记",
   "target" : "老人管理",
   "detail" : "老人 刘一鸿 办理入住",
-  "time" : "2026-05-26 08:17:37"
+  "time" : "2026-05-26 08:17:37",
+  "reversibleData" : null,
+  "reverted" : false
 }, {
   "logId" : "LOG0006",
   "operatorName" : "苏劲宇",
@@ -45,7 +55,9 @@
   "action" : "登记护理记录",
   "target" : "护理管理",
   "detail" : "老人 E0006 执行 LZ-002",
-  "time" : "2026-05-26 08:19:46"
+  "time" : "2026-05-26 08:19:46",
+  "reversibleData" : null,
+  "reverted" : false
 }, {
   "logId" : "LOG0007",
   "operatorName" : "未知",
@@ -53,7 +65,9 @@
   "action" : "设置护理等级",
   "target" : "老人管理",
   "detail" : "test → HL-1",
-  "time" : "2026-05-31 10:48:41"
+  "time" : "2026-05-31 10:48:41",
+  "reversibleData" : null,
+  "reverted" : false
 }, {
   "logId" : "LOG0008",
   "operatorName" : "未知",
@@ -61,7 +75,9 @@
   "action" : "移除护理级别",
   "target" : "老人管理",
   "detail" : "test",
-  "time" : "2026-05-31 10:58:58"
+  "time" : "2026-05-31 10:58:58",
+  "reversibleData" : null,
+  "reverted" : false
 }, {
   "logId" : "LOG0009",
   "operatorName" : "未知",
@@ -69,7 +85,9 @@
   "action" : "设置服务对象",
   "target" : "管家分配",
   "detail" : "李管家 ← E0016 - test",
-  "time" : "2026-05-31 11:00:10"
+  "time" : "2026-05-31 11:00:10",
+  "reversibleData" : null,
+  "reverted" : false
 }, {
   "logId" : "LOG0010",
   "operatorName" : "未知",
@@ -77,7 +95,9 @@
   "action" : "设置服务对象",
   "target" : "管家分配",
   "detail" : "李管家 ← E0017 - test03",
-  "time" : "2026-05-31 12:59:04"
+  "time" : "2026-05-31 12:59:04",
+  "reversibleData" : null,
+  "reverted" : false
 }, {
   "logId" : "LOG0011",
   "operatorName" : "未知",
@@ -85,7 +105,9 @@
   "action" : "床位调换",
   "target" : "床位管理",
   "detail" : "E0017 → 床位 202-1",
-  "time" : "2026-05-31 13:02:43"
+  "time" : "2026-05-31 13:02:43",
+  "reversibleData" : null,
+  "reverted" : false
 }, {
   "logId" : "LOG0012",
   "operatorName" : "未知",
@@ -93,7 +115,9 @@
   "action" : "登记健康记录",
   "target" : "健康记录",
   "detail" : "E0017 - test03",
-  "time" : "2026-05-31 14:24:16"
+  "time" : "2026-05-31 14:24:16",
+  "reversibleData" : null,
+  "reverted" : false
 }, {
   "logId" : "LOG0013",
   "operatorName" : "未知",
@@ -101,7 +125,9 @@
   "action" : "床位调换",
   "target" : "床位管理",
   "detail" : "E0027 → 床位 101-2",
-  "time" : "2026-05-31 15:39:07"
+  "time" : "2026-05-31 15:39:07",
+  "reversibleData" : null,
+  "reverted" : false
 }, {
   "logId" : "LOG0014",
   "operatorName" : "未知",
@@ -109,7 +135,9 @@
   "action" : "设置服务对象",
   "target" : "管家分配",
   "detail" : "李管家 ← E0027 - 关",
-  "time" : "2026-05-31 15:39:41"
+  "time" : "2026-05-31 15:39:41",
+  "reversibleData" : null,
+  "reverted" : false
 }, {
   "logId" : "LOG0015",
   "operatorName" : "未知",
@@ -117,5 +145,17 @@
   "action" : "添加膳食偏好",
   "target" : "膳食管理",
   "detail" : "郑秀英 - 喜爱",
-  "time" : "2026-05-31 15:55:40"
+  "time" : "2026-05-31 15:55:40",
+  "reversibleData" : null,
+  "reverted" : false
+}, {
+  "logId" : "LOG0016",
+  "operatorName" : "系统管理员",
+  "operatorRole" : "admin",
+  "action" : "设置护理等级",
+  "target" : "老人管理",
+  "detail" : "关 → ZL",
+  "time" : "2026-06-01 11:53:01",
+  "reversibleData" : "{\"elderlyId\":\"E0027\",\"newLevelCode\":\"ZL\",\"addedProjectIds\":[\"CCP0043\",\"CCP0044\",\"CCP0045\"],\"type\":\"nursing_level_set\",\"oldLevelCode\":\"\"}",
+  "reverted" : false
 } ]

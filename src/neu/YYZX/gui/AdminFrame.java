@@ -356,15 +356,62 @@ public class AdminFrame {
         box.setPadding(new Insets(15));
 
         TextField searchField = new TextField();
-        searchField.setPromptText("搜索老人姓名...");
+        searchField.setPromptText("搜索姓名/身份证/电话...");
         searchField.setPrefWidth(200);
 
+        ComboBox<String> levelFilter = new ComboBox<>();
+        levelFilter.setPrefWidth(120);
+        levelFilter.getItems().add("全部等级");
+        ctx.getNursingLevelDao().findAll().forEach(l -> levelFilter.getItems().add(l.getCode() + " " + l.getName()));
+        levelFilter.setValue("全部等级");
+
+        ComboBox<String> statusFilter = new ComboBox<>();
+        statusFilter.setPrefWidth(100);
+        statusFilter.getItems().addAll("全部状态", "在住", "外出", "已退住");
+        statusFilter.setValue("全部状态");
+
         TableView<Elderly> table = elderlyTable();
+
+        Runnable doFilter = () -> {
+            String kw = searchField.getText().trim();
+            String lv = levelFilter.getValue();
+            String st = statusFilter.getValue();
+            List<Elderly> all = ctx.getElderlyDao().findAll();
+            List<Elderly> filtered = all.stream().filter(e -> {
+                // 姓名/身份证/电话 模糊搜索
+                if (!kw.isEmpty()) {
+                    boolean matchName = e.getName() != null && e.getName().contains(kw);
+                    boolean matchIdCard = e.getIdCard() != null && e.getIdCard().contains(kw);
+                    boolean matchPhone = e.getPhone() != null && e.getPhone().contains(kw);
+                    if (!matchName && !matchIdCard && !matchPhone) return false;
+                }
+                // 护理等级筛选
+                if (!"全部等级".equals(lv)) {
+                    String code = lv.split(" ")[0];
+                    if (e.getNursingLevelCode() == null || !e.getNursingLevelCode().equals(code)) return false;
+                }
+                // 状态筛选
+                if (!"全部状态".equals(st)) {
+                    if (e.getStatus() == null || !e.getStatus().equals(st)) return false;
+                }
+                return true;
+            }).toList();
+            refreshElderly(table, filtered);
+        };
+
+        searchField.textProperty().addListener((o, ov, nv) -> doFilter.run());
+        levelFilter.setOnAction(e -> doFilter.run());
+        statusFilter.setOnAction(e -> doFilter.run());
         refreshElderly(table, ctx.getElderlyDao().findAll());
 
-        searchField.textProperty().addListener((o, ov, nv) -> {
-            if (nv.trim().isEmpty()) refreshElderly(table, ctx.getElderlyDao().findAll());
-            else refreshElderly(table, ctx.getElderlyDao().findByName(nv.trim()));
+        table.setRowFactory(tv -> {
+            TableRow<Elderly> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                    showElderlyInfoDialog(row.getItem());
+                }
+            });
+            return row;
         });
 
         Button checkinBtn = new Button("老人入住");
@@ -388,10 +435,10 @@ public class AdminFrame {
             Elderly sel = table.getSelectionModel().getSelectedItem();
             if (sel == null) { LoginPane.showAlert(Alert.AlertType.WARNING, "请先选择老人"); return; }
             showSetLevelDialog(sel);
-            refreshElderly(table, ctx.getElderlyDao().findAll());
+            doFilter.run();
         });
 
-        HBox btns = new HBox(10, searchField, checkinBtn, editBtn, setLevelBtn);
+        HBox btns = new HBox(10, searchField, levelFilter, statusFilter, checkinBtn, editBtn, setLevelBtn);
         box.getChildren().addAll(btns, table);
         return box;
     }
@@ -514,6 +561,11 @@ public class AdminFrame {
             e.setStatus("在住");
             ctx.getElderlyDao().insert(e);
             PersistentIdGenerator.getInstance().save();
+            Map<String, Object> undoData = new HashMap<>();
+            undoData.put("type", "elderly_checkin");
+            undoData.put("elderlyId", e.getId());
+            undoData.put("bedId", bedId);
+            AuditLogger.logReversible("老人入住", "老人管理", e.getName(), undoData);
             refreshElderly(table, ctx.getElderlyDao().findAll());
             return e;
         });
@@ -679,6 +731,56 @@ public class AdminFrame {
         });
         dlg.showAndWait();
     }
+
+    private void showElderlyInfoDialog(Elderly e) {
+        Dialog<Void> dlg = new Dialog<>();
+        dlg.initOwner(stage);
+        dlg.setTitle("老人信息 - " + e.getName());
+        dlg.setResizable(true);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(15); grid.setVgap(12); grid.setPadding(new Insets(20));
+
+        String[] labels = {"姓名", "年龄", "性别", "血型", "身份证号", "出生日期",
+            "电话", "地址", "家属", "紧急联系人", "紧急联系电话",
+            "入住日期", "合同到期", "护理等级", "房间号", "状态"};
+        String[] values = {
+            nvl(e.getName()), String.valueOf(e.getAge()), nvl(e.getGender()), nvl(e.getBloodType()),
+            nvl(e.getIdCard()), nvl(e.getBirthDate()),
+            nvl(e.getPhone()), nvl(e.getAddress()), nvl(e.getFamilyMember()),
+            nvl(e.getEmergencyContact()), nvl(e.getEmergencyPhone()),
+            nvl(e.getCheckInDate()), nvl(e.getContractEndDate()),
+            nvl(e.getNursingLevelCode()), nvl(e.getRoomNo()), nvl(e.getStatus())
+        };
+
+        for (int i = 0; i < labels.length; i++) {
+            Label lbl = new Label(labels[i] + "：");
+            lbl.setStyle("-fx-font-weight:bold; -fx-font-size:13px");
+            Label val = new Label(values[i]);
+            val.setStyle("-fx-font-size:13px");
+            val.setWrapText(true);
+            grid.add(lbl, 0, i);
+            grid.add(val, 1, i);
+        }
+
+        // 显示当前床位号
+        Label bedLbl = new Label("床位号：");
+        bedLbl.setStyle("-fx-font-weight:bold; -fx-font-size:13px");
+        String bedNo = "";
+        if (e.getBedId() != null && !e.getBedId().isEmpty()) {
+            Bed bed = ctx.getBedDao().findById(e.getBedId());
+            if (bed != null) bedNo = bed.getBedNo();
+        }
+        grid.add(bedLbl, 0, labels.length);
+        grid.add(new Label(bedNo), 1, labels.length);
+
+        ButtonType closeBtn = new ButtonType("关闭", ButtonBar.ButtonData.CANCEL_CLOSE);
+        dlg.getDialogPane().getButtonTypes().add(closeBtn);
+        dlg.getDialogPane().setContent(grid);
+        dlg.showAndWait();
+    }
+
+    private String nvl(String s) { return s != null && !s.isEmpty() ? s : "-"; }
 
     private void showSetLevelDialog(Elderly e) {
         boolean hasLevel = e.getNursingLevelCode() != null && !e.getNursingLevelCode().isEmpty();
@@ -947,12 +1049,17 @@ public class AdminFrame {
             java.util.Set<String> existingNos = new java.util.HashSet<>();
             ctx.getBedDao().findAll().forEach(b -> existingNos.add(b.getBedNo()));
 
+            String roomNo = room.getRoomNo();
             TextInputDialog bedDlg = new TextInputDialog();
             bedDlg.setTitle("添加床位");
             bedDlg.setHeaderText("请输入床位号（当前 " + currentBeds + "/" + room.getCapacity() + "）");
             bedDlg.showAndWait().ifPresent(bedNo -> {
                 String trimmed = bedNo.trim();
                 if (trimmed.isEmpty()) return;
+                // 如果输入不含"-"，自动补齐为"房间号-床位号"
+                if (!trimmed.contains("-")) {
+                    trimmed = roomNo + "-" + trimmed;
+                }
                 if (existingNos.contains(trimmed)) {
                     LoginPane.showAlert(Alert.AlertType.WARNING, "床位号「" + trimmed + "」已存在，请使用其他编号");
                     return;
@@ -1625,13 +1732,28 @@ public class AdminFrame {
         box.setPadding(new Insets(15));
 
         TableView<CareRecord> table = new TableView<>();
-        TableColumn<CareRecord, String> c1 = tc("老人ID", "elderlyId");
+        TableColumn<CareRecord, String> c0 = new TableColumn<>("老人姓名");
+        c0.setCellValueFactory(data -> {
+            Elderly e = ctx.getElderlyDao().findById(data.getValue().getElderlyId());
+            return new SimpleStringProperty(e != null ? e.getName() : data.getValue().getElderlyId());
+        });
         TableColumn<CareRecord, String> c2 = tc("项目代码", "projectCode");
         TableColumn<CareRecord, String> c3 = tc("执行时间", "executeTime");
         TableColumn<CareRecord, String> c4 = tc("数量", "quantity");
         TableColumn<CareRecord, String> c5 = tc("护工", "nurseName");
-        table.getColumns().addAll(c1, c2, c3, c4, c5);
+        table.getColumns().addAll(c0, c2, c3, c4, c5);
         refreshTable(table, ctx.getCareRecordDao().findAll());
+
+        table.setRowFactory(tv -> {
+            TableRow<CareRecord> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                    Elderly e = ctx.getElderlyDao().findById(row.getItem().getElderlyId());
+                    if (e != null) showElderlyInfoDialog(e);
+                }
+            });
+            return row;
+        });
 
         box.getChildren().add(table);
         return box;
@@ -1671,6 +1793,11 @@ public class AdminFrame {
 
         // 已购项目表格
         TableView<CustomerCareProject> table = new TableView<>();
+        TableColumn<CustomerCareProject, String> tc0 = new TableColumn<>("老人姓名");
+        tc0.setCellValueFactory(data -> {
+            Elderly e = ctx.getElderlyDao().findById(data.getValue().getCustomerId());
+            return new SimpleStringProperty(e != null ? e.getName() : data.getValue().getCustomerId());
+        });
         TableColumn<CustomerCareProject, String> tc1 = tc("项目代码", "projectCode");
         TableColumn<CustomerCareProject, String> tc2 = tc("购买数量", "quantity");
         TableColumn<CustomerCareProject, String> tc3 = tc("购买日期", "purchaseDate");
@@ -1689,10 +1816,23 @@ public class AdminFrame {
             } catch (Exception e) { status = "未知"; }
             return new SimpleStringProperty(status);
         });
-        table.getColumns().addAll(tc1, tc2, tc3, tc4, tc5);
+        table.getColumns().addAll(tc0, tc1, tc2, tc3, tc4, tc5);
 
         // 默认显示全部
         refreshTable(table, ctx.getCustomerCareProjectDao().findAll());
+
+        // 双击行查看老人信息
+        table.setRowFactory(tv -> {
+            TableRow<CustomerCareProject> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                    CustomerCareProject rowData = row.getItem();
+                    Elderly e = ctx.getElderlyDao().findById(rowData.getCustomerId());
+                    if (e != null) showElderlyInfoDialog(e);
+                }
+            });
+            return row;
+        });
 
         // 饮食偏好提示条
         HBox dietBar = new HBox(10);
@@ -1768,8 +1908,17 @@ public class AdminFrame {
             Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "确定移除此护理项目吗？移除后客户将不再享有对应服务。", ButtonType.YES, ButtonType.NO);
             confirm.showAndWait().ifPresent(r -> {
                 if (r == ButtonType.YES) {
+                    // 快照用于撤销
+                    Map<String, Object> undoData = new HashMap<>();
+                    undoData.put("type", "care_project_remove");
+                    undoData.put("customerId", ccp.getCustomerId());
+                    undoData.put("projectCode", ccp.getProjectCode());
+                    undoData.put("quantity", ccp.getQuantity());
+                    undoData.put("purchaseDate", ccp.getPurchaseDate());
+                    undoData.put("expireDate", ccp.getExpireDate());
                     ctx.getCustomerCareProjectDao().delete(ccp.getId());
                     PersistentIdGenerator.getInstance().save();
+                    AuditLogger.logReversible("移除护理项目", "服务关注", ccp.getProjectCode(), undoData);
                     String sel = customerBox.getValue();
                     if (sel == null) return;
                     if ("无 - 全部".equals(sel)) refreshTable(table, ctx.getCustomerCareProjectDao().findAll());
@@ -1819,8 +1968,13 @@ public class AdminFrame {
                 try { qty = Integer.parseInt(qtyField.getText().trim()); } catch (Exception ex) { qty = 1; }
                 String expireDate = expirePicker.getValue() != null ? expirePicker.getValue().toString() : LocalDate.now().plusMonths(3).toString();
                 String now = LocalDateTime.now().format(fmt);
-                ctx.getCustomerCareProjectDao().insert(new CustomerCareProject(null, customerId, projectCode, qty, now, expireDate));
+                CustomerCareProject newCcp = new CustomerCareProject(null, customerId, projectCode, qty, now, expireDate);
+                ctx.getCustomerCareProjectDao().insert(newCcp);
                 PersistentIdGenerator.getInstance().save();
+                Map<String, Object> undoData = new HashMap<>();
+                undoData.put("type", "care_project_buy");
+                undoData.put("projectId", newCcp.getId());
+                AuditLogger.logReversible("购买护理项目", "服务关注", customerName + " ← " + projectCode, undoData);
                 refreshTable(table, ctx.getCustomerCareProjectDao().findByCustomerId(customerId));
             }
             return null;
@@ -1855,12 +2009,20 @@ public class AdminFrame {
 
         dlg.setResultConverter(btn -> {
             if (btn == okBtn) {
+                int oldQty = ccp.getQuantity();
+                String oldExpireDate = ccp.getExpireDate();
                 int addQty;
                 try { addQty = Integer.parseInt(addQtyField.getText().trim()); } catch (Exception ex) { addQty = 0; }
-                ccp.setQuantity(ccp.getQuantity() + addQty);
+                ccp.setQuantity(oldQty + addQty);
                 if (newExpirePicker.getValue() != null) ccp.setExpireDate(newExpirePicker.getValue().toString());
                 ctx.getCustomerCareProjectDao().update(ccp);
                 PersistentIdGenerator.getInstance().save();
+                Map<String, Object> undoData = new HashMap<>();
+                undoData.put("type", "care_project_renew");
+                undoData.put("projectId", ccp.getId());
+                undoData.put("oldQuantity", oldQty);
+                undoData.put("oldExpireDate", oldExpireDate != null ? oldExpireDate : "");
+                AuditLogger.logReversible("续费护理项目", "服务关注", ccp.getProjectCode(), undoData);
                 refreshTable(table, ctx.getCustomerCareProjectDao().findByCustomerId(ccp.getCustomerId()));
             }
             return null;
@@ -1901,6 +2063,17 @@ public class AdminFrame {
 
         // 默认显示全部
         refreshTable(table, ctx.getServiceAssignmentDao().findAll());
+
+        table.setRowFactory(tv -> {
+            TableRow<ServiceAssignment> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                    Elderly e = ctx.getElderlyDao().findById(row.getItem().getElderlyId());
+                    if (e != null) showElderlyInfoDialog(e);
+                }
+            });
+            return row;
+        });
 
         butlerBox.setOnAction(e -> {
             String sel = butlerBox.getValue();
@@ -2143,6 +2316,17 @@ public class AdminFrame {
         Runnable refresh = () -> refreshTable(table, ctx.getOutRegistrationDao().findAll());
         refresh.run();
 
+        table.setRowFactory(tv -> {
+            TableRow<OutRegistration> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                    Elderly e = ctx.getElderlyDao().findById(row.getItem().getCustomerId());
+                    if (e != null) showElderlyInfoDialog(e);
+                }
+            });
+            return row;
+        });
+
         Button approveBtn = new Button("审批通过");
         Button rejectBtn = new Button("审批不通过");
 
@@ -2216,6 +2400,17 @@ public class AdminFrame {
         Runnable refresh = () -> refreshTable(table, ctx.getCheckOutDao().findAll());
         refresh.run();
 
+        table.setRowFactory(tv -> {
+            TableRow<CheckOut> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                    Elderly e = ctx.getElderlyDao().findById(row.getItem().getCustomerId());
+                    if (e != null) showElderlyInfoDialog(e);
+                }
+            });
+            return row;
+        });
+
         Button approveBtn = new Button("审批通过");
         Button rejectBtn = new Button("审批不通过");
 
@@ -2288,6 +2483,17 @@ public class AdminFrame {
         TableColumn<HealthRecord, String> c7 = tc("备注", "remark");
         table.getColumns().addAll(c0, c1, c2, c3, c4, c5, c6, c7);
         refreshTable(table, ctx.getHealthRecordDao().findAll());
+
+        table.setRowFactory(tv -> {
+            TableRow<HealthRecord> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                    Elderly e = ctx.getElderlyDao().findById(row.getItem().getCustomerId());
+                    if (e != null) showElderlyInfoDialog(e);
+                }
+            });
+            return row;
+        });
 
         customerBox.setOnAction(e -> {
             String sel = customerBox.getValue();
@@ -2415,7 +2621,24 @@ public class AdminFrame {
             }
             return new SimpleStringProperty(text);
         });
-        table.getColumns().addAll(c1, c2, c3, c4, c5, c6, c7);
+        TableColumn<OperationLog, Void> c8 = new TableColumn<>("跳转");
+        c8.setCellFactory(col -> new TableCell<>() {
+            private final Button btn = new Button("→");
+            {
+                btn.setStyle("-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-cursor: hand;");
+                btn.setOnAction(e -> {
+                    OperationLog log = getTableView().getItems().get(getIndex());
+                    String key = targetToModule(log.getTarget());
+                    if (key != null) switchContent(key);
+                });
+            }
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(empty ? null : btn);
+            }
+        });
+        table.getColumns().addAll(c1, c2, c3, c4, c5, c6, c7, c8);
 
         List<OperationLog> logs = ctx.getOperationLogDao().findAll();
         logs.sort((a, b) -> {
@@ -2462,6 +2685,24 @@ public class AdminFrame {
         HBox btnRow = new HBox(10, undoBtn);
         box.getChildren().addAll(btnRow, table);
         return box;
+    }
+
+    /** 操作日志目标 → 左侧导航模块映射 */
+    private String targetToModule(String target) {
+        if (target == null) return null;
+        if (target.contains("老人")) return "elderly";
+        if (target.contains("床位")) return "beds";
+        if (target.contains("护理级别") || target.contains("护理项目") || target.contains("护理记录")) return "nlevels";
+        if (target.contains("服务关注") || target.contains("服务")) return "serviceFocus";
+        if (target.contains("管家")) return "butlerAssign";
+        if (target.contains("健康")) return "health";
+        if (target.contains("膳食") || target.contains("餐饮")) return "foods";
+        if (target.contains("用户")) return "users";
+        if (target.contains("员工")) return "employees";
+        if (target.contains("外出")) return "outreg";
+        if (target.contains("退住")) return "checkout";
+        if (target.contains("日志")) return "logs";
+        return null;
     }
 
     @SuppressWarnings("unchecked")
@@ -2584,6 +2825,45 @@ public class AdminFrame {
                 case "diet_preference": {
                     String preferenceId = (String) data.get("preferenceId");
                     ctx.getDietPreferenceDao().delete(preferenceId);
+                    PersistentIdGenerator.getInstance().save();
+                    return true;
+                }
+                case "elderly_checkin": {
+                    String elderlyId = (String) data.get("elderlyId");
+                    String bedId = (String) data.get("bedId");
+                    ctx.getElderlyDao().delete(elderlyId);
+                    if (bedId != null && !bedId.isEmpty()) {
+                        Bed bed = ctx.getBedDao().findById(bedId);
+                        if (bed != null) { bed.setStatus("available"); ctx.getBedDao().update(bed); }
+                    }
+                    PersistentIdGenerator.getInstance().save();
+                    return true;
+                }
+                case "care_project_buy": {
+                    String projectId = (String) data.get("projectId");
+                    ctx.getCustomerCareProjectDao().delete(projectId);
+                    PersistentIdGenerator.getInstance().save();
+                    return true;
+                }
+                case "care_project_renew": {
+                    String projectId = (String) data.get("projectId");
+                    CustomerCareProject ccp = ctx.getCustomerCareProjectDao().findById(projectId);
+                    if (ccp == null) return false;
+                    int oldQty = data.get("oldQuantity") instanceof Integer ? (int) data.get("oldQuantity") : Integer.parseInt(String.valueOf(data.get("oldQuantity")));
+                    ccp.setQuantity(oldQty);
+                    ccp.setExpireDate((String) data.get("oldExpireDate"));
+                    ctx.getCustomerCareProjectDao().update(ccp);
+                    PersistentIdGenerator.getInstance().save();
+                    return true;
+                }
+                case "care_project_remove": {
+                    String customerId = (String) data.get("customerId");
+                    String projectCode = (String) data.get("projectCode");
+                    int qty = data.get("quantity") instanceof Integer ? (int) data.get("quantity") : Integer.parseInt(String.valueOf(data.get("quantity")));
+                    String purchaseDate = (String) data.get("purchaseDate");
+                    String expireDate = (String) data.get("expireDate");
+                    CustomerCareProject ccp = new CustomerCareProject(null, customerId, projectCode, qty, purchaseDate, expireDate);
+                    ctx.getCustomerCareProjectDao().insert(ccp);
                     PersistentIdGenerator.getInstance().save();
                     return true;
                 }

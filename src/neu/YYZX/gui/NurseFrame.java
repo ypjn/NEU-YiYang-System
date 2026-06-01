@@ -200,6 +200,16 @@ public class NurseFrame {
         table.getColumns().addAll(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13);
         refresh(table, ctx.getElderlyDao().findAll());
 
+        table.setRowFactory(tv -> {
+            TableRow<Elderly> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                    showElderlyInfoDialog(row.getItem());
+                }
+            });
+            return row;
+        });
+
         searchField.textProperty().addListener((o, ov, nv) -> {
             if (nv.trim().isEmpty()) refresh(table, ctx.getElderlyDao().findAll());
             else refresh(table, ctx.getElderlyDao().findByName(nv.trim()));
@@ -335,6 +345,11 @@ public class NurseFrame {
             e.setStatus("在住");
             ctx.getElderlyDao().insert(e);
             PersistentIdGenerator.getInstance().save();
+            Map<String, Object> undoData = new HashMap<>();
+            undoData.put("type", "elderly_checkin");
+            undoData.put("elderlyId", e.getId());
+            undoData.put("bedId", bedId);
+            AuditLogger.logReversible("老人入住", "老人管理", e.getName(), undoData);
             refresh(table, ctx.getElderlyDao().findAll());
             return e;
         });
@@ -524,15 +539,30 @@ public class NurseFrame {
         box.setPadding(new Insets(15));
 
         TableView<CareRecord> table = new TableView<>();
-        TableColumn<CareRecord, String> c1 = col("老人ID", "elderlyId");
+        TableColumn<CareRecord, String> c0 = new TableColumn<>("老人姓名");
+        c0.setCellValueFactory(data -> {
+            Elderly e = ctx.getElderlyDao().findById(data.getValue().getElderlyId());
+            return new SimpleStringProperty(e != null ? e.getName() : data.getValue().getElderlyId());
+        });
         TableColumn<CareRecord, String> c2 = col("项目代码", "projectCode");
         TableColumn<CareRecord, String> c3 = col("执行时间", "executeTime");
         TableColumn<CareRecord, String> c4 = col("数量", "quantity");
         TableColumn<CareRecord, String> c5 = col("护工", "nurseName");
-        table.getColumns().addAll(c1, c2, c3, c4, c5);
+        table.getColumns().addAll(c0, c2, c3, c4, c5);
 
         String nurseName = user.getRealName() != null ? user.getRealName() : user.getUsername();
         refresh(table, ctx.getCareRecordDao().findByNurseName(nurseName));
+
+        table.setRowFactory(tv -> {
+            TableRow<CareRecord> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                    Elderly e = ctx.getElderlyDao().findById(row.getItem().getElderlyId());
+                    if (e != null) showElderlyInfoDialog(e);
+                }
+            });
+            return row;
+        });
 
         Button addBtn = new Button("新增护理记录");
         addBtn.setOnAction(e -> showAddRecordDialog(nurseName, table));
@@ -607,6 +637,17 @@ public class NurseFrame {
         table.getColumns().addAll(c0, c1, c2, c3, c4);
         refresh(table, ctx.getServiceAssignmentDao().findAll());
 
+        table.setRowFactory(tv -> {
+            TableRow<ServiceAssignment> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                    Elderly e = ctx.getElderlyDao().findById(row.getItem().getElderlyId());
+                    if (e != null) showElderlyInfoDialog(e);
+                }
+            });
+            return row;
+        });
+
         Button endServiceBtn = new Button("结束服务");
         endServiceBtn.setOnAction(e -> {
             ServiceAssignment sa = table.getSelectionModel().getSelectedItem();
@@ -651,6 +692,17 @@ public class NurseFrame {
         TableColumn<DietPreference, String> c5 = col("忌口", "taboos");
         table.getColumns().addAll(c1, c2, c3, c4, c5);
         refresh(table, ctx.getDietPreferenceDao().findAll());
+
+        table.setRowFactory(tv -> {
+            TableRow<DietPreference> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                    Elderly e = ctx.getElderlyDao().findById(row.getItem().getCustomerId());
+                    if (e != null) showElderlyInfoDialog(e);
+                }
+            });
+            return row;
+        });
 
         Button addBtn = new Button("添加膳食偏好");
         addBtn.setOnAction(e -> {
@@ -785,6 +837,17 @@ public class NurseFrame {
         refresh(table, ctx.getOutRegistrationDao().findAll().stream()
             .filter(o -> nurseName.equals(o.getCompanion())).toList());
 
+        table.setRowFactory(tv -> {
+            TableRow<OutRegistration> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                    Elderly e = ctx.getElderlyDao().findById(row.getItem().getCustomerId());
+                    if (e != null) showElderlyInfoDialog(e);
+                }
+            });
+            return row;
+        });
+
         Button applyBtn = new Button("新增外出申请");
         applyBtn.setOnAction(e -> {
             List<Elderly> activeElders = ctx.getElderlyDao().findAll().stream()
@@ -876,6 +939,17 @@ public class NurseFrame {
         table.getColumns().addAll(c1, c2, c3, c4, c5);
 
         refresh(table, ctx.getCheckOutDao().findAll());
+
+        table.setRowFactory(tv -> {
+            TableRow<CheckOut> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                    Elderly e = ctx.getElderlyDao().findById(row.getItem().getCustomerId());
+                    if (e != null) showElderlyInfoDialog(e);
+                }
+            });
+            return row;
+        });
 
         Button applyBtn = new Button("新增退住申请");
         applyBtn.setOnAction(e -> {
@@ -1029,6 +1103,17 @@ public class NurseFrame {
         table.getColumns().addAll(c0, c1, c2, c3, c4, c5, c6, c7);
         refresh(table, ctx.getHealthRecordDao().findAll());
 
+        table.setRowFactory(tv -> {
+            TableRow<HealthRecord> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                    Elderly e = ctx.getElderlyDao().findById(row.getItem().getCustomerId());
+                    if (e != null) showElderlyInfoDialog(e);
+                }
+            });
+            return row;
+        });
+
         customerBox.setOnAction(e -> {
             String sel = customerBox.getValue();
             if (sel == null) return;
@@ -1147,4 +1232,53 @@ public class NurseFrame {
     private <T> void refresh(TableView<T> table, List<T> data) {
         table.setItems(FXCollections.observableArrayList(data));
     }
+
+    private void showElderlyInfoDialog(Elderly e) {
+        Dialog<Void> dlg = new Dialog<>();
+        dlg.initOwner(stage);
+        dlg.setTitle("老人信息 - " + e.getName());
+        dlg.setResizable(true);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(15); grid.setVgap(12); grid.setPadding(new Insets(20));
+
+        String[] labels = {"姓名", "年龄", "性别", "血型", "身份证号", "出生日期",
+            "电话", "地址", "家属", "紧急联系人", "紧急联系电话",
+            "入住日期", "合同到期", "护理等级", "房间号", "状态"};
+        String[] values = {
+            nvl(e.getName()), String.valueOf(e.getAge()), nvl(e.getGender()), nvl(e.getBloodType()),
+            nvl(e.getIdCard()), nvl(e.getBirthDate()),
+            nvl(e.getPhone()), nvl(e.getAddress()), nvl(e.getFamilyMember()),
+            nvl(e.getEmergencyContact()), nvl(e.getEmergencyPhone()),
+            nvl(e.getCheckInDate()), nvl(e.getContractEndDate()),
+            nvl(e.getNursingLevelCode()), nvl(e.getRoomNo()), nvl(e.getStatus())
+        };
+
+        for (int i = 0; i < labels.length; i++) {
+            Label lbl = new Label(labels[i] + ":");
+            lbl.setStyle("-fx-font-weight:bold; -fx-font-size:13px");
+            Label val = new Label(values[i]);
+            val.setStyle("-fx-font-size:13px");
+            val.setWrapText(true);
+            grid.add(lbl, 0, i);
+            grid.add(val, 1, i);
+        }
+
+        Label bedLbl = new Label("床位号:");
+        bedLbl.setStyle("-fx-font-weight:bold; -fx-font-size:13px");
+        String bedNo = "";
+        if (e.getBedId() != null && !e.getBedId().isEmpty()) {
+            Bed bed = ctx.getBedDao().findById(e.getBedId());
+            if (bed != null) bedNo = bed.getBedNo();
+        }
+        grid.add(bedLbl, 0, labels.length);
+        grid.add(new Label(bedNo), 1, labels.length);
+
+        ButtonType closeBtn = new ButtonType("关闭", ButtonBar.ButtonData.CANCEL_CLOSE);
+        dlg.getDialogPane().getButtonTypes().add(closeBtn);
+        dlg.getDialogPane().setContent(grid);
+        dlg.showAndWait();
+    }
+
+    private String nvl(String s) { return s != null && !s.isEmpty() ? s : "-"; }
 }

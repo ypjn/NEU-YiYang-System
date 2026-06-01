@@ -214,7 +214,7 @@
   "checkInDate" : "2026-05-31 00:00:00",
   "contractEndDate" : "2027-05-31",
   "bedId" : "BD0070",
-  "nursingLevelCode" : null,
+  "nursingLevelCode" : "ZL",
   "roomNo" : "101",
   "buildingId" : "B0004",
   "status" : "在住"

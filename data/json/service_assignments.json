@@ -4,9 +4,9 @@
   "elderlyId" : "E0017",
   "serviceType" : "日常护理",
   "startDate" : "2025-03-15",
-  "endDate" : null,
+  "endDate" : "2026-05-31",
   "fee" : 0.0,
-  "status" : "服务中",
+  "status" : "已结束",
   "remark" : null,
   "operatorName" : "系统管理员"
 }, {

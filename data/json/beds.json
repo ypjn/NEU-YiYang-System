@@ -118,4 +118,9 @@
   "bedNo" : "101-2",
   "roomId" : "RM0023",
   "status" : "occupied"
+}, {
+  "bedId" : "BD0071",
+  "bedNo" : "301-3",
+  "roomId" : "RM0027",
+  "status" : "available"
 } ]
