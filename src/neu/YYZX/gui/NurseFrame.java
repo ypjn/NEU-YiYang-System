@@ -851,11 +851,22 @@ public class NurseFrame {
 
             // 收集忌口关键词
             java.util.Set<String> banKeywords = new java.util.LinkedHashSet<>();
-            // 过敏原
+            // 过敏原 → 扩展关键词映射
+            java.util.Map<String, String[]> allergenMap = Map.of(
+                "鸡蛋", new String[]{"鸡蛋", "蛋"},
+                "牛奶", new String[]{"牛奶", "奶"},
+                "花生", new String[]{"花生"},
+                "海鲜", new String[]{"鱼", "虾", "蟹", "贝", "鱿", "海"}
+            );
             if (nv.getAllergies() != null && !nv.getAllergies().isEmpty() && !"无".equals(nv.getAllergies())) {
                 for (String a : nv.getAllergies().split("[、，,;；]")) {
                     String kw = a.trim();
-                    if (!kw.isEmpty()) banKeywords.add(kw);
+                    if (kw.isEmpty()) continue;
+                    if (allergenMap.containsKey(kw)) {
+                        for (String m : allergenMap.get(kw)) banKeywords.add(m);
+                    } else {
+                        banKeywords.add(kw);
+                    }
                 }
             }
             // 忌口 → 扩展关键词映射
@@ -888,7 +899,7 @@ public class NurseFrame {
                         Map.entry("大块肉类", new String[]{"大块"}),
                         Map.entry("香蕉", new String[]{"香蕉"}),
                         Map.entry("橘子", new String[]{"橘子", "橙"}),
-                        Map.entry("蛋黄", new String[]{"蛋黄", "蛋"})
+                        Map.entry("蛋黄", new String[]{"蛋黄"})
                     );
                     if (map.containsKey(t)) {
                         for (String kw : map.get(t)) banKeywords.add(kw);
